@@ -322,11 +322,12 @@ export default function GeoMap({
     });
 
     /* 区县 / 地市聚合气泡 */
-    bubbles.forEach((b) => {
+    bubbles.forEach((b, bi) => {
       const lon = Number(b.lon);
       const lat = Number(b.lat);
       if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
-      const html = `<div class="amap-bubble"><b>${b.value}</b><span>${b.name}</span></div>`;
+      /* 偶数个气泡加上 alt 类，CSS 里整体上抬，缓解相邻地市气泡压叠 */
+      const html = `<div class="amap-bubble${bi % 2 ? ' alt' : ''}"><b>${b.value}</b><span>${b.name}</span></div>`;
       const marker = new AMap.Marker({
         position: [lon, lat],
         content: html,
@@ -414,7 +415,13 @@ export default function GeoMap({
   };
 
   return (
-    <div ref={wrapRef} className="geomap" style={{ position: 'absolute', inset: 0 }}>
+    <div
+      ref={wrapRef}
+      className="geomap"
+      role="img"
+      aria-label="四川省矿山分布地图，可点击地图下钻查看市州与区县"
+      style={{ position: 'absolute', inset: 0 }}
+    >
       {mode === 'amap' && <div ref={boxRef} className="geomap-canvas" style={{ position: 'absolute', inset: 0 }} />}
 
       {mode === 'svg' && (

@@ -233,14 +233,14 @@
   border-bottom: 1px solid var(--line-soft);
   background: linear-gradient(90deg, rgba(36, 118, 196, 0.34), rgba(36, 118, 196, 0.02));
 }
-.panel-head h3 {
+.panel-head :is(h2, h3) {
   position: relative;
   padding-left: 10px;
   font-size: var(--fs-lg);
   letter-spacing: 0.1em;
   white-space: nowrap;
 }
-.panel-head h3::before {
+.panel-head :is(h2, h3)::before {
   content: '';
   position: absolute;
   left: 0;
@@ -985,7 +985,7 @@
   background: linear-gradient(90deg, rgba(34, 108, 186, 0.6), rgba(10, 34, 64, 0.2));
   border-bottom: 1px solid var(--line-soft);
 }
-.map-list-head h4 {
+.map-list-head :is(h3, h4) {
   font-size: var(--fs-md);
   letter-spacing: 0.08em;
 }
@@ -1057,7 +1057,7 @@
   padding: 8px 12px;
   border-bottom: 1px solid var(--line-soft);
 }
-.layer-head h4 {
+.layer-head :is(h3, h4) {
   font-size: var(--fs-md);
   letter-spacing: 0.08em;
 }
@@ -1150,7 +1150,7 @@
   padding: 10px 12px 8px;
   border-bottom: 1px solid var(--line-soft);
 }
-.mine-popup-head h4 {
+.mine-popup-head :is(h3, h4) {
   font-size: var(--fs-md);
   line-height: 1.45;
   font-weight: 600;
@@ -1798,7 +1798,7 @@
     gap: 10px;
     padding: 6px 12px 10px;
   }
-  .panel-head h3 { font-size: var(--fs-md); }
+  .panel-head :is(h2, h3) { font-size: var(--fs-md); }
   .stat-row .v { font-size: 17px; }
 }
 @media (max-width: 1180px) {

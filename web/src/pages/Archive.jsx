@@ -81,7 +81,7 @@ export default function Archive() {
 
       <section className="archive-hero" style={{ marginBottom: 16 }}>
         <div>
-          <h1>{mine.name}</h1>
+          <h2>{mine.name}</h2>
           <div className="sub">
             <span>{mine.region_name}</span>
             <span>许可证号：{mine.license_no || '—'}</span>

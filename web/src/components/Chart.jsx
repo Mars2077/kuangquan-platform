@@ -237,14 +237,17 @@ export function indicatorOption(items = []) {
   const targets = items.map((i) => Number(i.target) || 0);
   const tone = (w) => (w === '红牌' ? '#ff5f57' : w === '黄牌' ? '#ffcc44' : '#35d39a');
   const max = Math.max(1, ...actuals, ...targets);
+  // 标签宽度按最长类目自适应，避免「砂石土料产能控制…」被截断
+  const longest = names.reduce((m, n) => Math.max(m, String(n).length), 0);
+  const labelW = Math.min(196, Math.max(96, Math.round(longest * 11.5) + 14));
   return {
     animationDuration: 780,
-    grid: { left: 4, right: 66, top: 6, bottom: 4, containLabel: true },
+    grid: { left: 4, right: 78, top: 6, bottom: 4, containLabel: true },
     xAxis: { type: 'value', show: false, max: max * 1.16 },
     yAxis: {
       type: 'category', data: names, inverse: true,
       axisLine: { show: false }, axisTick: { show: false },
-      axisLabel: { color: TEXT, fontSize: 10, width: 98, overflow: 'truncate' }
+      axisLabel: { color: TEXT, fontSize: 10, width: labelW, overflow: 'truncate' }
     },
     series: [{
       type: 'bar',
@@ -263,7 +266,7 @@ export function indicatorOption(items = []) {
 
 /* ---------------------------------------------------------------- 组件 */
 export default function Chart({
-  option, height = 150, style, className = '', onEvents, notMerge = true, group
+  option, height = 150, style, className = '', onEvents, notMerge = true, group, label
 }) {
   const boxRef = useRef(null);
   const instRef = useRef(null);
@@ -303,6 +306,8 @@ export default function Chart({
   return (
     <div
       ref={boxRef}
+      role="img"
+      aria-label={label || '数据图表'}
       className={`chart ${className}`.trim()}
       style={{ width: '100%', height, ...style }}
     />

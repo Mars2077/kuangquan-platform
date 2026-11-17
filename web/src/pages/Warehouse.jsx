@@ -147,6 +147,7 @@ export default function Warehouse() {
               {assets.length === 0 ? (
                 <p className="muted small">暂无入库资产，可在右侧表单上传首个文件。</p>
               ) : (
+                <div className="table-wrap tall">
                 <table className="data-table dense">
                   <thead>
                     <tr>
@@ -167,6 +168,7 @@ export default function Warehouse() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </section>
           </div>

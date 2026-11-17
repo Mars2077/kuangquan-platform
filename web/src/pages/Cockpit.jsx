@@ -552,7 +552,7 @@ export default function Cockpit({ sceneKey }) {
         {(data?.left || []).map((p) => (
           <section className="panel" key={p.key}>
             <header className="panel-head">
-              <h3>{p.title}</h3>
+              <h2>{p.title}</h2>
               <button type="button" className="panel-more" onClick={() => nav(`/biz/${meta0.module}`)}>
                 详情 <Ic icon={ChevronDownIcon} size={11} />
               </button>
@@ -639,7 +639,7 @@ export default function Cockpit({ sceneKey }) {
         {toolOpen && (
           <div className="layer-panel" style={{ right: 56 }}>
             <div className="layer-head">
-              <h4>工具</h4>
+              <h3>工具</h3>
               <button type="button" className="btn-link" onClick={() => setToolOpen(false)}>关闭</button>
             </div>
             <div className="layer-body">
@@ -690,7 +690,7 @@ export default function Cockpit({ sceneKey }) {
         {layerOpen && (
           <div className="layer-panel">
             <div className="layer-head">
-              <h4>图层控制</h4>
+              <h3>图层控制</h3>
               <button
                 type="button"
                 className="btn-link"
@@ -759,7 +759,7 @@ export default function Cockpit({ sceneKey }) {
         {sel && (
           <div className="mine-popup">
             <div className="mine-popup-head">
-              <h4>{sel.name}</h4>
+              <h3>{sel.name}</h3>
               <button type="button" className="close" onClick={() => setSel(null)} aria-label="关闭">✕</button>
             </div>
             <div className="mine-popup-body">
@@ -791,7 +791,7 @@ export default function Cockpit({ sceneKey }) {
 
         <section className={`map-list${listOpen ? '' : ' collapsed'}`}>
           <header className="map-list-head">
-            <h4>{themeLabel}列表</h4>
+            <h3>{themeLabel}列表</h3>
             <div className="map-list-tools">
               <div className="search-mini">
                 <Ic icon={Search01Icon} size={12} />
@@ -841,7 +841,7 @@ export default function Cockpit({ sceneKey }) {
         {(data?.right || []).map((p) => (
           <section className="panel" key={p.key}>
             <header className="panel-head">
-              <h3>{p.title}</h3>
+              <h2>{p.title}</h2>
               <button type="button" className="panel-more" onClick={() => nav(`/biz/${meta0.module}`)}>
                 详情 <Ic icon={ChevronDownIcon} size={11} />
               </button>
@@ -851,7 +851,7 @@ export default function Cockpit({ sceneKey }) {
         ))}
         {data?.extra?.indicators && (
           <section className="panel">
-            <header className="panel-head"><h3>指标执行预警</h3></header>
+            <header className="panel-head"><h2>指标执行预警</h2></header>
             <div className="panel-body">
               <Chart
                 className="indicator-chart"

@@ -6,7 +6,7 @@ export function Panel({ title, more, onMore, children, className = '', style, bo
   return (
     <section className={`panel ${className}`} style={style}>
       <header className="panel-head">
-        <h3>{title}</h3>
+        <h2>{title}</h2>
         {actions}
         {more !== false && (
           <button type="button" className="panel-more" onClick={onMore} aria-label={`查看${title}详情`}>

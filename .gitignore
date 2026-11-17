@@ -26,3 +26,8 @@ Thumbs.db
 # 环境变量
 .env
 .env.local
+
+# 评审原始截图（237 张 / 约 100MB，仅本地保留；仓库内只收录 docs/shots/review/selected/ 精选 28 张）
+docs/shots/review/v2/
+docs/shots/review/v3/
+docs/shots/review/*.png

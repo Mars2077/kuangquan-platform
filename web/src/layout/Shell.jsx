@@ -109,7 +109,7 @@ export default function Shell() {
           </div>
           <button type="button" className="pill" onClick={() => nav('/battle')}>
             <Ic icon={ChartLineData01Icon} size={14} />
-            指标监测
+            <span className="pill-text">指标监测</span>
           </button>
         </div>
 
@@ -125,7 +125,7 @@ export default function Shell() {
         <div className="topbar-right">
           <button type="button" className="pill" onClick={() => setProblem(true)}>
             <Ic icon={Alert02Icon} size={14} />
-            问题监测
+            <span className="pill-text">问题监测</span>
           </button>
           <div className="userbox" ref={menuRef}>
             <button type="button" className="who" onClick={() => setMenu((v) => !v)} aria-haspopup="menu" aria-expanded={menu}>
@@ -186,6 +186,7 @@ export default function Shell() {
       </nav>
 
       <main className={`shell-main${bleed ? ' bleed' : ''}`}>
+        {bleed && <h1 className="sr-only">省域空间治理数字化平台 - 绿矿智用 · 四川省矿产资源数字化管理</h1>}
         <Outlet />
       </main>
 
