@@ -1,0 +1,21 @@
+[error] Error: near "WHERE": syntax error
+    at all (file:///E:/%E7%9F%BF%E6%9D%83%E7%AE%A1%E7%90%86/kuangquan-platform/server/src/db.js:507:13)
+    at mk (file:///E:/%E7%9F%BF%E6%9D%83%E7%AE%A1%E7%90%86/kuangquan-platform/server/src/routes/feature.js:108:12)
+    at filterOptions (file:///E:/%E7%9F%BF%E6%9D%83%E7%AE%A1%E7%90%86/kuangquan-platform/server/src/routes/feature.js:111:13)
+    at file:///E:/%E7%9F%BF%E6%9D%83%E7%AE%A1%E7%90%86/kuangquan-platform/server/src/routes/feature.js:226:71
+    at file:///E:/%E7%9F%BF%E6%9D%83%E7%AE%A1%E7%90%86/kuangquan-platform/server/src/util.js:12:17
+    at Layer.handle [as handle_request] (E:\矿权管理\kuangquan-platform\server\node_modules\express\lib\router\layer.js:95:5)
+    at next (E:\矿权管理\kuangquan-platform\server\node_modules\express\lib\router\route.js:149:13)
+    at Route.dispatch (E:\矿权管理\kuangquan-platform\server\node_modules\express\lib\router\route.js:119:3)
+    at Layer.handle [as handle_request] (E:\矿权管理\kuangquan-platform\server\node_modules\express\lib\router\layer.js:95:5)
+    at E:\矿权管理\kuangquan-platform\server\node_modules\express\lib\router\index.js:284:15
+    at param (E:\矿权管理\kuangquan-platform\server\node_modules\express\lib\router\index.js:365:14)
+    at param (E:\矿权管理\kuangquan-platform\server\node_modules\express\lib\router\index.js:376:14)
+    at param (E:\矿权管理\kuangquan-platform\server\node_modules\express\lib\router\index.js:376:14)
+    at router.process_params (E:\矿权管理\kuangquan-platform\server\node_modules\express\lib\router\index.js:421:3)
+    at next (E:\矿权管理\kuangquan-platform\server\node_modules\express\lib\router\index.js:280:10)
+    at authRequired (file:///E:/%E7%9F%BF%E6%9D%83%E7%AE%A1%E7%90%86/kuangquan-platform/server/src/auth.js:49:5) {
+  code: 'ERR_SQLITE_ERROR',
+  errcode: 1,
+  errstr: 'SQL logic error'
+}

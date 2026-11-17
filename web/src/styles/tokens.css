@@ -1,0 +1,190 @@
+/* ===================================================================
+   绿矿智用 · 矿权管理系统 — 设计令牌（Design Tokens）
+   规范来源：docs/DESIGN-SYSTEM.md（采纳 taste-skill 的反模板化约束）
+   =================================================================== */
+:root {
+  /* 外壳尺寸：顶栏 / 一级导航 */
+  --topbar-h: 68px;
+  --nav-h: 39px;
+
+  /* 底色：深色科技蓝，政务 GIS 大屏 */
+  --bg-0: #050f21;
+  --bg-1: #071730;
+  --bg-2: #0a1a33;
+  --bg-3: #102a4a;
+  --bg-4: #16375c;
+
+  /* 面板与描边 */
+  --panel: rgba(10, 32, 64, 0.58);
+  --panel-solid: rgba(9, 26, 52, 0.92);
+  --panel-raise: rgba(16, 45, 82, 0.78);
+  --line: rgba(64, 158, 255, 0.35);
+  --line-soft: rgba(64, 158, 255, 0.16);
+  --line-strong: rgba(73, 195, 255, 0.55);
+
+  /* 主色与语义色 */
+  --cyan: #49c3ff;
+  --cyan-bright: #7fe3ff;
+  --blue: #2ea8ff;
+  --blue-deep: #1c6fd6;
+  --green: #35d39a;
+  --orange: #ff8a3d;
+  --yellow: #ffcc44;
+  --red: #ff5f57;
+  --purple-forbidden: none; /* 规范：禁止使用紫色系 */
+
+  /* 文字 */
+  --text-1: #f2f9ff;
+  --text-2: #cfe4ff;
+  --text-3: #8fb4d9;
+  --text-4: #5f85ab;
+
+  /* 圆角刻度（只允许三档） */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 14px;
+
+  /* 字号刻度（只允许六档） */
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 28px;
+
+  /* 间距刻度 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  --shadow-panel: 0 8px 28px rgba(0, 10, 28, 0.45);
+  --shadow-pop: 0 18px 48px rgba(0, 8, 24, 0.6);
+  --glow-cyan: 0 0 18px rgba(73, 195, 255, 0.35);
+
+  --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Source Han Sans SC', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-num: 'DIN Alternate', 'Bahnschrift', 'Roboto Condensed', 'PingFang SC', sans-serif;
+
+  --header-h: 74px;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  color: var(--text-2);
+  background:
+    radial-gradient(1200px 700px at 50% -10%, #13345c 0%, rgba(9, 26, 52, 0) 62%),
+    radial-gradient(900px 620px at 8% 108%, #0d2b50 0%, rgba(7, 23, 48, 0) 60%),
+    var(--bg-0);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: 0.02em;
+}
+
+a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* 焦点环：全站统一，键盘可达 */
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(73, 195, 255, 0.32);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(73, 195, 255, 0.55);
+}
+
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.muted {
+  color: var(--text-3);
+}
+.tiny {
+  font-size: var(--fs-xs);
+}
+.up {
+  color: var(--red);
+}
+.down {
+  color: var(--green);
+}
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.row {
+  display: flex;
+  align-items: center;
+}
+.gap-1 { gap: var(--sp-1); }
+.gap-2 { gap: var(--sp-2); }
+.gap-3 { gap: var(--sp-3); }
+.gap-4 { gap: var(--sp-4); }
+.grow { flex: 1; min-width: 0; }
+.nowrap { white-space: nowrap; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

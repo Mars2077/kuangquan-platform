@@ -1,0 +1,18 @@
+{
+  "name": "kuangquan-platform",
+  "private": true,
+  "version": "1.0.0",
+  "description": "省域空间治理数字化平台 · 绿矿智用 — 矿权管理系统",
+  "type": "module",
+  "scripts": {
+    "setup": "npm --prefix server install && npm --prefix web install",
+    "dev": "node scripts/dev.mjs",
+    "seed": "npm --prefix server run seed",
+    "build": "npm --prefix web run build",
+    "start": "npm --prefix server start",
+    "preview": "node scripts/dev.mjs --prod"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

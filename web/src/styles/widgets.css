@@ -1,0 +1,491 @@
+/* ===================================================================
+   业务控件：Tab / 环形图 / 条形图 / 预警块 / 门户大卡
+   =================================================================== */
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: 9px;
+}
+.tab {
+  position: relative;
+  padding: 4px 0 7px;
+  font-size: var(--fs-md);
+  color: var(--text-3);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: color 0.16s var(--ease);
+}
+.tab::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  transform: translateX(-50%);
+  transition: width 0.22s var(--ease);
+}
+.tab:hover {
+  color: var(--text-1);
+}
+.tab.on {
+  color: #fff;
+  text-shadow: 0 0 12px rgba(73, 195, 255, 0.6);
+}
+.tab.on::after {
+  width: 100%;
+}
+
+/* 环形图卡片 */
+.ring-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ring-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+.ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+}
+.ring-center b {
+  font-family: var(--font-num);
+  font-size: 21px;
+  color: var(--cyan-bright);
+  text-shadow: 0 0 14px rgba(73, 195, 255, 0.55);
+}
+.ring-center span {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.ring-legend {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ring-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+}
+.ring-row i {
+  width: 9px;
+  height: 3px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+.ring-row .n {
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.ring-row .v {
+  margin-left: auto;
+  font-family: var(--font-num);
+  color: var(--text-1);
+  font-size: var(--fs-md);
+}
+.ring-row .d {
+  font-size: var(--fs-xs);
+  width: 44px;
+  text-align: right;
+}
+
+/* 条形分布 */
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: 74px 1fr 42px;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+}
+.bar-row .n {
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar-row .track {
+  height: 7px;
+  border-radius: 4px;
+  background: rgba(126, 190, 245, 0.14);
+  overflow: hidden;
+}
+.bar-row .track i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(46, 168, 255, 0.7), #7fe3ff);
+  box-shadow: 0 0 10px rgba(73, 195, 255, 0.45);
+  transition: width 0.7s var(--ease);
+}
+.bar-row .v {
+  text-align: right;
+  font-family: var(--font-num);
+  color: var(--text-2);
+}
+
+/* 预警块（智慧监管） */
+.warn-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.warn-card {
+  position: relative;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 138, 61, 0.45);
+  background: linear-gradient(160deg, rgba(96, 44, 18, 0.42), rgba(12, 32, 58, 0.5));
+  border-radius: var(--r-sm);
+  text-align: center;
+  transition: border-color 0.18s var(--ease), transform 0.18s var(--ease);
+}
+.warn-card:hover {
+  border-color: rgba(255, 138, 61, 0.85);
+  transform: translateY(-2px);
+}
+.warn-card .k {
+  font-size: var(--fs-xs);
+  color: #f0b98d;
+}
+.warn-card .v {
+  font-family: var(--font-num);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--orange);
+  line-height: 1.2;
+  text-shadow: 0 0 14px rgba(255, 138, 61, 0.5);
+}
+.warn-card .s {
+  font-size: 10px;
+  color: var(--text-4);
+}
+.sensor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  text-align: center;
+}
+.sensor-grid .c {
+  padding: 4px 2px;
+}
+.sensor-grid .c .v {
+  font-family: var(--font-num);
+  font-size: 19px;
+  color: var(--cyan-bright);
+}
+.sensor-grid .c .v small {
+  font-size: 10px;
+  color: var(--text-3);
+  margin-left: 2px;
+}
+.sensor-grid .c .k {
+  font-size: 10px;
+  color: var(--text-4);
+}
+.block-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  margin: 2px 0 7px;
+}
+.block-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(126, 190, 245, 0.25), transparent);
+}
+
+/* 迷你 KPI 行 */
+.kpi-inline {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.kpi-inline > div {
+  flex: 1;
+  min-width: 90px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  background: rgba(9, 30, 58, 0.55);
+}
+.kpi-inline .k {
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.kpi-inline .v {
+  font-family: var(--font-num);
+  font-size: 20px;
+  color: var(--cyan-bright);
+  margin-top: 2px;
+}
+.kpi-inline .v small {
+  font-size: 10px;
+  color: var(--text-3);
+  margin-left: 2px;
+}
+
+/* 门户大卡缩略图占位（无外链图片时的自绘示意） */
+.thumb-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.thumb-art .grid-line {
+  stroke: rgba(73, 195, 255, 0.16);
+  stroke-width: 0.6;
+}
+
+/* 地图 SVG */
+.geo-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: default;
+  background:
+    radial-gradient(900px 620px at 50% 42%, rgba(18, 62, 104, 0.9) 0%, rgba(5, 18, 36, 0.96) 68%);
+}
+.geo-region {
+  fill: rgba(24, 82, 128, 0.62);
+  stroke: rgba(102, 206, 255, 0.55);
+  stroke-width: 0.8;
+  transition: fill 0.18s var(--ease), stroke 0.18s var(--ease);
+  cursor: pointer;
+}
+.geo-region:hover {
+  fill: rgba(42, 132, 196, 0.8);
+  stroke: var(--cyan-bright);
+  stroke-width: 1.1;
+}
+.geo-region.on {
+  fill: rgba(56, 160, 224, 0.85);
+  stroke: #bdeeff;
+  stroke-width: 1.2;
+  filter: drop-shadow(0 0 6px rgba(73, 195, 255, 0.8));
+}
+.geo-ring {
+  fill: none;
+  stroke: rgba(73, 195, 255, 0.22);
+  stroke-width: 0.7;
+  stroke-dasharray: 3 7;
+}
+.geo-marker {
+  cursor: pointer;
+}
+.geo-marker circle {
+  transition: r 0.15s var(--ease);
+}
+.geo-marker:hover circle.core {
+  r: 5;
+}
+.geo-point {
+  fill: rgba(126, 214, 255, 0.85);
+  stroke: rgba(10, 34, 64, 0.9);
+  stroke-width: 0.5;
+}
+.geo-num {
+  fill: #d9f2ff;
+  font-size: 7px;
+  font-family: var(--font-num);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+.geo-mine-poly {
+  fill: rgba(255, 95, 87, 0.16);
+  stroke: #ff6b62;
+  stroke-width: 1.1;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+  animation: poly-pulse 2.4s ease-in-out infinite;
+}
+@keyframes poly-pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.45; }
+}
+.geo-tip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 20;
+  padding: 4px 8px;
+  font-size: var(--fs-xs);
+  color: #eaf8ff;
+  background: rgba(8, 28, 54, 0.94);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  transform: translate(-50%, calc(-100% - 10px));
+  white-space: nowrap;
+}
+.map-breadcrumb {
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.map-breadcrumb button {
+  background: none;
+  border: 0;
+  color: var(--cyan);
+  cursor: pointer;
+  font-size: var(--fs-xs);
+  padding: 0 2px;
+}
+.map-breadcrumb button:hover {
+  text-decoration: underline;
+}
+.map-breadcrumb i {
+  font-style: normal;
+  opacity: 0.5;
+}
+
+/* 图例 */
+.legend-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+}
+.legend-inline span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.legend-inline i {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+/* 工具栏浮层（测距等） */
+.tool-tip {
+  position: absolute;
+  left: 12px;
+  bottom: 214px;
+  z-index: 6;
+  padding: 6px 10px;
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  background: rgba(7, 24, 46, 0.9);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  max-width: 220px;
+  line-height: 1.6;
+}
+
+/* 档案页 */
+.archive-hero {
+  position: relative;
+  padding: 18px 22px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background:
+    radial-gradient(600px 200px at 12% 0%, rgba(46, 168, 255, 0.28), transparent 70%),
+    linear-gradient(160deg, rgba(15, 44, 82, 0.8), rgba(8, 25, 50, 0.6));
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.archive-hero h2 {
+  font-size: var(--fs-xl);
+}
+.archive-hero .qr {
+  margin-left: auto;
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--text-3);
+  background: #fff;
+  padding: 6px;
+  border-radius: var(--r-sm);
+}
+.archive-hero .qr img {
+  display: block;
+  width: 88px;
+  height: 88px;
+}
+.archive-hero .qr span {
+  display: block;
+  color: #33475f;
+  margin-top: 3px;
+}
+
+/* 时间轴 */
+.timeline {
+  position: relative;
+  padding-left: 18px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: linear-gradient(180deg, rgba(73, 195, 255, 0.5), transparent);
+}
+.tl-item {
+  position: relative;
+  padding: 0 0 12px 0;
+  font-size: var(--fs-sm);
+}
+.tl-item::before {
+  content: '';
+  position: absolute;
+  left: -18px;
+  top: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px rgba(73, 195, 255, 0.8);
+}
+.tl-item .t {
+  color: var(--text-1);
+}
+.tl-item .m {
+  color: var(--text-4);
+  font-size: var(--fs-xs);
+  margin-top: 2px;
+}
+
+/* 详情抽屉内容 */
+.detail-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.detail-head h3 {
+  font-size: var(--fs-lg);
+}
