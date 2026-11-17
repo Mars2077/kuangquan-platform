@@ -10,7 +10,10 @@
     "seed": "npm --prefix server run seed",
     "build": "npm --prefix web run build",
     "start": "npm --prefix server start",
-    "preview": "node scripts/dev.mjs --prod"
+    "preview": "node scripts/dev.mjs --prod",
+    "export:snapshot": "node scripts/export-snapshot.mjs",
+    "build:demo": "npm --prefix web run build:demo",
+    "preview:demo": "npm --prefix web exec vite preview -- --port 4173 --strictPort"
   },
   "engines": {
     "node": ">=22"

@@ -3,7 +3,7 @@
 > 省域空间治理数字化平台 —— 矿权管理系统（矿产资源全生命周期一体化监管）
 > 依据《矿权管理系统功能设计文档》与 5 张系统截图实现，覆盖文档列出的 **6 大业务域 / 40 个功能点 / 7 个驾驶舱专题**。
 >
-> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　部署：见 [docs/04-部署说明.md](docs/04-部署说明.md)（含火山引擎全站加速 IGA）
+> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-a0ii6jgxjr.preview.iga-pages.com?iga_token=6d770f1c7103d9b22030a1ba80009856&iga_time=1795067843>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
 
 ![数字驾驶舱](docs/shots/dashboard.png)
 
@@ -77,6 +77,22 @@ npm start         # 启动 API，并静态托管 web/dist
 ```
 
 访问 <http://127.0.0.1:8787/>（SPA 单端口，无需 Nginx）。
+
+### 方式三：纯静态部署（无后端进程，火山引擎 IGA Pages 线上版）
+
+线上地址见本节末尾。该形态把数据与业务逻辑下沉到浏览器：构建时带上真实数据库导出的快照，
+运行期由前端内置的接口层接管全部 `/api/*` 请求，因此可以放在任意静态站点/CDN 上（IGA Pages、OSS、Nginx 均可）。
+
+```bash
+npm run export:snapshot          # 1. 从 SQLite 导出快照 + 同步功能规格到前端
+npm run build:demo               # 2. 以 demo 模式构建（产物 web/dist 即完整站点）
+npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
+```
+
+- 上线：`cd web && iga pages deploy --name kuangquan-platform`（需先 `iga login`，配置见 `web/iga.json`）
+- 线上：<https://kuangquan-platfo-541ysnljv4-a0ii6jgxjr.preview.iga-pages.com?iga_token=6d770f1c7103d9b22030a1ba80009856&iga_time=1795067843>
+- 差异：静态版的新增/修改/删除写入浏览器 `localStorage`（键 `kq_demo_journal_v1`），刷新后仍在、换设备不共享；服务端版写真实 SQLite。
+- 两个形态共用同一份前端代码与同一套接口契约，页面、交互、算法完全一致。
 
 ### 演示账号
 
