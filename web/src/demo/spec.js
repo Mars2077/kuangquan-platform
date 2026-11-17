@@ -6,18 +6,28 @@
  */
 
 export const REGION_OPTIONS = [
-  { value: '330000', label: '浙江省' },
-  { value: '330100', label: '杭州市' },
-  { value: '330200', label: '宁波市' },
-  { value: '330300', label: '温州市' },
-  { value: '330400', label: '嘉兴市' },
-  { value: '330500', label: '湖州市' },
-  { value: '330600', label: '绍兴市' },
-  { value: '330700', label: '金华市' },
-  { value: '330800', label: '衢州市' },
-  { value: '330900', label: '舟山市' },
-  { value: '331000', label: '台州市' },
-  { value: '331100', label: '丽水市' }
+  { value: '510000', label: '四川省' },
+  { value: '510100', label: '成都市' },
+  { value: '510300', label: '自贡市' },
+  { value: '510400', label: '攀枝花市' },
+  { value: '510500', label: '泸州市' },
+  { value: '510600', label: '德阳市' },
+  { value: '510700', label: '绵阳市' },
+  { value: '510800', label: '广元市' },
+  { value: '510900', label: '遂宁市' },
+  { value: '511000', label: '内江市' },
+  { value: '511100', label: '乐山市' },
+  { value: '511300', label: '南充市' },
+  { value: '511400', label: '眉山市' },
+  { value: '511500', label: '宜宾市' },
+  { value: '511600', label: '广安市' },
+  { value: '511700', label: '达州市' },
+  { value: '511800', label: '雅安市' },
+  { value: '511900', label: '巴中市' },
+  { value: '512000', label: '资阳市' },
+  { value: '513200', label: '阿坝藏族羌族自治州' },
+  { value: '513300', label: '甘孜藏族自治州' },
+  { value: '513400', label: '凉山彝族自治州' }
 ];
 
 export const MINERAL_OPTIONS = [

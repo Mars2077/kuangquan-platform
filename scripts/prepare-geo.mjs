@@ -1,8 +1,9 @@
 /**
- * 把 server/data/geo-raw 下的浙江省行政区划 GeoJSON 简化后输出到 web/public/geo/。
- * 目的：省-市-县三级下钻用的真实边界，体积控制在 ~300KB，首屏可用。
+ * 把 server/data/geo-raw-sc 下的四川省行政区划 GeoJSON 简化后输出到 web/public/geo/。
+ * 目的：省-市-县三级下钻用的真实边界，体积可控，首屏可用。
  *
  * 来源：阿里云 DataV 行政区划边界（geo.datav.aliyun.com/areas_v3/bound/{adcode}_full.json）
+ * 覆盖：四川省 510000（21 个市州）+ 21 个市州各自的下辖区县（183 个县级区划）
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -10,8 +11,12 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const RAW = path.join(ROOT, 'server/data/geo-raw');
+const RAW = path.join(ROOT, 'server/data/geo-raw-sc');
 const OUT = path.join(ROOT, 'web/public/geo');
+
+const SHORT = (name = '') => name
+  .replace(/(藏族羌族自治州|藏族自治州|彝族自治州|自治州|地区)$/, '')
+  .replace(/(自治县|市辖区|新区|区|县|市|旗)$/, '');
 
 /** Douglas-Peucker 简化 */
 function simplifyRing(points, tolerance) {
@@ -74,31 +79,36 @@ function processGeometry(geom, tol) {
   return geom;
 }
 
-function transform(file, tol, keepProps) {
+function transform(file, tol) {
   const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
   return {
     type: 'FeatureCollection',
     features: raw.features.map((f) => ({
       type: 'Feature',
-      properties: keepProps(f.properties),
+      properties: {
+        adcode: f.properties.adcode,
+        name: f.properties.name,
+        short: SHORT(f.properties.name),
+        level: f.properties.level,
+        center: f.properties.center,
+        parent: f.properties.parent && f.properties.parent.adcode
+      },
       geometry: processGeometry(f.geometry, tol)
     }))
   };
 }
 
 fs.mkdirSync(OUT, { recursive: true });
+for (const old of fs.readdirSync(OUT)) {
+  if (old.endsWith('.json')) fs.unlinkSync(path.join(OUT, old));
+}
+
 let total = 0;
 const files = fs.readdirSync(RAW).filter((f) => f.endsWith('.json'));
 for (const file of files) {
-  const code = path.basename(file, '.json');
-  const tol = code === '330000' ? 0.004 : 0.0025;
-  const geo = transform(path.join(RAW, file), tol, (p) => ({
-    adcode: p.adcode,
-    name: p.name,
-    level: p.level,
-    center: p.center,
-    parent: p.parent && p.parent.adcode
-  }));
+  const code = path.basename(file, '.json').replace(/_full$/, '');
+  const tol = code === '510000' ? 0.0012 : 0.0016;
+  const geo = transform(path.join(RAW, file), tol);
   const text = JSON.stringify(geo);
   fs.writeFileSync(path.join(OUT, `${code}.json`), text);
   total += text.length;

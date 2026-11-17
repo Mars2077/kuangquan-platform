@@ -48,7 +48,7 @@ export default function Mobile() {
   const cards = home.data?.cards || [];
 
   return (
-    <div className="page">
+    <div className="page mobile-page">
       <header className="page-head">
         <div>
           <h1>政务移动端（掌上应用）</h1>
@@ -63,7 +63,7 @@ export default function Mobile() {
             <div className="form-grid">
               <label>
                 <span>矿山名称</span>
-                <input className="input" value={form.mine_name} onChange={(e) => setForm({ ...form, mine_name: e.target.value })} placeholder="如：浙江省长兴县长兴白象硅灰石矿有限公司" />
+                <input className="input" value={form.mine_name} onChange={(e) => setForm({ ...form, mine_name: e.target.value })} placeholder="如：四川省彭州市白象硅灰石矿有限公司" />
               </label>
               <label>
                 <span>巡查结论</span>
@@ -119,11 +119,11 @@ export default function Mobile() {
         <div className="stack">
           <div className="mobile-frame">
             <div className="mf-top">
-              <span>{home.data?.user?.region || '浙江省'}</span>
+              <span>{home.data?.user?.region || '四川省'}</span>
               <span className="mf-time">掌上绿矿</span>
             </div>
             <div className="mf-user">
-              <div className="avatar">{home.data?.user?.name?.[0] || '浙'}</div>
+              <div className="avatar">{home.data?.user?.name?.[0] || '川'}</div>
               <div>
                 <div className="n">{home.data?.user?.name || bootMeta?.user?.name}</div>
                 <div className="o">{home.data?.user?.org || bootMeta?.user?.org}</div>
@@ -149,7 +149,7 @@ export default function Mobile() {
             </div>
           </div>
           <p className="muted tiny" style={{ lineHeight: 1.8 }}>
-            掌上应用以同一套接口驱动，演示环境用网页内的手机外框模拟；生产可打包为浙政钉/微信小程序并复用 /api/mobile/* 接口。
+            掌上应用以同一套接口驱动，演示环境用网页内的手机外框模拟；生产可打包为天府通办/微信小程序并复用 /api/mobile/* 接口。
           </p>
         </div>
       </div>

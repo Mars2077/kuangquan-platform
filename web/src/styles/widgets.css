@@ -46,7 +46,27 @@
 .ring-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
+}
+.ring-card .ring-chart {
+  flex: 0 0 auto;
+}
+
+/* 大屏侧栏：图表随面板高度放大，减少稀疏留白 */
+.screen-col .ring-card .ring-chart {
+  height: 132px !important;
+  width: 132px !important;
+  flex: 0 0 132px !important;
+}
+
+.screen-col .ring-row { font-size: 12.5px; }
+.screen-col .ring-row .d { width: 46px; font-size: 11px; }
+.screen-col .ring-legend { gap: 10px; }
+
+.screen-col .bars-chart,
+.screen-col .indicator-chart {
+  min-height: 120px;
 }
 .ring-wrap {
   position: relative;
@@ -80,19 +100,26 @@
 }
 .ring-row {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--fs-sm);
+  align-items: baseline;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+  min-width: 0;
 }
 .ring-row i {
-  width: 9px;
+  width: 8px;
   height: 3px;
   border-radius: 2px;
   flex: 0 0 auto;
+  position: relative;
+  top: -2px;
 }
 .ring-row .n {
   color: var(--text-3);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--fs-sm);
 }
 .ring-row .v {
   margin-left: auto;
@@ -101,9 +128,10 @@
   font-size: var(--fs-md);
 }
 .ring-row .d {
-  font-size: var(--fs-xs);
-  width: 44px;
+  font-size: 10px;
+  width: 36px;
   text-align: right;
+  flex: 0 0 auto;
 }
 
 /* 条形分布 */
@@ -488,4 +516,77 @@
 }
 .detail-head h3 {
   font-size: var(--fs-lg);
+}
+
+/* ---------------- 高德地图底图（GeoMap AMap 模式） ---------------- */
+.geomap {
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 48%, #12314f 0%, #071a30 58%, #050f21 100%);
+}
+.geomap-canvas {
+  width: 100%;
+  height: 100%;
+}
+.geomap .amap-logo,
+.geomap .amap-copyright {
+  opacity: 0.42;
+  transform: scale(0.82);
+  transform-origin: left bottom;
+}
+/* 高德 Marker 自定义气泡：地市/区县聚合数 */
+.amap-bubble {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 3px 8px 4px;
+  min-width: 44px;
+  color: #eaf8ff;
+  font-family: var(--font-num);
+  background: linear-gradient(180deg, rgba(18, 60, 108, 0.96), rgba(9, 32, 60, 0.96));
+  border: 1px solid rgba(127, 227, 255, 0.62);
+  border-radius: 6px;
+  box-shadow: 0 0 14px rgba(46, 168, 255, 0.45), inset 0 0 10px rgba(46, 168, 255, 0.18);
+  white-space: nowrap;
+  transform: translateY(-6px);
+}
+.amap-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  background: rgba(127, 227, 255, 0.8);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+.amap-bubble b {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cyan-bright);
+  line-height: 1.1;
+  text-shadow: 0 0 8px rgba(73, 195, 255, 0.7);
+}
+.amap-bubble span {
+  font-size: 10px;
+  color: #c2e3ff;
+  letter-spacing: 0.4px;
+  line-height: 1.2;
+}
+.amap-bubble:hover {
+  border-color: #9defff;
+  box-shadow: 0 0 18px rgba(73, 195, 255, 0.75), inset 0 0 12px rgba(46, 168, 255, 0.3);
+}
+/* 图例 */
+.map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.map-legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
 }

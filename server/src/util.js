@@ -78,7 +78,7 @@ export function whereRegion(user, alias = '') {
   if (!code) return { sql: '', params: [] };
   const col = alias ? `${alias}.region_code` : 'region_code';
   if (code.endsWith('0000')) {
-    // 省级以下：按市级前缀匹配（330500 → 3305xx）
+    // 省级以下：按市级前缀匹配（510100 → 3305xx）
     const prefix = code.slice(0, 4);
     return { sql: ` AND ${col} LIKE ?`, params: [`${prefix}%`] };
   }

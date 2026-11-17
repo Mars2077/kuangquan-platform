@@ -164,9 +164,9 @@ function DashboardBigArt() {
 }
 
 const LEGACY = [
-  { title: '浙江省地矿综合监管系统', meta: '存量系统 · 已上线', kind: 'legacy', tag: '单点登录' },
+  { title: '四川省地矿综合监管系统', meta: '存量系统 · 已上线', kind: 'legacy', tag: '单点登录' },
   { title: '自然资源行政审批管理信息系统（矿政部分）', meta: '存量系统 · 已上线', kind: 'legacy', tag: '单点登录' },
-  { title: '浙江省矿业权网上交易系统', meta: '存量系统 · 已上线', kind: 'legacy', tag: '单点登录' }
+  { title: '四川省矿业权网上交易系统', meta: '存量系统 · 已上线', kind: 'legacy', tag: '单点登录' }
 ];
 
 const BUILT = [

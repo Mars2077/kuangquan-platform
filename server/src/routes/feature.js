@@ -378,7 +378,7 @@ router.post('/:module/:feature/:id/action', wrap((req, res) => {
     params.push(JSON.stringify(history));
   }
   if (terminal && wf.onTerminal === 'genReviewNo' && cols.includes('review_no')) {
-    const no = `浙储备〔${new Date().getFullYear()}〕${String(Math.floor(Math.random() * 900) + 100)}号`;
+    const no = `川储备〔${new Date().getFullYear()}〕${String(Math.floor(Math.random() * 900) + 100)}号`;
     sets.push('review_no = ?');
     params.push(no);
     if (cols.includes('record_at')) {

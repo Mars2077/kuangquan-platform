@@ -22,7 +22,7 @@ export default function SystemPage() {
   const audit = useFetch(() => sys.audit({ page: 1, pageSize: 50 }), []);
   const health = useFetch(() => sys.health(), []);
   const indicator = useFetch(() => sys.indicator(), []);
-  const [form, setForm] = useState({ username: '', password: '', name: '', org: '', role: 'county', region_code: '330500', region_name: '湖州市' });
+  const [form, setForm] = useState({ username: '', password: '', name: '', org: '', role: 'county', region_code: '510100', region_name: '成都市' });
   const [busy, setBusy] = useState(false);
 
   const createUser = async () => {
@@ -139,7 +139,7 @@ export default function SystemPage() {
                   {ROLES.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </label>
-              <label><span>所属单位</span><input className="input" value={form.org} onChange={(e) => setForm({ ...form, org: e.target.value })} placeholder="如：长兴县自然资源和规划局" /></label>
+              <label><span>所属单位</span><input className="input" value={form.org} onChange={(e) => setForm({ ...form, org: e.target.value })} placeholder="如：彭州市自然资源和规划局" /></label>
               <label><span>行政区划名称</span><input className="input" value={form.region_name} onChange={(e) => setForm({ ...form, region_name: e.target.value })} /></label>
             </div>
             <div className="actions" style={{ marginTop: 12 }}>

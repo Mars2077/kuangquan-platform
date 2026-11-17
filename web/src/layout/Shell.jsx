@@ -140,7 +140,7 @@ export default function Shell() {
                 <div className="um-head">
                   <b>{user?.name}</b>
                   <span>{bootMeta?.roles?.[user?.role] || user?.role}</span>
-                  <span className="muted tiny">{user?.region_name || '浙江省'}</span>
+                  <span className="muted tiny">{user?.region_name || '四川省'}</span>
                 </div>
                 <button type="button" onClick={() => { setMenu(false); nav('/system'); }}>
                   <Ic icon={Settings01Icon} size={14} /> 个人中心与系统管理

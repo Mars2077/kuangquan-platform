@@ -12,16 +12,16 @@ import { ALL_FEATURES } from './features.js';
 import { makeRandom, rndInt, rndFloat, pick, nowStr, today } from './util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const RAW = path.resolve(__dirname, '../data/geo-raw');
+const RAW = path.resolve(__dirname, '../data/geo-raw-sc');
 const rnd = makeRandom(20241121);
 
 /* ------------------------------------------------------------------ 行政区划 */
 function loadRegions() {
-  const provinceGeo = JSON.parse(fs.readFileSync(path.join(RAW, '330000.json'), 'utf8'));
+  const provinceGeo = JSON.parse(fs.readFileSync(path.join(RAW, '510000_full.json'), 'utf8'));
   const cities = provinceGeo.features.map((f) => ({ code: String(f.properties.adcode), name: f.properties.name, center: f.properties.center }));
   const counties = {};
   for (const c of cities) {
-    const file = path.join(RAW, `${c.code}.json`);
+    const file = path.join(RAW, `${c.code}_full.json`);
     if (!fs.existsSync(file)) continue;
     const geo = JSON.parse(fs.readFileSync(file, 'utf8'));
     counties[c.code] = geo.features.map((f) => ({ code: String(f.properties.adcode), name: f.properties.name, center: f.properties.center || c.center }));
@@ -40,15 +40,32 @@ const DEGREES = ['普查', '详查', '勘探'];
 const PLACE_WORDS = ['白象', '梅溪', '石淙', '大岗山', '老虎塘', '冷山', '石门', '凤凰', '龙溪', '青山', '金鸡', '双溪', '南湖', '杨岭', '里岙', '高桥', '沙蟹岭', '万山', '云顶', '龙潭', '石塘', '尖山', '杨梅', '百丈', '鹤顶', '宝岭', '乌石', '花桥', '黄阳'];
 const ORG_SUFFIX = ['矿有限公司', '矿业有限公司', '石矿有限公司', '建材有限公司', '矿业开发有限公司', '采石场', '新材料有限公司'];
 const CITY_DEPT = {
-  330100: '杭州市规划和自然资源局', 330200: '宁波市自然资源和规划局', 330300: '温州市自然资源和规划局',
-  330400: '嘉兴市自然资源和规划局', 330500: '湖州市规划和自然资源局', 330600: '绍兴市自然资源和规划局',
-  330700: '金华市自然资源和规划局', 330800: '衢州市自然资源和规划局', 330900: '舟山市自然资源和规划局',
-  331000: '台州市自然资源和规划局', 331100: '丽水市自然资源和规划局'
+  510100: '成都市自然资源和规划局',
+  510300: '自贡市自然资源和规划局',
+  510400: '攀枝花市自然资源和规划局',
+  510500: '泸州市自然资源和规划局',
+  510600: '德阳市自然资源和规划局',
+  510700: '绵阳市自然资源和规划局',
+  510800: '广元市自然资源和规划局',
+  510900: '遂宁市自然资源和规划局',
+  511000: '内江市自然资源和规划局',
+  511100: '乐山市自然资源和规划局',
+  511300: '南充市自然资源和规划局',
+  511400: '眉山市自然资源和规划局',
+  511500: '宜宾市自然资源和规划局',
+  511600: '广安市自然资源和规划局',
+  511700: '达州市自然资源和规划局',
+  511800: '雅安市自然资源和规划局',
+  511900: '巴中市自然资源和规划局',
+  512000: '资阳市自然资源和规划局',
+  513200: '阿坝藏族羌族自治州自然资源和规划局',
+  513300: '甘孜藏族自治州自然资源和规划局',
+  513400: '凉山彝族自治州自然资源和规划局'
 };
 
 /* ------------------------------------------------------------------ 工具 */
 function licenseNo(date, idx) {
-  return `C330000${date.replace(/-/g, '')}${String(20000 + idx).slice(-5)}`;
+  return `C510000${date.replace(/-/g, '')}${String(20000 + idx).slice(-5)}`;
 }
 function randDate(y1, y2) {
   const y = rndInt(rnd, y1, y2);
@@ -60,16 +77,16 @@ function addDays(dateStr, days) {
   return d.toISOString().slice(0, 10);
 }
 function jitter(center, scale = 0.35) {
-  const [lon, lat] = center || [120.15, 29.3];
+  const [lon, lat] = center || [PROVINCE.lon, PROVINCE.lat];
   return [Number((lon + (rnd() - 0.5) * scale).toFixed(5)), Number((lat + (rnd() - 0.5) * scale).toFixed(5))];
 }
-const PROVINCE = { code: '330000', name: '浙江省', short: '浙江' };
+const PROVINCE = { code: '510000', name: '四川省', short: '四川', lon: 104.0657, lat: 30.6595 };
 
 /* ------------------------------------------------------------------ 各类数据 */
 function seedRegions() {
-  insertRow('region', { code: PROVINCE.code, name: PROVINCE.name, level: 1, parent: null, short: '浙江', center_lon: 120.15, center_lat: 29.3 });
+  insertRow('region', { code: PROVINCE.code, name: PROVINCE.name, level: 1, parent: null, short: '四川', center_lon: PROVINCE.lon, center_lat: PROVINCE.lat });
   for (const c of cities) {
-    insertRow('region', { code: c.code, name: c.name, level: 2, parent: PROVINCE.code, short: shortName(c.name), center_lon: c.center?.[0] ?? 120.15, center_lat: c.center?.[1] ?? 29.3 });
+    insertRow('region', { code: c.code, name: c.name, level: 2, parent: PROVINCE.code, short: shortName(c.name), center_lon: c.center?.[0] ?? PROVINCE.lon, center_lat: c.center?.[1] ?? PROVINCE.lat });
     for (const t of counties[c.code] || []) {
       insertRow('region', { code: t.code, name: t.name, level: 3, parent: c.code, short: shortName(t.name), center_lon: t.center?.[0] ?? c.center?.[0], center_lat: t.center?.[1] ?? c.center?.[1] });
     }
@@ -78,18 +95,18 @@ function seedRegions() {
 
 function seedUsers() {
   const users = [
-    { username: 'admin', password: 'admin123', name: '赵丹蕾', org: '湖州市规划和自然资源局', role: 'admin', title: '系统管理员', region_code: '330500', region_name: '湖州市' },
-    { username: 'province', password: '123456', name: '陈嘉禾', org: '浙江省自然资源厅', role: 'province', title: '矿业权管理处处长', region_code: '330000', region_name: '浙江省' },
-    { username: 'city', password: '123456', name: '沈立群', org: '湖州市规划和自然资源局', role: 'city', title: '地质勘查与矿产资源管理科科长', region_code: '330500', region_name: '湖州市' },
-    { username: 'county', password: '123456', name: '王永祥', org: '长兴县自然资源和规划局', role: 'county', title: '矿产资源管理科科员', region_code: '330522', region_name: '长兴县' },
-    { username: 'enterprise', password: '123456', name: '李国强', org: '浙江省长兴县长兴白象硅灰石矿有限公司', role: 'enterprise', title: '矿长', region_code: '330522', region_name: '长兴县' },
-    { username: 'public', password: '123456', name: '社会公众', org: '公众访问', role: 'public', title: '访客', region_code: '330000', region_name: '浙江省' }
+    { username: 'admin', password: 'admin123', name: '赵丹蕾', org: '成都市规划和自然资源局', role: 'admin', title: '系统管理员', region_code: '510100', region_name: '成都市' },
+    { username: 'province', password: '123456', name: '陈嘉禾', org: '四川省自然资源厅', role: 'province', title: '矿业权管理处处长', region_code: '510000', region_name: '四川省' },
+    { username: 'city', password: '123456', name: '沈立群', org: '成都市规划和自然资源局', role: 'city', title: '地质勘查与矿产资源管理科科长', region_code: '510100', region_name: '成都市' },
+    { username: 'county', password: '123456', name: '王永祥', org: '彭州市自然资源和规划局', role: 'county', title: '矿产资源管理科科员', region_code: '510182', region_name: '彭州市' },
+    { username: 'enterprise', password: '123456', name: '李国强', org: '四川省彭州市白象硅灰石矿有限公司', role: 'enterprise', title: '矿长', region_code: '510182', region_name: '彭州市' },
+    { username: 'public', password: '123456', name: '社会公众', org: '公众访问', role: 'public', title: '访客', region_code: '510000', region_name: '四川省' }
   ];
   for (const u of users) {
     insertRow('sys_user', {
       username: u.username, password: hashPassword(u.password), name: u.name, org: u.org, role: u.role, title: u.title,
       region_code: u.region_code, region_name: u.region_name, phone: `13${rndInt(rnd, 100000000, 999999999)}`,
-      email: `${u.username}@zj.gov.example`, status: '正常', created_at: nowStr()
+      email: `${u.username}@sc.gov.example`, status: '正常', created_at: nowStr()
     });
   }
   const names = ['周敏', '吴建平', '徐红梅', '郑海涛', '钱伟民', '孙丽华', '刘海峰', '张建国', '黄文斌', '许志强', '何晓东'];
@@ -98,7 +115,7 @@ function seedUsers() {
       username: `city${c.code.slice(2, 4)}`, password: hashPassword('123456'), name: names[i] || '管理员',
       org: CITY_DEPT[c.code] || `${c.name}自然资源和规划局`, role: 'city', title: '矿产资源管理科科长',
       region_code: c.code, region_name: c.name, phone: `13${rndInt(rnd, 100000000, 999999999)}`,
-      email: `city${c.code.slice(2, 4)}@zj.gov.example`, status: '正常', created_at: nowStr()
+      email: `city${c.code.slice(2, 4)}@sc.gov.example`, status: '正常', created_at: nowStr()
     });
   });
 }
@@ -110,7 +127,7 @@ function seedMines() {
     idx += 1;
     const mineral = pick(rnd, MINERALS);
     const short = shortName(t.name);
-    const name = `浙江省${shortName(c.name)}${short}${pick(rnd, PLACE_WORDS)}${mineral.replace(/用|岩$/, '')}${pick(rnd, ORG_SUFFIX)}`;
+    const name = `四川省${shortName(c.name)}${short}${pick(rnd, PLACE_WORDS)}${mineral.replace(/用|岩$/, '')}${pick(rnd, ORG_SUFFIX)}`;
     const [lon, lat] = jitter(t.center, 0.22);
     const gr = rnd();
     const greenLevel = gr < 0.18 ? '国家级' : gr < 0.4 ? '省级' : gr < 0.55 ? '市级' : '未入库';
@@ -207,11 +224,11 @@ function seedPlan() {
   ];
   for (const r of [PROVINCE, ...cities]) {
     for (const ind of indicators) {
-      const target = Number((ind.base * (r.code === '330000' ? 1 : rndFloat(rnd, 0.06, 0.16, 3))).toFixed(1));
+      const target = Number((ind.base * (r.code === '510000' ? 1 : rndFloat(rnd, 0.06, 0.16, 3))).toFixed(1));
       const actual = Number((target * rndFloat(rnd, 0.72, 1.06, 3)).toFixed(1));
       const p = target ? actual / target : 0;
       insertRow('plan_indicator', {
-        region_code: r.code, region_name: r.name, level: r.code === '330000' ? '省' : '市', name: ind.name,
+        region_code: r.code, region_name: r.name, level: r.code === '510000' ? '省' : '市', name: ind.name,
         category: ind.category, unit: ind.unit, target, actual, year: 2024,
         warn: p >= 1.02 ? '红牌' : p >= 0.95 ? '黄牌' : '正常'
       });
@@ -224,7 +241,7 @@ function seedReviews(mines) {
     const submit = randDate(2023, 2024);
     const status = pick(rnd, ['待受理', '已受理', '专家评审', '已备案', '已备案', '已备案']);
     insertRow('reserve_review', {
-      review_no: `浙储备〔${submit.slice(0, 4)}〕${String(100 + i).padStart(3, '0')}号`, mine_name: m.name,
+      review_no: `川储备〔${submit.slice(0, 4)}〕${String(100 + i).padStart(3, '0')}号`, mine_name: m.name,
       applicant: m.enterprise, mineral: m.mineral, region_code: m.region_code, region_name: m.region_name,
       report_name: `${m.name}储量核实报告`, reserve_t: rndFloat(rnd, 120, 8600, 2),
       grade: rnd() < 0.5 ? '大型' : rnd() < 0.8 ? '中型' : '小型', submit_at: submit,
@@ -398,7 +415,7 @@ function seedProjects(mines) {
 
 function seedGeo() {
   const cats = ['攻深找盲扩能', '农业地质调查', '地质灾害防治', '基础地质调查'];
-  const units = ['浙江省地质勘查局', '浙江省地质调查院', '浙江省有色地质勘查局', '浙江省水文地质工程地质大队'];
+  const units = ['四川省地质调查研究院', '四川省地质矿产勘查开发局', '四川省煤田地质局', '四川省核工业地质局'];
   for (let i = 0; i < 48; i++) {
     const c = pick(rnd, cities);
     const t = pick(rnd, counties[c.code] || [{ code: c.code, name: c.name }]);
@@ -444,7 +461,7 @@ function seedGeo() {
       lon, lat, intro: '以典型地质遗迹与地质文化融合展示为核心，配套科普研学与乡村共富业态。'
     });
   }
-  const orgs = ['浙江省地质勘查局', '浙江省地质调查院', '浙江省有色地质勘查局', '浙江省水文地质工程地质大队', '浙江省地球物理地球化学勘查院', '浙江省核工业二六二大队', '浙江省第三地质大队', '浙江省第七地质大队', '浙江省第十一地质大队', '浙江省测绘科学技术研究院', '浙江省地质环境监测中心', '浙江省地质矿产研究所'];
+  const orgs = ['四川省地质调查研究院', '四川省地质矿产勘查开发局', '四川省煤田地质局', '四川省核工业地质局', '四川省地质环境监测总站', '四川省国土科学技术研究院', '四川省地质工程勘察院', '四川省地球物理调查研究所', '四川省地质测绘院', '四川省自然资源厅', '四川省储量评审中心', '四川省地质学会'];
   orgs.forEach((o, i) => {
     const c = pick(rnd, cities);
     insertRow('org_unit', {
@@ -474,8 +491,8 @@ function seedGeo() {
 function seedBattle() {
   const cats = [
     { name: '地矿共富提质助推行动', dept: '地勘处', support: ['地矿所', '生态修复所'], works: [
-      { work: '地质文化传播工程', items: [['做好年度全国地质文化村申报和创建。', '四季度'], ['建立地质文化村联盟。', '四季度'], ['开展“浙江地质奇观”评选。', '三季度'], ['编制全省地质文化资源“一张图”。', '四季度']] },
-      { work: '富硒土地资源详查', items: [['编制《浙江省富硒土地资源详查工作方案》。', '二季度'], ['起草《土地质量地球化学档案建设规范》。', '四季度'], ['实施百镇千村富硒土地资源详查，建成富硒地块数据库。', '四季度']] }
+      { work: '地质文化传播工程', items: [['做好年度全国地质文化村申报和创建。', '四季度'], ['建立地质文化村联盟。', '四季度'], ['开展“四川地质奇观”评选。', '三季度'], ['编制全省地质文化资源“一张图”。', '四季度']] },
+      { work: '富硒土地资源详查', items: [['编制《四川省富硒土地资源详查工作方案》。', '二季度'], ['起草《土地质量地球化学档案建设规范》。', '四季度'], ['实施百镇千村富硒土地资源详查，建成富硒地块数据库。', '四季度']] }
     ] },
     { name: '矿产资源保供攻坚行动', dept: '矿业权处', support: ['地矿所', '评审中心'], works: [
       { work: '净矿出让', items: [['完成年度净矿出让区块储备库建设。', '二季度'], ['推动 20 宗砂石土料采矿权净矿出让。', '四季度'], ['建立净矿出让联合踏勘工作机制。', '三季度']] },
@@ -555,25 +572,25 @@ function seedBizRecords() {
 function seedCatalog() {
   const topics = [
     { topic: '地质勘查专题库', items: [
-      ['历年地勘项目报告', '文档', '浙江省地质勘查局', 1862, '份', ['项目编号', '项目名称', '承担单位', '提交时间', '评审意见']],
-      ['钻孔柱状图', '矢量', '浙江省地质调查院', 42860, '孔', ['孔号', '孔深', '坐标', '地层', '岩性']],
-      ['物化探成果', '栅格', '浙江省地球物理地球化学勘查院', 3260, '幅', ['图幅号', '比例尺', '元素', '异常下限']],
-      ['财政/社会资金投入明细', '结构化', '浙江省自然资源厅', 1240, '条', ['年度', '资金来源', '项目', '金额']]
+      ['历年地勘项目报告', '文档', '四川省地质调查研究院', 1862, '份', ['项目编号', '项目名称', '承担单位', '提交时间', '评审意见']],
+      ['钻孔柱状图', '矢量', '四川省地质调查研究院', 42860, '孔', ['孔号', '孔深', '坐标', '地层', '岩性']],
+      ['物化探成果', '栅格', '四川省地球物理调查研究所', 3260, '幅', ['图幅号', '比例尺', '元素', '异常下限']],
+      ['财政/社会资金投入明细', '结构化', '四川省自然资源厅', 1240, '条', ['年度', '资金来源', '项目', '金额']]
     ] },
     { topic: '储量评审备案范围专题库', items: [
-      ['评审备案矢量边界', '矢量', '浙江省自然资源厅', 3120, '个', ['备案文号', '矿山名称', '面积', '拐点坐标']],
-      ['块段储量台账', '结构化', '浙江省储量评审中心', 26400, '块段', ['块段号', '矿石量', '品位', '储量级别']],
-      ['历史储量增减序列', '结构化', '浙江省自然资源厅', 8600, '条', ['年度', '矿山', '增减量', '原因']]
+      ['评审备案矢量边界', '矢量', '四川省自然资源厅', 3120, '个', ['备案文号', '矿山名称', '面积', '拐点坐标']],
+      ['块段储量台账', '结构化', '四川省储量评审中心', 26400, '块段', ['块段号', '矿石量', '品位', '储量级别']],
+      ['历史储量增减序列', '结构化', '四川省自然资源厅', 8600, '条', ['年度', '矿山', '增减量', '原因']]
     ] },
     { topic: '矿山开发利用统计年报专题库', items: [
-      ['年度开发利用统计', '结构化', '浙江省自然资源厅', 5400, '条', ['矿山', '产量', '产值', '三率']],
+      ['年度开发利用统计', '结构化', '四川省自然资源厅', 5400, '条', ['矿山', '产量', '产值', '三率']],
       ['季度快报', '结构化', '各市自然资源局', 21600, '条', ['矿山', '季度', '产量', '销量']],
-      ['三率考核结果', '结构化', '浙江省自然资源厅', 5400, '条', ['矿山', '回采率', '贫化率', '选矿回收率']]
+      ['三率考核结果', '结构化', '四川省自然资源厅', 5400, '条', ['矿山', '回采率', '贫化率', '选矿回收率']]
     ] },
     { topic: '在采矿山专题库', items: [
-      ['有效采矿权台账', '结构化', '浙江省自然资源厅', 1280, '宗', ['许可证号', '采矿权人', '矿种', '有效期']],
+      ['有效采矿权台账', '结构化', '四川省自然资源厅', 1280, '宗', ['许可证号', '采矿权人', '矿种', '有效期']],
       ['物联网感知设备', '时序', '各市自然资源局', 4260, '台套', ['设备编号', '类型', '状态', '监测值']],
-      ['三维矿山模型底座', '三维', '浙江省地质调查院', 260, '个', ['模型编号', '矿山', '分辨率', '更新时间']]
+      ['三维矿山模型底座', '三维', '四川省地质调查研究院', 260, '个', ['模型编号', '矿山', '分辨率', '更新时间']]
     ] }
   ];
   topics.forEach((t) => {

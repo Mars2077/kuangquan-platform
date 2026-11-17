@@ -156,7 +156,7 @@ function regionName(code) {
 function regionPrefix(code) {
   const c = String(code || '');
   if (!c) return '';
-  if (c === '330000') return '';
+  if (c === '510000') return '';
   if (c.endsWith('0000')) return c.slice(0, 2);
   if (c.endsWith('00')) return c.slice(0, 4);
   return c;
@@ -395,7 +395,7 @@ function actionHandler(moduleKey, featureKey, id, body) {
   if (done && feature.key === 'reserve-review') {
     const y = new Date().getFullYear();
     const seq = rowsOf('reserve_review').length + 1;
-    patch.review_no = `浙储备〔${y}〕${String(seq).padStart(3, '0')}号`;
+    patch.review_no = `川储备〔${y}〕${String(seq).padStart(3, '0')}号`;
     patch.status = '已办结';
   }
   patchRow(feature.table, row.id, patch);
@@ -716,7 +716,7 @@ function bubblesOf(code) {
 function sceneHandler(scene, q) {
   const base = state.views.scenes?.[scene];
   if (!base) throw { status: 404, msg: '场景不存在' };
-  const code = q.get('code') || '330000';
+  const code = q.get('code') || '510000';
   const out = { ...base, map: { ...(base.map || {}) } };
   out.map = { ...out.map, bubbles: bubblesOf(code), themes: base.map?.themes || [] };
   const listObj = base.list || {};
@@ -733,7 +733,7 @@ function sceneHandler(scene, q) {
 }
 function layersHandler(theme, q) {
   const base = state.views.maps?.[theme]?.list || [];
-  const code = q.get('code') || '330000';
+  const code = q.get('code') || '510000';
   return { list: filterByCode(base, code, ['region_code']) };
 }
 function battleHandler(q) {
@@ -842,8 +842,8 @@ async function route(req, url) {
     if (!body.username) return answerErr('请填写登录账号', 400);
     const row = insertRow('sys_user', {
       id: nextId('sys_user'), username: body.username, name: body.name || body.username,
-      role: body.role || 'county', org: body.org || '浙江省自然资源厅',
-      region_code: body.region_code || '330000', status: '启用', created_at: nowStr(),
+      role: body.role || 'county', org: body.org || '四川省自然资源厅',
+      region_code: body.region_code || '510000', status: '启用', created_at: nowStr(),
       password: '123456'
     });
     return answer(row);
@@ -901,7 +901,7 @@ async function route(req, url) {
       id: nextId('data_asset'), topic: form?.get('topic') || '其他', name: file?.name || '未命名文件',
       file_type: (file?.name || '').split('.').pop() || 'file',
       size_kb: file ? Math.round(file.size / 1024) : 0, source: '在线入库',
-      year: Number(form?.get('year') || new Date().getFullYear()), region_name: '浙江省',
+      year: Number(form?.get('year') || new Date().getFullYear()), region_name: '四川省',
       uploaded_at: nowStr(), meta: JSON.stringify({ note: form?.get('note') || '', demo: true })
     });
     return answer({ id: row.id, name: row.name });
@@ -918,8 +918,8 @@ async function route(req, url) {
     const b = await req.json().catch(() => ({}));
     const row = insertRow('patrol_log', {
       id: nextId('patrol_log'), plan_name: '移动端巡查打卡', mine_id: b.mine_id || null,
-      mine_name: b.mine_name || '', region_code: b.region_code || '330500',
-      region_name: b.region_name || '湖州市', lon: b.lon || 119.9, lat: b.lat || 30.9,
+      mine_name: b.mine_name || '', region_code: b.region_code || '510100',
+      region_name: b.region_name || '成都市', lon: b.lon || 119.9, lat: b.lat || 30.9,
       finding: b.finding || '', photos: b.photos || 0, result: b.result || '正常',
       patrol_at: nowStr(), created_at: nowStr()
     });

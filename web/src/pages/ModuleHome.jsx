@@ -87,7 +87,7 @@ export default function ModuleHome() {
   const Icon = MODULE_ICON[mod.key] || InboxIcon;
 
   return (
-    <div className="page">
+    <div className="page page-fill">
       <header className="page-head">
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

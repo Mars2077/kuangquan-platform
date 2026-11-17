@@ -183,7 +183,7 @@ router.post('/warehouse/upload', authRequired, upload.single('file'), wrap((req,
     size_kb: Math.round(req.file.size / 1024),
     source: req.user.org || '',
     year: Number(req.body.year || new Date().getFullYear()),
-    region_name: req.user.region_name || '浙江省',
+    region_name: req.user.region_name || '四川省',
     uploaded_at: nowStr(),
     meta: JSON.stringify({ storedAs: safeName, uploader: req.user.name, note: req.body.note || '' })
   });

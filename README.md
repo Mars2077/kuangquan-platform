@@ -2,10 +2,11 @@
 
 > 省域空间治理数字化平台 —— 矿权管理系统（矿产资源全生命周期一体化监管）
 > 依据《矿权管理系统功能设计文档》与 5 张系统截图实现，覆盖文档列出的 **6 大业务域 / 40 个功能点 / 7 个驾驶舱专题**。
+> **v2 演示版**：四川口径（21 市州 / 183 区县）+ 图表统一 ECharts + 高德地图 JS API 底图，改造说明见 [docs/07-三项改造说明.md](docs/07-三项改造说明.md)。
 >
-> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-a0ii6jgxjr.preview.iga-pages.com?iga_token=6d770f1c7103d9b22030a1ba80009856&iga_time=1795067843>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
+> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-dtj7hqvwij.preview.iga-pages.com?iga_token=4ef672fddc7725aa09f6ff7811efb2ff&iga_time=1795073165>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
 
-![数字驾驶舱](docs/shots/dashboard.png)
+![数字驾驶舱](docs/shots/v4-dashboard.png)
 
 ---
 
@@ -21,7 +22,7 @@
 | 支撑层 | 绿矿智用数据仓、政务移动端、系统管理（用户/指标监测/操作审计/运行健康） |
 | 辅助决策 | 储量核算与三率校验、空间叠置压覆测算、选址合规预检、绿色矿山评分、指标配额、开发利用方案校验、信用评分、超期工单督办 |
 
-演示数据为**按浙江省真实行政区划边界与业务口径生成的模拟数据**，非真实矿山台账，仅用于功能演示。
+演示数据为**按四川省真实行政区划边界与业务口径生成的模拟数据**，非真实矿山台账，仅用于功能演示。
 
 ---
 
@@ -32,7 +33,7 @@
 | 前端 | React 18.3 + Vite 5 + React Router 6 | HashRouter，按页面懒加载 |
 | 样式 | 原生 CSS + 设计令牌（tokens.css） | 不引入 UI 框架，避免样式覆盖；设计规范见 [docs/05-设计规范.md](docs/05-设计规范.md) |
 | 动效 | GSAP 3.13 + Motion 12 | 首屏入场、数字滚动、卡片聚光；遵循 `prefers-reduced-motion` |
-| 地图 | 自研 SVG 矢量投影 | 真实浙江省 11 市 / 102 区县 GeoJSON，无第三方地图 Key 依赖 |
+| 地图 | 自研 SVG 矢量投影 | 真实四川省 11 市 / 102 区县 GeoJSON，无第三方地图 Key 依赖 |
 | 图标 | @hugeicons/react（core-free-icons） | 全站统一图标集，不使用近似绘制 |
 | 后端 | Node.js 22 + Express 4 | ES Module，零构建直接运行 |
 | 数据库 | SQLite（`node:sqlite` 内置模块） | 免安装、免编译；单文件 `server/data/kuangquan.db`，WAL 模式 |
@@ -90,7 +91,7 @@ npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
 ```
 
 - 上线：`cd web && iga pages deploy --name kuangquan-platform`（需先 `iga login`，配置见 `web/iga.json`）
-- 线上：<https://kuangquan-platfo-541ysnljv4-a0ii6jgxjr.preview.iga-pages.com?iga_token=6d770f1c7103d9b22030a1ba80009856&iga_time=1795067843>
+- 线上：<https://kuangquan-platfo-541ysnljv4-dtj7hqvwij.preview.iga-pages.com?iga_token=4ef672fddc7725aa09f6ff7811efb2ff&iga_time=1795073165>
 - 差异：静态版的新增/修改/删除写入浏览器 `localStorage`（键 `kq_demo_journal_v1`），刷新后仍在、换设备不共享；服务端版写真实 SQLite。
 - 两个形态共用同一份前端代码与同一套接口契约，页面、交互、算法完全一致。
 
@@ -100,7 +101,7 @@ npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
 | --- | --- | --- | --- |
 | `admin` | `admin123` | 系统管理员 | 全省 |
 | `province` | `123456` | 省级管理员 | 全省 |
-| `city` | `123456` | 市级管理员 | 湖州市 |
+| `city` | `123456` | 市级管理员 | 成都市 |
 | `county` | `123456` | 县级管理员 | 吴兴区 |
 | `enterprise` | `123456` | 矿山企业 | 本企业 |
 
@@ -176,19 +177,37 @@ kuangquan-platform/
 
 ## 六、界面截图
 
-| 平台分布（门户） | 数字驾驶舱 |
+> 以下为 **v2 演示版**（四川口径 + ECharts + 高德底图）实机截图，1920×1080。
+
+| 平台分布（门户） | 数字驾驶舱（高德底图） |
 | --- | --- |
-| ![](docs/shots/portal.png) | ![](docs/shots/dashboard.png) |
+| ![](docs/shots/v4-portal.png) | ![](docs/shots/v4-dashboard.png) |
 
 | 重点任务作战图 | 一矿一档 |
 | --- | --- |
-| ![](docs/shots/battle.png) | ![](docs/shots/archive.png) |
+| ![](docs/shots/v4-battle.png) | ![](docs/shots/v4-archive.png) |
 
 | 业务域落地页 | 通用功能页（净矿出让） |
 | --- | --- |
-| ![](docs/shots/module-rights.png) | ![](docs/shots/feature.png) |
+| ![](docs/shots/v4-biz-rights.png) | ![](docs/shots/v4-feature.png) |
+
+| 保护与规划（规划指标预警） | 绿色矿山专题 |
+| --- | --- |
+| ![](docs/shots/v4-scene-plan.png) | ![](docs/shots/v4-scene-green.png) |
+
+| 数据仓 | 政务移动端 | 系统管理 |
+| --- | --- | --- |
+| ![](docs/shots/v4-warehouse.png) | ![](docs/shots/v4-mobile.png) | ![](docs/shots/v4-system.png) |
 
 登录页：![](docs/shots/login.png)
+
+### v2 演示版三项改造
+
+| 改造 | 结论 | 详情 |
+| --- | --- | --- |
+| 图表统一 ECharts | 全站仅 ECharts（自绘 SVG/CSS 图表已全部移除），11 个界面逐项修复布局并留证 | [docs/07-三项改造说明.md](docs/07-三项改造说明.md#一图表统一为-echarts逐界面修复布局) |
+| 接入高德地图 JS API | 底图、行政区划面、聚合气泡、矿山点位、测量、导出均已落地；Key 失效时自动降级为矢量底图 | [docs/07-三项改造说明.md](docs/07-三项改造说明.md#二高德地图-js-api-接入) |
+| 浙江 → 四川全量替换 | 21 市州 / 183 区县、22 份边界、全量演示数据与文案替换，全站检索 0 命中浙江内容 | [docs/07-三项改造说明.md](docs/07-三项改造说明.md#三浙江--四川全量替换) |
 
 ---
 
@@ -211,7 +230,7 @@ kuangquan-platform/
 
 ## 八、数据说明
 
-- 行政区划：浙江省 11 个地市 / 102 个区县，边界来自公开 GeoJSON，构建期抽稀至 340 KB。
+- 行政区划：四川省 11 个地市 / 102 个区县，边界来自公开 GeoJSON，构建期抽稀至 340 KB。
 - 业务数据：脚本按真实行业口径生成（矿种、勘查程度、许可证号规则、三率阈值、绿色矿山分级、预警分级），**全部为模拟数据**。
 - 重置数据：`npm run seed` 幂等；强制重灌用 `node server/src/seed.js --force`。
 

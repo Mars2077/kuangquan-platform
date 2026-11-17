@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import GeoMap from '../components/GeoMap.jsx';
+import Chart, { COLORS, donutOption, barOption, indicatorOption } from '../components/Chart.jsx';
 import { Tabs } from '../components/Panel.jsx';
 import { Ic, QuarterFlag } from '../components/Icon';
 import { useApp, useFetch } from '../store.jsx';
@@ -18,7 +19,7 @@ const nf = (v, d = 2) => {
 };
 const int = (v) => (Number.isFinite(Number(v)) ? Number(v).toLocaleString('zh-CN') : '—');
 
-const PALETTE = ['#49c3ff', '#35d39a', '#ff8a3d', '#ffcc44', '#8f7bff', '#ff5f57', '#5ee0d0', '#7fa6cc'];
+const PALETTE = COLORS;
 
 const THEMES = [
   { key: 'online', label: '在线矿山', tone: '#35d39a' },
@@ -108,46 +109,6 @@ const POPUP_FIELDS = {
   hazard: [['type', '灾害类型'], ['level', '风险等级'], ['status', '状态'], ['region_name', '行政区划']]
 };
 
-/* ------------------------------------------------------------------ 环形图 */
-function Donut({ parts = [], size = 78, thickness = 9, center, unit, label }) {
-  const total = parts.reduce((s, p) => s + Number(p.value || 0), 0) || 1;
-  const r = (size - thickness) / 2;
-  const c = 2 * Math.PI * r;
-  let acc = 0;
-  return (
-    <div className="ring-wrap" style={{ width: size, height: size }}>
-      <svg width={size} height={size} aria-hidden="true">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(126,190,245,0.14)" strokeWidth={thickness} />
-        {parts.map((p, i) => {
-          const frac = Number(p.value || 0) / total;
-          const dash = frac * c;
-          const el = (
-            <circle
-              key={p.name || i}
-              cx={size / 2}
-              cy={size / 2}
-              r={r}
-              fill="none"
-              stroke={PALETTE[i % PALETTE.length]}
-              strokeWidth={thickness}
-              strokeLinecap="butt"
-              strokeDasharray={`${Math.max(0, dash - 1.5)} ${c}`}
-              strokeDashoffset={-acc}
-              transform={`rotate(-90 ${size / 2} ${size / 2})`}
-            />
-          );
-          acc += dash;
-          return el;
-        })}
-      </svg>
-      <div className="ring-center">
-        <b>{center ?? int(total)}</b>
-        {unit && <span>{label || unit}</span>}
-      </div>
-    </div>
-  );
-}
-
 /* ------------------------------------------------------------------ 面板内容 */
 function PanelBody({ panel, onMore }) {
   const [tab, setTab] = useState(panel.tabs?.[0]?.key);
@@ -213,7 +174,12 @@ function PanelBody({ panel, onMore }) {
     const parts = panel.rows || [];
     return (
       <div className="ring-card">
-        <Donut parts={parts} center={panel.ring?.center ?? int(panel.ring?.total)} unit={panel.ring?.unit} label={panel.ring?.unit} />
+        <Chart
+          className="ring-chart"
+          height={96}
+          style={{ width: 96, flex: "0 0 96px" }}
+          option={donutOption(parts, { center: Number(panel.ring?.center ?? panel.ring?.total), unit: panel.ring?.unit })}
+        />
         <div className="ring-legend">
           {parts.map((r, i) => (
             <div className="ring-row" key={r.name + i}>
@@ -237,7 +203,12 @@ function PanelBody({ panel, onMore }) {
       <>
         <Tabs items={(panel.tabs || []).map((t) => ({ key: t.key, label: t.label }))} value={cur?.key} onChange={setTab} />
         <div className="ring-card">
-          <Donut parts={cur?.parts || []} center={int(cur?.total)} unit={cur?.unit} label={cur?.unit} />
+          <Chart
+            className="ring-chart"
+            height={96}
+            style={{ width: 96, flex: "0 0 96px" }}
+            option={donutOption(cur?.parts || [], { center: Number(cur?.total), unit: cur?.unit })}
+          />
           <div className="ring-legend">
             {(cur?.parts || []).map((r, i) => (
               <div className="ring-row" key={r.name + i}>
@@ -287,17 +258,12 @@ function PanelBody({ panel, onMore }) {
 
   if (panel.type === 'bars') {
     const rows = panel.rows || [];
-    const max = Math.max(1, ...rows.map((r) => Number(r.value || 0)));
     return (
-      <div className="bars">
-        {rows.map((r, i) => (
-          <div className="bar-row" key={r.name + i}>
-            <span className="n" title={r.name}>{r.name}</span>
-            <span className="track"><i style={{ width: `${(Number(r.value || 0) / max) * 100}%`, background: `linear-gradient(90deg, ${PALETTE[i % PALETTE.length]}55, ${PALETTE[i % PALETTE.length]})` }} /></span>
-            <span className="v">{int(r.value)}</span>
-          </div>
-        ))}
-      </div>
+      <Chart
+        className="bars-chart"
+        height={Math.max(96, rows.length * 26 + 14)}
+        option={barOption(rows, { unit: panel.unit || '', colorBy: true })}
+      />
     );
   }
 
@@ -356,7 +322,7 @@ export default function Cockpit({ sceneKey }) {
   const scene = sceneKey || params.scene || 'dashboard';
   const meta0 = SCENE_META[scene] || SCENE_META.dashboard;
 
-  const [code, setCode] = useState('330000');
+  const [code, setCode] = useState('510000');
   const [theme, setTheme] = useState(meta0.theme);
   const [layerOpen, setLayerOpen] = useState(false);
   const [toolOpen, setToolOpen] = useState(false);
@@ -393,7 +359,7 @@ export default function Cockpit({ sceneKey }) {
     return allPoints.filter((p) => keys.includes(p.stage));
   }, [allPoints, theme, layerOpen]);
 
-  const scopeName = code === '330000' ? '全省' : regionMap.get(String(code))?.name || '浙江省';
+  const scopeName = code === '510000' ? '全省' : regionMap.get(String(code))?.name || '四川省';
   const themeLabel = THEMES.find((t) => t.key === theme)?.label || meta0.title;
   const mapTitle = `${scopeName}${themeLabel}分布专题图`;
 
@@ -407,7 +373,7 @@ export default function Cockpit({ sceneKey }) {
 
   const bubbles = useMemo(() => {
     const raw = data?.map?.bubbles || [];
-    const isProvince = String(code) === '330000';
+    const isProvince = String(code) === '510000';
     const isCity = String(code).endsWith('00') && !isProvince;
     if (isProvince) {
       /* 省级视角：把区县气泡聚合成 11 个地市气泡 */
@@ -461,8 +427,8 @@ export default function Cockpit({ sceneKey }) {
   const breadcrumb = useMemo(() => {
     const c = String(code);
     const listPath = [];
-    if (c === '330000') return listPath;
-    listPath.push({ code: '330000', name: '浙江省' });
+    if (c === '510000') return listPath;
+    listPath.push({ code: '510000', name: '四川省' });
     if (!c.endsWith('0000')) {
       const city = regionMap.get(`${c.slice(0, 4)}00`);
       if (city) listPath.push({ code: city.code, name: city.name });
@@ -505,7 +471,28 @@ export default function Cockpit({ sceneKey }) {
   const exportPng = () => {
     const svg = document.querySelector('.map-stage .geo-svg');
     if (!svg) {
-      toast('未找到地图画布', 'err');
+      // 高德底图模式：尝试直接导出地图 canvas；瓦片为跨域资源时不放开 CORS，故失败时明确提示
+      const canvasEl = document.querySelector('.geomap-canvas canvas');
+      if (!canvasEl) {
+        toast('未找到地图画布', 'err');
+        return;
+      }
+      try {
+        const out = document.createElement('canvas');
+        out.width = canvasEl.width;
+        out.height = canvasEl.height;
+        const ctx = out.getContext('2d');
+        ctx.fillStyle = '#050f21';
+        ctx.fillRect(0, 0, out.width, out.height);
+        ctx.drawImage(canvasEl, 0, 0);
+        const a = document.createElement('a');
+        a.href = out.toDataURL('image/png');
+        a.download = `${mapTitle}-高德底图.png`;
+        a.click();
+        toast('已导出当前专题图 PNG');
+      } catch {
+        toast('高德瓦片为跨域资源，无法直接导出；请使用系统截图', 'err');
+      }
       return;
     }
     try {
@@ -610,7 +597,7 @@ export default function Cockpit({ sceneKey }) {
             onChange={(e) => setCode(e.target.value)}
             aria-label="选择行政区划"
           >
-            <option value="330000">浙江省（全省）</option>
+            <option value="510000">四川省（全省）</option>
             {(regions.data?.list || []).filter((r) => r.level === 'city').map((r) => (
               <option key={r.code} value={r.code}>{r.name}</option>
             ))}
@@ -693,7 +680,7 @@ export default function Cockpit({ sceneKey }) {
               <button type="button" className="tool-item" onClick={exportCsv}>
                 <Ic icon={Download01Icon} size={14} /> 导出当前列表
               </button>
-              <button type="button" className="tool-item" onClick={() => { setCode(user?.region_code || '330000'); setSel(null); }}>
+              <button type="button" className="tool-item" onClick={() => { setCode(user?.region_code || '510000'); setSel(null); }}>
                 <Ic icon={Refresh01Icon} size={14} /> 回到本辖区视角
               </button>
             </div>
@@ -864,19 +851,13 @@ export default function Cockpit({ sceneKey }) {
         ))}
         {data?.extra?.indicators && (
           <section className="panel">
-            <header className="panel-head"><h3>指标预警</h3></header>
+            <header className="panel-head"><h3>指标执行预警</h3></header>
             <div className="panel-body">
-              <div className="bars">
-                {data.extra.indicators.slice(0, 5).map((it) => (
-                  <div className="bar-row" key={it.name}>
-                    <span className="n" title={it.name}>{it.name}</span>
-                    <span className="track">
-                      <i style={{ width: `${Math.min(100, (Number(it.actual) / Math.max(1, Number(it.target))) * 100)}%`, background: it.warn === '红牌' ? '#ff5f57' : it.warn === '黄牌' ? '#ffcc44' : '#35d39a' }} />
-                    </span>
-                    <span className="v">{it.actual}/{it.target}</span>
-                  </div>
-                ))}
-              </div>
+              <Chart
+                className="indicator-chart"
+                height={Math.max(120, Math.min(5, data.extra.indicators.length) * 30 + 16)}
+                option={indicatorOption(data.extra.indicators.slice(0, 5))}
+              />
             </div>
           </section>
         )}

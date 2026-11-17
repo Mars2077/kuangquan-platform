@@ -144,8 +144,10 @@ export default function Battle() {
                   return items.map((it, i) => (
                     <tr key={it.id}>
                       {i === 0 && (
-                        <td className="merge" rowSpan={items.length} style={{ width: 96 }}>
-                          {g.category.split('').map((ch, ci) => <div key={ci}>{ch}</div>)}
+                        <td className={`merge${items.length <= 3 ? ' merge-h' : ''}`} rowSpan={items.length} style={{ width: 40 }}>
+                          {items.length <= 3
+                            ? <span>{g.category}</span>
+                            : g.category.split('').map((ch, ci) => <div key={ci}>{ch}</div>)}
                         </td>
                       )}
                       <td>{it.seq}</td>
@@ -195,7 +197,7 @@ export default function Battle() {
       </p>
       {bootMeta && (
         <p className="muted tiny" style={{ lineHeight: 1.8 }}>
-          当前账号：{bootMeta.user?.name}（{bootMeta.user?.org}），可见范围为{bootMeta.user?.region_code === '330000' ? '全省' : '本级及下级'}任务。
+          当前账号：{bootMeta.user?.name}（{bootMeta.user?.org}），可见范围为{bootMeta.user?.region_code === '510000' ? '全省' : '本级及下级'}任务。
         </p>
       )}
     </div>

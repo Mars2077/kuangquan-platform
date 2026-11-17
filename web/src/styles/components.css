@@ -838,6 +838,33 @@
   min-height: 0;
   overflow: auto;
   padding-right: 2px;
+  /* 与底部浮动列表同高留白：面板区止于列表上沿，避免每块面板内部被拉出大段空白 */
+  padding-bottom: 198px;
+}
+/* 左/右列的三组面板等高铺满整列，避免底部大片留白 */
+.screen-col > .panel {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.screen-col > .panel > .panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14px 14px 16px;
+}
+.screen-col > .panel > .panel-body > .stat-list,
+.screen-col > .panel > .panel-body > .tab-groups {
+  flex: 0 1 auto;
+  justify-content: space-evenly;
+  gap: 10px;
+}
+.screen-col > .panel > .panel-body > .ring-card {
+  flex: 1 1 auto;
 }
 .map-stage {
   position: relative;

@@ -7,10 +7,10 @@ import { useApp } from '../store.jsx';
 import { LockPasswordIcon, UserIcon, ArrowRight01Icon, Shield01Icon } from '@hugeicons/core-free-icons';
 
 const DEMO = [
-  { u: 'admin', p: 'admin123', label: '系统管理员', who: '赵丹蕾 · 湖州市' },
-  { u: 'province', p: '123456', label: '省级管理员', who: '陈嘉禾 · 浙江省自然资源厅' },
-  { u: 'city', p: '123456', label: '市级管理员', who: '沈立群 · 湖州市' },
-  { u: 'county', p: '123456', label: '县级管理员', who: '王永祥 · 长兴县' },
+  { u: 'admin', p: 'admin123', label: '系统管理员', who: '赵丹蕾 · 成都市' },
+  { u: 'province', p: '123456', label: '省级管理员', who: '陈嘉禾 · 四川省自然资源厅' },
+  { u: 'city', p: '123456', label: '市级管理员', who: '沈立群 · 成都市' },
+  { u: 'county', p: '123456', label: '县级管理员', who: '王永祥 · 彭州市' },
   { u: 'enterprise', p: '123456', label: '矿山企业', who: '李国强 · 白象硅灰石矿' }
 ];
 
@@ -43,7 +43,7 @@ export default function Login() {
       </div>
 
       <section className="login-copy">
-        <span className="eyebrow"><BrandMark size={16} /> 浙江省自然资源厅 · 绿矿智用</span>
+        <span className="eyebrow"><BrandMark size={16} /> 四川省自然资源厅 · 绿矿智用</span>
         <h1>
           省域空间治理数字化平台
           <br />

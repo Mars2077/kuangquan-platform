@@ -9,7 +9,7 @@ router.use(authRequired);
 
 /** 依据当前行政区划视角生成过滤条件（省=全部，市=按前4位，县=精确） */
 function cond(code, table) {
-  if (!code || code === '330000' || code === 'all') return { sql: '', params: [] };
+  if (!code || code === '510000' || code === 'all') return { sql: '', params: [] };
   const cols = all(`PRAGMA table_info(${table})`).map((c) => c.name);
   const col = cols.includes('region_code') ? 'region_code' : cols.includes('city_code') ? 'city_code' : null;
   if (!col) return { sql: '', params: [] };
@@ -33,7 +33,7 @@ const round = (v, d = 2) => Number(Number(v || 0).toFixed(d));
 
 /* 上级视角下用于展示区县气泡 */
 function countyBubbles(code) {
-  if (!code || code === '330000') {
+  if (!code || code === '510000') {
     return listBy(
       `SELECT m.region_code AS code, m.region_name AS name, COUNT(*) AS value,
               AVG(m.lon) AS lon, AVG(m.lat) AS lat
@@ -98,7 +98,7 @@ function screenDashboard(code, year) {
         key: 'reserve', title: '矿产资源储量', type: 'stat-list',
         rows: [
           { label: '纳入统计矿产种数', value: minerals.length || 100, unit: '种' },
-          { label: '增减率TOP1', value: '125.5', unit: '%', suffix: '溶剂用灰岩', delta: 125.5 },
+          { label: '增减率TOP1', suffix: '溶剂用灰岩', value: '125.5', unit: '%' },
           { label: '保护储量', value: depositReserve || 148029.26, unit: '万吨', decimals: 2 }
         ]
       },
@@ -224,7 +224,8 @@ function screenPlan(code) {
   const warnCount = indicators.filter((x) => x.warn !== '正常').length;
   return {
     left: [
-      { key: 'zones', title: '规划分区', type: 'ring-split', ring: { total: zoneGroups.reduce((s, x) => s + x.value, 0), unit: '个' }, rows: zoneGroups.map((x) => ({ name: x.name, value: x.value, unit: '个' })) }
+      { key: 'zones', title: '规划分区', type: 'ring-split', ring: { total: zoneGroups.reduce((s, x) => s + x.value, 0), unit: '个' }, rows: zoneGroups.map((x) => ({ name: x.name, value: x.value, unit: '个' })) },
+      { key: 'zoneArea', title: '分区面积', type: 'bars', unit: 'km²', rows: zoneGroups.map((x) => ({ name: x.name, value: round(x.area), unit: 'km²' })) }
     ],
     right: [
       { key: 'warn', title: '指标预警', type: 'stat-list', rows: [
@@ -270,7 +271,12 @@ function screenGreen(code) {
   const score = round(get(`SELECT AVG(total_score) AS s FROM green_apply WHERE stage='已入库' ${g.sql}`, g.params)?.s || 0, 1);
   return {
     left: [
-      { key: 'level', title: '绿色矿山分级', type: 'ring-split', ring: { total, unit: '家', center: String(total) }, rows: byLevel.map((x) => ({ name: x.name, value: x.value, unit: '家' })) }
+      { key: 'level', title: '绿色矿山分级', type: 'ring-split', ring: { total, unit: '家', center: String(total) }, rows: byLevel.map((x) => ({ name: x.name, value: x.value, unit: '家' })) },
+      { key: 'digital', title: '名录结构', type: 'stat-list', rows: [
+        { label: '绿色矿山', value: total, unit: '家' },
+        { label: '数字矿山', value: countBy(`SELECT COUNT(*) AS c FROM mine WHERE digital_level != '—' ${c.sql}`, c.params), unit: '家' },
+        { label: '智能矿山', value: countBy(`SELECT COUNT(*) AS c FROM mine WHERE smart_level != '—' ${c.sql}`, c.params), unit: '家' }
+      ] }
     ],
     right: [
       { key: 'stage', title: '申报进度', type: 'bars', rows: byStage },
@@ -358,7 +364,7 @@ const SCREENS = {
 router.get('/:scene', wrap((req, res) => {
   const fn = SCREENS[req.params.scene];
   if (!fn) return res.status(404).json({ code: 404, msg: '场景不存在', data: null });
-  const code = req.query.code || req.user.region_code || '330000';
+  const code = req.query.code || req.user.region_code || '510000';
   const year = Number(req.query.year || 2024);
   ok(res, fn(code, year));
 }));
@@ -366,7 +372,7 @@ router.get('/:scene', wrap((req, res) => {
 /* 地图要素：按当前视角返回矿山 / 矿产地 / 矿业权点 */
 router.get('/map/:theme', wrap((req, res) => {
   const theme = req.params.theme;
-  const code = req.query.code || '330000';
+  const code = req.query.code || '510000';
   const map = {
     online: () => {
       const c = cond(code, 'mine');
