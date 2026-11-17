@@ -789,52 +789,6 @@ export default function Cockpit({ sceneKey }) {
           </div>
         )}
 
-        <section className={`map-list${listOpen ? '' : ' collapsed'}`}>
-          <header className="map-list-head">
-            <h3>{themeLabel}列表</h3>
-            <div className="map-list-tools">
-              <div className="search-mini">
-                <Ic icon={Search01Icon} size={12} />
-                <input value={kw} onChange={(e) => setKw(e.target.value)} placeholder="筛选当前列表" aria-label="筛选当前列表" />
-              </div>
-              <button type="button" className="btn-link" onClick={exportCsv}>
-                <Ic icon={Download01Icon} size={12} /> 导出
-              </button>
-              <button type="button" className="btn-link" onClick={() => setListOpen((v) => !v)}>
-                {listOpen ? '收起' : '展开'}
-              </button>
-            </div>
-          </header>
-          <div className="map-list-body">
-            <table className="data-table dense map-table">
-              <thead>
-                <tr>
-                  <th style={{ width: 48 }}>序号</th>
-                  {columns.map((c) => (
-                    <th key={c.key} className={c.align === 'right' ? 'num' : ''} style={c.width ? { width: c.width } : undefined}>
-                      {c.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {list.slice(0, 200).map((row, i) => (
-                  <tr key={row.id ?? i} onClick={() => setSel(row)} className={sel && sel.id === row.id ? 'selected' : ''}>
-                    <td className="num">{i + 1}</td>
-                    {columns.map((c) => (
-                      <td key={c.key} className={c.align === 'right' ? 'num' : ''}>
-                        {c.align === 'right' && Number.isFinite(Number(row[c.key])) ? int(row[c.key]) : row[c.key] ?? '—'}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-                {list.length === 0 && (
-                  <tr><td colSpan={columns.length + 1}><div className="table-empty">当前视角下没有要素</div></td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
       </div>
 
       <aside className="screen-col">
@@ -862,6 +816,53 @@ export default function Cockpit({ sceneKey }) {
           </section>
         )}
       </aside>
+
+      <section className={`map-list${listOpen ? '' : ' collapsed'}`}>
+        <header className="map-list-head">
+          <h3>{themeLabel}列表</h3>
+          <div className="map-list-tools">
+            <div className="search-mini">
+              <Ic icon={Search01Icon} size={12} />
+              <input value={kw} onChange={(e) => setKw(e.target.value)} placeholder="筛选当前列表" aria-label="筛选当前列表" />
+            </div>
+            <button type="button" className="btn-link" onClick={exportCsv}>
+              <Ic icon={Download01Icon} size={12} /> 导出
+            </button>
+            <button type="button" className="btn-link" onClick={() => setListOpen((v) => !v)}>
+              {listOpen ? '收起' : '展开'}
+            </button>
+          </div>
+        </header>
+        <div className="map-list-body">
+          <table className="data-table dense map-table">
+            <thead>
+              <tr>
+                <th style={{ width: 48 }}>序号</th>
+                {columns.map((c) => (
+                  <th key={c.key} className={c.align === 'right' ? 'num' : ''} style={c.width ? { width: c.width } : undefined}>
+                    {c.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {list.slice(0, 200).map((row, i) => (
+                <tr key={row.id ?? i} onClick={() => setSel(row)} className={sel && sel.id === row.id ? 'selected' : ''}>
+                  <td className="num">{i + 1}</td>
+                  {columns.map((c) => (
+                    <td key={c.key} className={c.align === 'right' ? 'num' : ''}>
+                      {c.align === 'right' && Number.isFinite(Number(row[c.key])) ? int(row[c.key]) : row[c.key] ?? '—'}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {list.length === 0 && (
+                <tr><td colSpan={columns.length + 1}><div className="table-empty">当前视角下没有要素</div></td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }

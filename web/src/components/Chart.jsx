@@ -28,9 +28,16 @@ const TOOLTIP = {
   backgroundColor: 'rgba(6,22,44,0.94)',
   borderColor: 'rgba(64,158,255,0.45)',
   borderWidth: 1,
-  padding: [7, 10],
+  padding: [6, 9],
   textStyle: { color: TEXT, fontSize: 12 },
+  // 关键修复：把浮层挂到 body 并限制在可视区内。
+  // 否则 .panel-body / .card 的 overflow 会把 tooltip 裁掉，
+  // 表现为「浮层超出容器、被切一半」。
+  appendTo: 'body',
+  confine: true,
+  transitionDuration: 0.15,
   extraCssText: 'border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.45);'
+    + 'max-width:260px;white-space:normal;pointer-events:none;z-index:3000;'
 };
 
 const fmt = (v, d = 0) => {
@@ -243,6 +250,15 @@ export function indicatorOption(items = []) {
   return {
     animationDuration: 780,
     grid: { left: 4, right: 78, top: 6, bottom: 4, containLabel: true },
+    tooltip: {
+      ...TOOLTIP,
+      trigger: 'axis',
+      axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(73,195,255,0.08)' } },
+      formatter: (ps) => {
+        const i = ps[0].dataIndex;
+        return `${names[i]}<br/>实际 <b style="font-size:13px">${fmt(actuals[i], 0)}</b> / 目标 ${fmt(targets[i], 0)}`;
+      }
+    },
     xAxis: { type: 'value', show: false, max: max * 1.16 },
     yAxis: {
       type: 'category', data: names, inverse: true,

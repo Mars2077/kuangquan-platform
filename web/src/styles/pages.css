@@ -2022,3 +2022,238 @@
   .archive-hero .qr img { width: 128px; height: 128px; }
   .archive-hero .qr p { font-size: 11px; max-width: 168px; }
 }
+
+
+/* ---------------------------------------------------------------- R-22 大屏结构重构
+   反馈 1：底部列表不再悬浮在地图内部，改为 .screen 的第二行并横跨三栏，
+           左右两栏不再为它预留 198px 空白，面板独占整列高度。
+   反馈 2：面板先按内容确定基础高度（flex-basis:auto），再把剩余高度等分（flex-grow:1），
+           使每块容器的大小与内容量匹配、块间距一致，避免「均匀分布但空格差距很大」。 */
+.screen {
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 10px 14px;
+}
+.screen > .screen-col:first-of-type { grid-area: 1 / 1 / 2 / 2; }
+.screen > .map-stage { grid-area: 1 / 2 / 2 / 3; }
+.screen > .screen-col:last-of-type { grid-area: 1 / 3 / 2 / 4; }
+.screen > .map-list {
+  grid-area: 2 / 1 / 3 / -1;
+  position: static;
+  inset: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+  height: 196px;
+  transition: height 0.22s var(--ease);
+}
+.screen > .map-list.collapsed {
+  height: 34px;
+  transform: none;
+}
+.screen-col {
+  padding-bottom: 0;
+  gap: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.screen-col > .panel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.screen-col > .panel > .panel-body {
+  justify-content: flex-start;
+  overflow: auto;
+}
+.map-legend {
+  bottom: 14px;
+}
+
+/* 三栏档位：取消此前「固定 198px 留白 + space-between」的旧规则 */
+@media (max-width: 2100px) and (min-width: 1361px) {
+  .screen-col {
+    justify-content: flex-start;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 0;
+  }
+  .screen-col > .panel {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .screen-col > .panel > .panel-body {
+    justify-content: flex-start;
+  }
+}
+
+/* 单列档位（含平板/手机）：地图在上、面板依次向下、列表最后，全部按内容高度排布 */
+@media (max-width: 1360px) {
+  .screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    gap: 12px;
+  }
+  .screen > .screen-col,
+  .screen > .map-stage,
+  .screen > .map-list {
+    grid-area: auto / 1 / auto / 2;
+  }
+  .screen > .map-stage {
+    min-height: 480px;
+  }
+  .screen > .map-list {
+    height: 196px;
+  }
+  .screen > .map-list.collapsed {
+    height: 34px;
+  }
+  .screen-col {
+    overflow: visible;
+  }
+  .screen-col > .panel {
+    flex: 0 0 auto;
+    min-height: 176px;
+  }
+}
+
+
+/* R-23：①修正单列档位的选择器优先级（:first-of-type 的显式 grid-area 覆盖了媒体查询，
+   导致 1280 仍是三列）；②1361–1700 档位收紧面板内边距与底部列表高度，
+   让面板内容与容器高度匹配，避免面板内部出现滚动条。 */
+@media (max-width: 1360px) {
+  .screen > .screen-col:first-of-type,
+  .screen > .screen-col:last-of-type,
+  .screen > .map-stage,
+  .screen > .map-list {
+    grid-area: auto / 1 / auto / 2;
+  }
+}
+@media (max-width: 1700px) and (min-width: 1361px) {
+  .screen > .map-list { height: 168px; }
+  .screen > .map-list.collapsed { height: 34px; }
+  .screen-col > .panel > .panel-body { padding: 6px 10px 6px; }
+  .screen-col .stat-list,
+  .screen-col .tab-groups { gap: 5px; }
+  .screen-col .stat-row { min-height: 18px; }
+}
+@media (max-width: 1500px) and (min-width: 1361px) {
+  .screen-col .ring-card .ring-chart {
+    height: 76px !important;
+    width: 76px !important;
+    flex: 0 0 76px !important;
+  }
+  .screen-col .ring-row { font-size: 12px; }
+}
+
+
+/* R-24：1361–1700 档位再收紧一档（环图、行高、内边距），
+   把 R-23 复测残留的 10~18px 面板内部溢出清零。 */
+@media (max-width: 1700px) and (min-width: 1361px) {
+  .screen-col > .panel > .panel-body { padding: 5px 9px; }
+  .screen-col .stat-row { min-height: 16px; }
+  .screen-col .stat-list,
+  .screen-col .tab-groups { gap: 4px; }
+  .screen-col .ring-card .ring-chart {
+    height: 68px !important;
+    width: 68px !important;
+    flex: 0 0 68px !important;
+  }
+  .screen-col .ring-row { font-size: 11.5px; }
+  .screen-col .ring-row .d { width: 38px; font-size: 10px; }
+}
+
+
+/* R-25：1361–1700 档位把底部列表压到 152px、栏间距收到 8px、环图 64px，
+   给左右两栏腾出约 30px，使 dashboard 的三块统计面板不再内部滚动。 */
+@media (max-width: 1700px) and (min-width: 1361px) {
+  .screen > .map-list { height: 152px; }
+  .screen > .map-list.collapsed { height: 34px; }
+  .screen-col { gap: 8px; }
+  .screen-col > .panel > .panel-body { padding: 4px 9px; }
+  .screen-col .ring-card .ring-chart {
+    height: 64px !important;
+    width: 64px !important;
+    flex: 0 0 64px !important;
+  }
+}
+
+
+/* R-26：①1361–1700 档位再省 3~6px，清掉 1600 下残留的 1~2px 溢出；
+   ②短屏（height ≤ 820，如 1366×768）改为「面板按内容定高 + 侧栏自身滚动」，
+   不再把内容压进不足的高度里。 */
+@media (max-width: 1700px) and (min-width: 1361px) {
+  .screen-col .stat-row { min-height: 15px; }
+  .screen-col .ring-card .ring-chart {
+    height: 60px !important;
+    width: 60px !important;
+    flex: 0 0 60px !important;
+  }
+}
+@media (max-height: 820px) and (min-width: 1361px) {
+  .screen-col { overflow-y: auto; }
+  .screen-col > .panel { flex: 0 0 auto; }
+  .screen-col > .panel > .panel-body { overflow: visible; }
+}
+
+
+/* R-27：把 1600 档位残留的 1~2px 面板内部溢出清零。 */
+@media (max-width: 1700px) and (min-width: 1361px) {
+  .screen-col > .panel > .panel-body { padding: 3px 9px; }
+}
+
+
+/* R-28：左右两栏按用户口径执行「先按内容定容器大小，再均匀分布」：
+   面板不再强行拉伸（flex-grow 0），高度取内容高度；侧栏剩余高度由
+   justify-content: space-between 均分为面板之间的间隙，避免把空白堆在面板内部。
+   内容比可用高度更高时仍允许收缩（flex-shrink 1），并由 panel-body 自身滚动兜底。 */
+@media (min-width: 1361px) {
+  .screen-col { justify-content: space-between; }
+  .screen-col > .panel { flex: 0 1 auto; }
+}
+
+
+/* R-29：撤销 R-28 的「按内容定高 + 均分间隙」——两栏只有 2~3 块面板时，
+   均分间隙会在中间留下 400px 的空洞。改为：面板拉伸填满侧栏（容器与内容适配，
+   不出现内嵌空白），面板内部内容垂直居中，剩余留白均分到内容上下两侧。 */
+@media (min-width: 1361px) {
+  .screen-col { justify-content: flex-start; }
+  .screen-col > .panel { flex: 1 1 auto; }
+  .screen-col > .panel > .panel-body { justify-content: center; }
+}
+@media (max-height: 820px) and (min-width: 1361px) {
+  .screen-col { justify-content: flex-start; }
+  .screen-col > .panel { flex: 0 0 auto; }
+  .screen-col > .panel > .panel-body { justify-content: flex-start; }
+}
+
+
+/* R-30：面板内的统计行原本用 space-evenly 撑开（行与行之间留出上百像素的空洞），
+   改为紧凑排列（固定 12px 间距），整体仍由 panel-body 垂直居中，
+   空白只出现在内容块的上下两侧，不再出现在行与行之间。 */
+@media (min-width: 1361px) {
+  .screen-col .stat-list,
+  .screen-col .tab-groups {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+  .screen-col .stat-row { min-height: 0; }
+}
+
+
+/* R-31：components.css:860-865 用 .screen-col > .panel > .panel-body > .stat-list
+   这一 4 级选择器设了 space-evenly（特异度 0,4,0），R-30 的 2 级选择器压不过它，
+   所以统计行仍被均匀撑开。这里用同等特异度覆盖，把行与行之间的空洞消掉。 */
+@media (min-width: 1361px) {
+  .screen-col > .panel > .panel-body > .stat-list,
+  .screen-col > .panel > .panel-body > .tab-groups {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+  .screen-col > .panel > .panel-body > .tab-groups > .tab-group > .stat-list {
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  .screen-col > .panel > .panel-body > .tab-groups > .tab-group {
+    margin-bottom: 2px;
+  }
+}
