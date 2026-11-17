@@ -4,6 +4,7 @@
 > 依据《矿权管理系统功能设计文档》与 5 张系统截图实现，覆盖文档列出的 **6 大业务域 / 40 个功能点 / 7 个驾驶舱专题**。
 > **v2 演示版**：四川口径（21 市州 / 183 区县）+ 图表统一 ECharts + 高德地图 JS API 底图，改造说明见 [docs/07-三项改造说明.md](docs/07-三项改造说明.md)。
 > **v2.1 可用性修复**：11 条路由 × 7 档视口的 UI 评审（42 条问题）已全量修复并复测，报告见 [docs/08-UI评审-响应式适配.md](docs/08-UI评审-响应式适配.md)（§8 为修复清单与实测数据）。
+> **v2.2 布局二次修复**：底部列表横跨整屏、侧栏面板尺寸与分布按内容适配、ECharts 悬浮提示挂载到 body 不再被容器裁切，说明与实测见 [docs/09-第二轮修复-布局与浮层.md](docs/09-第二轮修复-布局与浮层.md)。
 >
 > 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-4bger8ga3q.preview.iga-pages.com?iga_token=6add70f9c73c70ffa5f2b9e39f216dc4&iga_time=1795080312>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
 
