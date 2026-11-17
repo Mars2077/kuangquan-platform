@@ -30,4 +30,13 @@ Thumbs.db
 # 评审原始截图（237 张 / 约 100MB，仅本地保留；仓库内只收录 docs/shots/review/selected/ 精选 28 张）
 docs/shots/review/v2/
 docs/shots/review/v3/
+docs/shots/review/v4/
+docs/shots/review/v5/
+docs/shots/review/v6/
 docs/shots/review/*.png
+
+# 验证过程产物（不入库）
+web/.verify/
+web/.shots/
+.tmp/
+.tmp-ux/
