@@ -1,5 +1,14 @@
 const TOKEN_KEY = 'kq_token';
 
+/**
+ * 接口基址：
+ * - 默认同源（/api），本地 dev 由 Vite 代理到 8787；
+ * - 静态托管（如 IGA Pages / CDN）时用 VITE_API_BASE 指到后端地址，
+ *   例如 VITE_API_BASE=https://api.example.com。
+ */
+export const API_BASE = String(import.meta.env.VITE_API_BASE || '').replace(/\/+$/, '');
+const apiUrl = (path) => `${API_BASE}/api${path}`;
+
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY) || '';
 }
@@ -28,7 +37,7 @@ async function request(path, { method = 'GET', body, raw } = {}) {
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(apiUrl(path), {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body)
@@ -123,7 +132,7 @@ export const sys = {
     const headers = {};
     const token = getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
-    const res = await fetch('/api/warehouse/upload', { method: 'POST', headers, body: formData });
+    const res = await fetch(apiUrl('/warehouse/upload'), { method: 'POST', headers, body: formData });
     const json = await res.json().catch(() => ({ code: 1, msg: '上传失败' }));
     if (json.code !== 0) throw new Error(json.msg || '上传失败');
     return json;

@@ -12,7 +12,8 @@ const TYPE_LABEL = { patrol: '巡查记录', order: '待整改工单', green: '�
 export default function Mobile() {
   const { bootMeta, toast } = useApp();
   const home = useFetch(() => sys.mobileHome(), []);
-  const [type, setType] = useState('');
+  /* 默认展示巡查台账，避免首屏空白 */
+  const [type, setType] = useState('patrol');
   const list = useFetch(() => sys.mobileList(type), [type], { immediate: !!type });
   const [form, setForm] = useState({ mine_name: '', finding: '', result: '正常', photos: 0 });
   const [saving, setSaving] = useState(false);
