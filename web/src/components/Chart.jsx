@@ -46,6 +46,32 @@ const fmt = (v, d = 0) => {
   return n.toLocaleString('zh-CN', { minimumFractionDigits: d, maximumFractionDigits: d });
 };
 
+/* 全站统一的「按单位定小数位」规则（契约 §5 数值口径）：
+ * 亿元 / 万元 / 万吨 → 2 位；百分比 → 1 位；计数类（个/座/宗/家/条/件/处/项/分…）→ 0 位。
+ * 后端显式给出 decimals 时以字段为准（例如保护储量 4508895.38 万吨）。
+ */
+export function unitDecimals(unit, decimals) {
+  if (decimals !== undefined && decimals !== null && decimals !== '') {
+    const d = Number(decimals);
+    if (Number.isFinite(d)) return Math.max(0, Math.min(6, d));
+  }
+  switch (unit) {
+    case '亿元':
+    case '万元':
+    case '万吨':
+      return 2;
+    case '%':
+      return 1;
+    default:
+      return 0;
+  }
+}
+
+/* 面板数值、图例、tooltip 共用同一个格式化入口，避免同一数字出现两种写法 */
+export function formatValue(v, unit, decimals) {
+  return fmt(v, unitDecimals(unit, decimals));
+}
+
 /* ---------------------------------------------------------------- 环形图 */
 export function donutOption(parts = [], opts = {}) {
   const {
@@ -57,25 +83,33 @@ export function donutOption(parts = [], opts = {}) {
     itemStyle: { color: p.color || COLORS[i % COLORS.length] }
   }));
   const total = data.reduce((s, d) => s + d.value, 0);
+  /* 小数位由单位统一决定；center 保留后端给的精度（2.63 不会被截成 3） */
+  const d = unitDecimals(unit, decimals);
+  const centerText = fmt(center !== undefined ? center : total, d);
   return {
     animationDuration: 700,
     color: COLORS,
     tooltip: {
       ...TOOLTIP,
       trigger: 'item',
-      formatter: (p) => `${p.marker}${p.name}<br/><b style="font-size:14px">${fmt(p.value, decimals ?? (unit === '亿元' ? 2 : 0))}</b> ${unit || ''} · ${p.percent}%`
+      formatter: (p) => `${p.marker}${p.name}<br/><b style="font-size:14px">${fmt(p.value, d)}</b> ${unit || ''} · ${p.percent}%`
     },
     legend: legend ? {
       type: 'scroll', orient: 'vertical', right: 0, top: 'center', itemWidth: 8, itemHeight: 8,
       icon: 'roundRect', itemGap: 9, textStyle: { color: TEXT_DIM, fontSize: 11 }
     } : { show: false },
     title: {
-      text: center !== undefined ? fmt(center, decimals ?? (unit === '亿元' ? 2 : 0)) : fmt(total, decimals ?? 0),
+      text: centerText,
       subtext: unit || '',
       left: legend ? '34%' : 'center',
       top: 'center',
       textAlign: 'center',
-      textStyle: { color: '#e8f4ff', fontSize: 19, fontWeight: 700, lineHeight: 24 },
+      textStyle: {
+        color: '#e8f4ff',
+        fontSize: centerText.length > 8 ? 14 : centerText.length > 6 ? 16 : 19,
+        fontWeight: 700,
+        lineHeight: 22
+      },
       subtextStyle: { color: TEXT_DIM, fontSize: 11 },
       itemGap: 2
     },
@@ -105,13 +139,17 @@ export function barOption(rows = [], opts = {}) {
   const { unit = '', decimals, maxWidth = '96%', colorBy = false, showValue = true } = opts;
   const names = rows.map((r) => r.name);
   const values = rows.map((r) => Number(r.value || 0));
+  const d = unitDecimals(unit, decimals);
+  /* 数值标签预留宽度按最长数值自适应，避免「9,960,466.32」被右边界裁掉 */
+  const labelW = values.reduce((m, v) => Math.max(m, fmt(v, d).length), 1) * 6.8;
+  const rightGap = showValue ? Math.min(150, Math.max(46, Math.round(labelW) + 12)) : 10;
   return {
     animationDuration: 700,
     color: COLORS,
-    grid: { left: 4, right: showValue ? 46 : 10, top: 6, bottom: 2, containLabel: true },
+    grid: { left: 4, right: rightGap, top: 6, bottom: 2, containLabel: true },
     tooltip: {
       ...TOOLTIP, trigger: 'axis', axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(73,195,255,0.08)' } },
-      formatter: (ps) => `${ps[0].name}<br/><b style="font-size:14px">${fmt(ps[0].value, decimals ?? 0)}</b> ${unit}`
+      formatter: (ps) => `${ps[0].name}<br/><b style="font-size:14px">${fmt(ps[0].value, d)}</b> ${unit}`
     },
     xAxis: { type: 'value', show: false, max: (v) => v.max * 1.02 },
     yAxis: {
@@ -133,7 +171,7 @@ export function barOption(rows = [], opts = {}) {
       },
       label: {
         show: showValue, position: 'right', color: TEXT, fontSize: 11,
-        formatter: (p) => fmt(p.value, decimals ?? 0)
+        formatter: (p) => fmt(p.value, d)
       },
       data: values
     }]
@@ -242,6 +280,8 @@ export function indicatorOption(items = []) {
   const names = items.map((i) => i.name);
   const actuals = items.map((i) => Number(i.actual) || 0);
   const targets = items.map((i) => Number(i.target) || 0);
+  /* 指标存在小数（66.6 / 6.8）时统一保留 1 位，整数指标不显示 .0 */
+  const d = [...actuals, ...targets].some((v) => !Number.isInteger(v)) ? 1 : 0;
   const tone = (w) => (w === '红牌' ? '#ff5f57' : w === '黄牌' ? '#ffcc44' : '#35d39a');
   const max = Math.max(1, ...actuals, ...targets);
   // 标签宽度按最长类目自适应，避免「砂石土料产能控制…」被截断
@@ -256,7 +296,7 @@ export function indicatorOption(items = []) {
       axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(73,195,255,0.08)' } },
       formatter: (ps) => {
         const i = ps[0].dataIndex;
-        return `${names[i]}<br/>实际 <b style="font-size:13px">${fmt(actuals[i], 0)}</b> / 目标 ${fmt(targets[i], 0)}`;
+        return `${names[i]}<br/>实际 <b style="font-size:13px">${fmt(actuals[i], d)}</b> / 目标 ${fmt(targets[i], d)}`;
       }
     },
     xAxis: { type: 'value', show: false, max: max * 1.16 },
@@ -274,7 +314,7 @@ export function indicatorOption(items = []) {
       data: actuals.map((v, i) => ({ value: v, itemStyle: { color: tone(items[i].warn) } })),
       label: {
         show: true, position: 'right', color: TEXT, fontSize: 10,
-        formatter: (p) => `${fmt(actuals[p.dataIndex], 0)}/${fmt(targets[p.dataIndex], 0)}`
+        formatter: (p) => `${fmt(actuals[p.dataIndex], d)}/${fmt(targets[p.dataIndex], d)}`
       }
     }]
   };

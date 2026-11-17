@@ -1,183 +1,194 @@
-/* 空间底图组件：高德地图 JS API 2.0（主）+ 行政区划矢量渲染（降级）
- *
- * 高德 Key / 安全密钥配置位置：本文件顶部 AMAP_KEY / AMAP_SECURITY_CODE 常量。
- * 部署注意：
- *   1) Key 为 Web 端（JS API）Key，需在「高德开放平台控制台 → 应用管理 → 我的应用」中
- *      把访问域名加入白名单（含正式域名；本地调试可加 127.0.0.1/localhost）。
- *   2) 安全密钥 securityJsCode 必须以 window._AMapSecurityConfig 形式在 JS API 加载前注入，
- *      本文件在 loadAMap() 中完成；若改用代理服务器方案，则改配 serviceHost。
- *   3) 若脚本被拦截/Key 未授权，组件自动降级为本地 GeoJSON 矢量底图，功能（下钻、图层、
- *      属性卡、测量）全部保留，仅失去卫星/路网底图。
+/* 地图舞台：高德底图（在线）与本地 GeoJSON 矢量底图（降级）双模式。
+ * v3：根容器为契约 §5 的 .dash-map（flex 纵向铺满，不再写死 height）；
+ *     内部全部使用内联样式/SVG 属性，不再依赖 widgets.css 的 .geo-* / .amap-* 类。
+ * 对外交互：下钻、点位选择、气泡、测距/测面点、点击取坐标。
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-export const AMAP_KEY = 'b4c7c73243192c0b2ffdf1558cb4f5a9';
-export const AMAP_SECURITY_CODE = '8001ae482867d588498b444a0ac6123c';
+const AMAP_KEY = 'b4c7c73243192c0b2ffdf1558cb4f5a9';
+const AMAP_SECURITY_CODE = '8001ae482867d588498b444a0ac6123c';
 
-/* ---------------------------------------------------------------- 地图脚本加载 */
-let amapLoader = null;
-export function loadAMap() {
-  if (typeof window === 'undefined') return Promise.reject(new Error('no window'));
+const VIEW_W = 1000;
+const VIEW_H = 620;
+const PAD = 26;
+
+const CYAN = '#49c3ff';
+const CYAN_2 = '#7fe3ff';
+const TEXT_1 = '#eaf4ff';
+const TEXT_3 = '#8fb0cc';
+const TEXT_4 = '#5d7d99';
+const STAGE_TONE = { 待查: '#7fa6cc', 在查: '#ffcc44', 查明: '#35d39a', 规划: '#ff8a3d' };
+
+/* ---------------------------------------------------------------- 高德加载 */
+function loadAMap() {
   if (window.AMap) return Promise.resolve(window.AMap);
-  if (amapLoader) return amapLoader;
-  amapLoader = new Promise((resolve, reject) => {
-    window._AMapSecurityConfig = { securityJsCode: AMAP_SECURITY_CODE };
-    const script = document.createElement('script');
-    script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_KEY}&plugin=AMap.Scale,AMap.ToolBar`;
-    script.async = true;
-    script.onload = () => (window.AMap ? resolve(window.AMap) : reject(new Error('AMap 未就绪')));
-    script.onerror = () => reject(new Error('高德地图脚本加载失败'));
-    document.head.appendChild(script);
-    setTimeout(() => {
-      if (!window.AMap) reject(new Error('高德地图加载超时'));
-    }, 12000);
-  }).catch((e) => {
-    amapLoader = null;
-    throw e;
-  });
-  return amapLoader;
+  if (!window.__kqAmapPromise) {
+    window.__kqAmapPromise = new Promise((resolve, reject) => {
+      window._AMapSecurityConfig = { securityJsCode: AMAP_SECURITY_CODE };
+      const script = document.createElement('script');
+      script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_KEY}&plugin=AMap.Scale,AMap.ToolBar`;
+      script.async = true;
+      const timer = setTimeout(() => {
+        window.__kqAmapPromise = null;
+        reject(new Error('高德底图加载超时'));
+      }, 12000);
+      script.onload = () => {
+        clearTimeout(timer);
+        if (window.AMap) resolve(window.AMap);
+        else {
+          window.__kqAmapPromise = null;
+          reject(new Error('高德底图不可用'));
+        }
+      };
+      script.onerror = () => {
+        clearTimeout(timer);
+        window.__kqAmapPromise = null;
+        reject(new Error('高德底图加载失败'));
+      };
+      document.head.appendChild(script);
+    });
+  }
+  return window.__kqAmapPromise;
 }
 
 /* ---------------------------------------------------------------- 几何工具 */
-const W = 1000;
-const H = 620;
-const PAD = 26;
-
-function collectCoords(features) {
-  let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
-  const walk = (arr) => {
-    if (typeof arr[0] === 'number') {
-      const [lon, lat] = arr;
-      if (lon < minLon) minLon = lon;
-      if (lon > maxLon) maxLon = lon;
-      if (lat < minLat) minLat = lat;
-      if (lat > maxLat) maxLat = lat;
-      return;
-    }
-    arr.forEach(walk);
-  };
-  features.forEach((f) => { if (f.geometry?.coordinates) walk(f.geometry.coordinates); });
-  return { minLon, maxLon, minLat, maxLat };
-}
-
-function buildProjection(features) {
-  const b = collectCoords(features);
-  const spanLon = Math.max(0.0001, b.maxLon - b.minLon);
-  const spanLat = Math.max(0.0001, b.maxLat - b.minLat);
-  const s = Math.min((W - PAD * 2) / spanLon, (H - PAD * 2) / spanLat);
-  const offX = (W - spanLon * s) / 2;
-  const offY = (H - spanLat * s) / 2;
-  return {
-    bbox: b,
-    scale: s,
-    project: (lon, lat) => [offX + (lon - b.minLon) * s, offY + (b.maxLat - lat) * s],
-    unproject: (x, y) => [b.minLon + (x - offX) / s, b.maxLat - (y - offY) / s]
-  };
-}
-
-function ringToPath(ring, project) {
-  return `${ring.map((p, i) => {
-    const [x, y] = project(p[0], p[1]);
-    return `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`;
-  }).join(' ')} Z`;
-}
-
-function featureToPath(feature, project) {
-  const g = feature.geometry;
-  if (!g) return '';
-  if (g.type === 'Polygon') return g.coordinates.map((r) => ringToPath(r, project)).join(' ');
-  if (g.type === 'MultiPolygon') return g.coordinates.map((p) => p.map((r) => ringToPath(r, project)).join(' ')).join(' ');
-  return '';
-}
-
-/** 依矿区面积生成示意范围多边形（不规则八边形，形状由 seed 决定，保证同一矿山形状稳定） */
-export function minePolygon(lon, lat, areaKm2, seed = 1) {
-  const rkm = Math.max(0.14, Math.sqrt(Math.max(0.02, areaKm2 || 0.3) / Math.PI));
-  const ring = [];
-  for (let i = 0; i < 8; i += 1) {
-    const a = (i / 8) * Math.PI * 2 + (seed % 7) * 0.11;
-    const jitter = 0.78 + ((Math.sin(seed * 12.9898 + i * 4.1414) + 1) / 2) * 0.44;
-    const dr = rkm * jitter;
-    const dLat = dr / 110.57;
-    const dLon = dr / (111.32 * Math.cos((lat * Math.PI) / 180) || 1);
-    ring.push([lon + Math.cos(a) * dLon, lat + Math.sin(a) * dLat]);
-  }
-  return ring;
-}
-
-const TONE = { 生产中: '#35d39a', 探矿权: '#ffcc44', default: '#49c3ff' };
-const markerTone = (pt) => {
-  if (pt?.tone) return pt.tone;
-  if (pt?.status === '生产中') return TONE.生产中;
-  if (pt?.right_type === '探矿权') return TONE.探矿权;
-  if (pt?.level === '一级' || pt?.level === '二级') return '#ff5f57';
-  if (pt?.stage === '规划') return '#ff8a3d';
-  return TONE.default;
+const fmtNum = (v) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return String(v ?? '');
+  return n.toLocaleString('zh-CN', { maximumFractionDigits: 0 });
 };
 
-/** 经纬度轨迹扁平化（MultiPolygon → 若干 Polygon） */
-function polygonsOf(feature) {
-  const g = feature?.geometry;
-  if (!g) return [];
-  if (g.type === 'Polygon') return [g.coordinates.map((r) => r.map(([lon, lat]) => [lon, lat]))];
-  if (g.type === 'MultiPolygon') return g.coordinates.map((poly) => poly.map((r) => r.map(([lon, lat]) => [lon, lat])));
-  return [];
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+));
+
+/* 点位色：显式色优先，其次按状态/权类/等级/勘查阶段推导 */
+function markerTone(p = {}) {
+  if (p.color) return p.color;
+  if (p.tone && /^#/.test(String(p.tone))) return p.tone;
+  if (p.status === '生产中') return '#35d39a';
+  if (p.right_type === '探矿权') return '#ffcc44';
+  if (p.level === '一级' || p.level === '二级' || p.level === '红色') return '#ff5f57';
+  if (p.level === '黄色') return '#ffcc44';
+  if (p.stage && STAGE_TONE[p.stage]) return STAGE_TONE[p.stage];
+  return CYAN;
 }
 
-/* ---------------------------------------------------------------- 主组件 */
+/* 矿区范围示意多边形（8 边不规则环，面积近似） */
+function minePolygon(lon, lat, areaKm2, seed = 1) {
+  const area = Math.max(0.15, Number(areaKm2) || 0.6);
+  const rDeg = Math.sqrt(area / Math.PI) / 111;
+  const cosLat = Math.cos((lat * Math.PI) / 180) || 1;
+  const pts = [];
+  for (let i = 0; i < 8; i += 1) {
+    const ang = (i / 8) * Math.PI * 2;
+    const wobble = 0.68 + ((Math.sin(seed * 12.9898 + i * 78.233) + 1) / 2) * 0.62;
+    const r = rDeg * wobble;
+    pts.push([lon + (Math.cos(ang) * r) / cosLat, lat + Math.sin(ang) * r]);
+  }
+  return pts;
+}
+
+function parseGeo(json) {
+  const feats = Array.isArray(json?.features) ? json.features : [];
+  return feats.map((f) => {
+    const props = f.properties || {};
+    const rings = [];
+    const pushRing = (ring) => {
+      if (Array.isArray(ring) && ring.length > 2) rings.push(ring);
+    };
+    const g = f.geometry || {};
+    if (g.type === 'Polygon') (g.coordinates || []).forEach(pushRing);
+    else if (g.type === 'MultiPolygon') (g.coordinates || []).forEach((poly) => (poly || []).forEach(pushRing));
+    return {
+      adcode: String(props.adcode ?? props.code ?? props.ADCODE ?? ''),
+      name: props.name || props.NAME || '',
+      rings
+    };
+  }).filter((f) => f.rings.length > 0);
+}
+
+function buildProjection(coords) {
+  if (!coords.length) return null;
+  let minLon = Infinity;
+  let maxLon = -Infinity;
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+  coords.forEach(([lon, lat]) => {
+    if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+    if (lon < minLon) minLon = lon;
+    if (lon > maxLon) maxLon = lon;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  });
+  if (!Number.isFinite(minLon) || !Number.isFinite(minLat)) return null;
+  const spanLon = Math.max(0.02, maxLon - minLon);
+  const spanLat = Math.max(0.02, maxLat - minLat);
+  const cx = (minLon + maxLon) / 2;
+  const cy = (minLat + maxLat) / 2;
+  const cosLat = Math.cos((cy * Math.PI) / 180) || 1;
+  const scale = Math.min((VIEW_W - PAD * 2) / (spanLon * cosLat), (VIEW_H - PAD * 2) / spanLat);
+  return {
+    project: (lon, lat) => [VIEW_W / 2 + (lon - cx) * cosLat * scale, VIEW_H / 2 - (lat - cy) * scale],
+    unproject: (x, y) => [cx + (x - VIEW_W / 2) / (cosLat * scale), cy - (y - VIEW_H / 2) / scale]
+  };
+}
+
+const ringPath = (ring, project) => ring.map((pt, i) => {
+  const [x, y] = project(pt[0], pt[1]);
+  return `${i ? 'L' : 'M'}${x.toFixed(2)} ${y.toFixed(2)}`;
+}).join(' ') + ' Z';
+
+const ringPoints = (ring, project) => ring.map((pt) => {
+  const [x, y] = project(pt[0], pt[1]);
+  return `${x.toFixed(2)},${y.toFixed(2)}`;
+}).join(' ');
+
+/* ---------------------------------------------------------------- 组件 */
 export default function GeoMap({
   code = '510000',
   onDrill,
   bubbles = [],
   points = [],
-  selected,
+  selected = null,
   onSelectPoint,
   onSelectRegion,
   selectedRegion,
   onMapClick,
-  measure,
+  measure = { mode: 'none', points: [] },
   showRings = true,
-  height = 620
+  style,
+  children
 }) {
-  const [geo, setGeo] = useState(null);
-  const [failed, setFailed] = useState(false);
-  const [mode, setMode] = useState('loading'); // loading | amap | svg
-  const [tip, setTip] = useState(null);
-  const wrapRef = useRef(null);
+  const stageRef = useRef(null);
   const boxRef = useRef(null);
-  const mapRef = useRef(null);
-  const overlaysRef = useRef([]);
-  const regionsRef = useRef([]);
   const svgRef = useRef(null);
+  const mapRef = useRef(null);
+  const polygonsRef = useRef([]);
+  const overlaysRef = useRef([]);
 
-  /* ---------------- 行政区划 GeoJSON（按 code 逐级回退） */
-  useEffect(() => {
-    let alive = true;
-    setFailed(false);
-    const chain = [];
-    if (/^\d{6}$/.test(String(code))) {
-      chain.push(String(code));
-      if (!String(code).endsWith('00')) chain.push(`${String(code).slice(0, 4)}00`);
-      chain.push('510000');
-    } else {
-      chain.push('510000');
-    }
-    (async () => {
-      for (const c of chain) {
-        try {
-          const r = await fetch(`/geo/${c}.json`);
-          if (!r.ok) continue;
-          const j = await r.json();
-          if (!alive) return;
-          if (j?.features?.length) { setGeo(j); return; }
-        } catch { /* 继续尝试上一级 */ }
-      }
-      if (alive) setFailed(true);
-    })();
-    return () => { alive = false; };
-  }, [code]);
+  const [mode, setMode] = useState('loading');
+  const [geo, setGeo] = useState(null);
+  const [geoReady, setGeoReady] = useState(false);
+  const [tip, setTip] = useState(null);
 
-  /* ---------------- 高德脚本加载（失败则降级 SVG） */
+  /* 气泡文字防重叠：只在数值最大的若干个气泡上显示地名，其余靠悬浮提示 */
+  const bubbleLabelSet = useMemo(() => {
+    const arr = (bubbles || []).filter((b) => Number.isFinite(Number(b.value)) && b.name);
+    const top = [...arr]
+      .sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))
+      .slice(0, 12);
+    return new Set(top.map((b) => String(b.code || b.name)));
+  }, [bubbles]);
+  const showBubbleName = (b) => bubbleLabelSet.has(String(b.code || b.name));
+
+  /* 回调放进 ref，避免父组件每次渲染都重建地图 */
+  const cbRef = useRef({});
+  cbRef.current = { onDrill, onSelectPoint, onSelectRegion, onMapClick };
+
+  const selectRegion = String(selectedRegion || code || '');
+
+  /* -------- 1. 高德加载（失败降级矢量） -------- */
   useEffect(() => {
     let alive = true;
     loadAMap()
@@ -189,345 +200,537 @@ export default function GeoMap({
     return () => { alive = false; };
   }, []);
 
-  /* ---------------- 创建地图实例 */
+  /* -------- 2. 本地 GeoJSON：逐级回退 -------- */
   useEffect(() => {
-    if (mode !== 'amap' || !boxRef.current || mapRef.current) return;
-    const AMap = window.AMap;
-    const map = new AMap.Map(boxRef.current, {
-      zoom: 7,
-      center: [104.0657, 30.6595],
-      mapStyle: 'amap://styles/dark',
-      viewMode: '2D',
-      zooms: [4, 17],
-      showLabel: true,
-      jogEnable: false,
-      resizeEnable: true,
-      features: ['bg', 'road', 'building']
-    });
-    mapRef.current = map;
-    map.on('click', (e) => {
-      if (!onMapClick) return;
-      onMapClick([Number(e.lnglat.getLng().toFixed(6)), Number(e.lnglat.getLat().toFixed(6))]);
-    });
-    const t = setTimeout(() => map.resize(), 260);
-    return () => clearTimeout(t);
-  }, [mode, onMapClick]);
+    let alive = true;
+    setGeoReady(false);
+    setGeo(null);
+    const c = String(code || '510000');
+    const tries = [...new Set([c, `${c.slice(0, 4)}00`, '510000'])];
+    (async () => {
+      for (let i = 0; i < tries.length; i += 1) {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          const res = await fetch(`/geo/${tries[i]}.json`);
+          if (!res.ok) continue;
+          // eslint-disable-next-line no-await-in-loop
+          const json = await res.json();
+          const features = parseGeo(json);
+          if (features.length) {
+            if (alive) {
+              setGeo({ features, source: tries[i] });
+              setGeoReady(true);
+            }
+            return;
+          }
+        } catch {
+          /* 继续尝试下一级 */
+        }
+      }
+      if (alive) setGeo({ features: [], source: '' });
+    })();
+    return () => { alive = false; };
+  }, [code]);
 
-  useEffect(() => () => {
-    if (mapRef.current) { mapRef.current.destroy(); mapRef.current = null; }
-  }, []);
+  const features = geo?.features || [];
 
-  /* ---------------- 行政区划面 */
-  useEffect(() => {
-    const map = mapRef.current;
-    if (mode !== 'amap' || !map || !geo) return;
-    const AMap = window.AMap;
-    regionsRef.current.forEach((o) => o.setMap(null));
-    regionsRef.current = [];
-    const polys = [];
-    geo.features.forEach((f) => {
-      const adcode = String(f.properties.adcode);
-      const name = f.properties.name;
-      polygonsOf(f).forEach((rings) => {
-        const poly = new AMap.Polygon({
-          path: rings,
-          strokeColor: String(selectedRegion) === adcode ? 'rgba(127,227,255,0.95)' : 'rgba(126,214,255,0.62)',
-          strokeWeight: String(selectedRegion) === adcode ? 2 : 1,
-          fillColor: 'rgba(12,48,88,0.66)',
-          fillOpacity: 0.62,
-          zIndex: 30,
-          bubble: true,
-          cursor: 'pointer'
-        });
-        poly.on('click', (e) => {
-          e?.originEvent?.stopPropagation?.();
-          if (onDrill) onDrill(adcode);
-          else if (onSelectRegion) onSelectRegion(adcode);
-        });
-        poly.on('mouseover', () => poly.setOptions({ fillColor: 'rgba(46,168,255,0.58)', fillOpacity: 0.72 }));
-        poly.on('mouseout', () => poly.setOptions({ fillColor: 'rgba(12,48,88,0.66)', fillOpacity: 0.62 }));
-        poly.on('mousemove', (e) => {
-          const rect = wrapRef.current?.getBoundingClientRect();
-          if (!rect) return;
-          setTip({ x: e.pixel.x, y: e.pixel.y, text: name });
-        });
-        poly.on('mouseout', () => setTip(null));
-        regionsRef.current.push(poly);
-        polys.push(poly);
+  const projection = useMemo(() => {
+    const coords = [];
+    features.forEach((f) => f.rings.forEach((ring) => ring.forEach((pt) => coords.push(pt))));
+    if (!coords.length) {
+      [...points, ...bubbles].forEach((p) => {
+        const lon = Number(p.lon);
+        const lat = Number(p.lat);
+        if (Number.isFinite(lon) && Number.isFinite(lat)) coords.push([lon, lat]);
       });
-    });
-    map.add(regionsRef.current);
-    if (polys.length) map.setFitView(polys, false, [70, 70, 130, 130]);
-    return undefined;
-  }, [mode, geo, selectedRegion, onDrill, onSelectRegion]);
-
-  /* ---------------- 气泡 / 点位 / 选中范围 / 测量 */
-  const overlaySig = useMemo(() => JSON.stringify({
-    b: bubbles.map((x) => [x.code, x.value, x.lon, x.lat]),
-    p: points.length,
-    s: selected ? [selected.id, selected.lon, selected.lat] : null,
-    m: measure?.points?.length || 0,
-    mc: !!measure?.closed,
-    mode
-  }), [bubbles, points.length, selected, measure, mode]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (mode !== 'amap' || !map) return;
-    const AMap = window.AMap;
-    overlaysRef.current.forEach((o) => o.setMap && o.setMap(null));
-    overlaysRef.current = [];
-    const add = (o) => { overlaysRef.current.push(o); };
-
-    /* 选中矿区示意范围 */
-    if (selected && selected.lon && selected.lat) {
-      const ring = minePolygon(Number(selected.lon), Number(selected.lat), Number(selected.area_km2 || selected.area || 0.5), Number(selected.id || 1));
-      add(new AMap.Polygon({
-        path: ring,
-        strokeColor: '#ff5f57', strokeWeight: 2, strokeStyle: 'dashed',
-        fillColor: 'rgba(255,95,87,0.14)', fillOpacity: 0.5, zIndex: 90, bubble: true
-      }));
     }
+    return buildProjection(coords);
+  }, [features, points, bubbles]);
 
-    /* 矿山点位 */
-    points.forEach((pt) => {
-      const lon = Number(pt.lon);
-      const lat = Number(pt.lat);
+  /* -------- 3. 高德实例：行政区面 -------- */
+  useEffect(() => {
+    if (mode !== 'amap' || !features.length || !boxRef.current) return undefined;
+    const AMap = window.AMap;
+    let map = null;
+    let fitTimer = null;
+    try {
+      map = new AMap.Map(boxRef.current, {
+        zoom: 7,
+        viewMode: '2D',
+        mapStyle: 'amap://styles/dark',
+        resizeEnable: true,
+        showLabel: true
+      });
+      mapRef.current = map;
+      window.__kqMap = map; // 调试/自检用：暴露当前高德实例
+      map.on('click', (e) => {
+        if (e?.lnglat) cbRef.current.onMapClick?.([e.lnglat.getLng(), e.lnglat.getLat()]);
+      });
+      const polygons = [];
+      features.forEach((f) => {
+        f.rings.forEach((ring) => {
+          const poly = new AMap.Polygon({
+            path: ring.map(([lon, lat]) => [lon, lat]),
+            fillColor: '#2ea8ff',
+            fillOpacity: 0.1,
+            strokeColor: CYAN,
+            strokeOpacity: 0.5,
+            strokeWeight: 1
+          });
+          poly.on('click', () => cbRef.current.onDrill?.(f.adcode));
+          poly.on('mouseover', () => {
+            poly.setOptions({ fillOpacity: 0.2 });
+            if (f.name) setTip({ fixed: true, text: f.name });
+          });
+          poly.on('mouseout', () => {
+            poly.setOptions({ fillOpacity: String(f.adcode) === selectRegion ? 0.28 : 0.1 });
+            setTip(null);
+          });
+          polygons.push({ poly, adcode: f.adcode });
+        });
+      });
+      polygonsRef.current = polygons;
+      if (polygons.length) {
+        map.add(polygons.map((p) => p.poly));
+        // 用要素自带经纬度包围盒算视野，等底图 complete 后再设一次：
+        // 高德首次 setFitView 常在容器尺寸/底图未就绪时失效，导致视野落在辖区之外。
+        let minLon = 180;
+        let maxLon = -180;
+        let minLat = 90;
+        let maxLat = -90;
+        features.forEach((f) => {
+          (f.rings || []).forEach((ring) => {
+            ring.forEach(([lon, lat]) => {
+              if (lon < minLon) minLon = lon;
+              if (lon > maxLon) maxLon = lon;
+              if (lat < minLat) minLat = lat;
+              if (lat > maxLat) maxLat = lat;
+            });
+          });
+        });
+        let fitted = false;
+        const fit = () => {
+          if (fitted || !mapRef.current) return;
+          fitted = true;
+          try {
+            if (Number.isFinite(minLon) && maxLon > minLon) {
+              const padX = (maxLon - minLon) * 0.06;
+              const padY = (maxLat - minLat) * 0.08;
+              map.setBounds(
+                new AMap.Bounds([minLon - padX, minLat - padY], [maxLon + padX, maxLat + padY]),
+                true,
+                [24, 24, 24, 24]
+              );
+            } else {
+              map.setFitView(polygons.map((p) => p.poly), true, [24, 24, 24, 24]);
+            }
+          } catch {
+            /* ignore */
+          }
+        };
+        fit();
+        fitTimer = setTimeout(fit, 260);
+        map.once('complete', fit);
+      } else {
+        map.setZoomAndCenter(7, [104.07, 30.65]);
+      }
+      setTip(null);
+    } catch (e) {
+      console.warn('[GeoMap] 高德地图初始化失败，降级为矢量底图：', e?.message);
+      setMode('svg');
+      return undefined;
+    }
+    const ro = new ResizeObserver(() => {
+      if (mapRef.current) mapRef.current.resize();
+    });
+    if (boxRef.current) ro.observe(boxRef.current);
+    return () => {
+      ro.disconnect();
+      if (fitTimer) clearTimeout(fitTimer);
+      polygonsRef.current = [];
+      overlaysRef.current = [];
+      if (map) {
+        try { map.destroy(); } catch { /* ignore */ }
+      }
+      mapRef.current = null;
+    };
+    // selectRegion 只用于初始化时的选中态，不触发重建
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, features]);
+
+  /* 选中行政区高亮 */
+  useEffect(() => {
+    polygonsRef.current.forEach(({ poly, adcode }) => {
+      const on = String(adcode) === selectRegion;
+      poly.setOptions({
+        fillOpacity: on ? 0.28 : 0.1,
+        strokeColor: on ? CYAN_2 : CYAN,
+        strokeWeight: on ? 2 : 1
+      });
+    });
+  }, [mode, selectRegion, features]);
+
+  /* -------- 4. 高德覆盖物：点位 / 气泡 / 测量 -------- */
+  useEffect(() => {
+    if (mode !== 'amap') return undefined;
+    const map = mapRef.current;
+    if (!map) return undefined;
+    const AMap = window.AMap;
+    const created = [];
+
+    (points || []).forEach((p) => {
+      const lon = Number(p.lon);
+      const lat = Number(p.lat);
       if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
-      const isSel = selected && String(selected.id) === String(pt.id);
-      const tone = markerTone(pt);
-      const marker = new AMap.CircleMarker({
+      const tone = markerTone(p);
+      const isSel = selected && String(selected.id) === String(p.id);
+      const dot = new AMap.CircleMarker({
         center: [lon, lat],
-        radius: isSel ? 7 : 4.2,
-        fillColor: isSel ? '#ffffff' : tone,
+        radius: isSel ? 8 : 5,
+        strokeColor: '#050e1c',
+        strokeWeight: 1,
+        strokeOpacity: 0.9,
+        fillColor: tone,
         fillOpacity: 0.92,
-        strokeColor: tone,
-        strokeWeight: isSel ? 2 : 1,
-        strokeOpacity: 0.55,
-        zIndex: isSel ? 120 : 100,
-        cursor: 'pointer',
-        bubble: true
+        zIndex: 120,
+        cursor: 'pointer'
       });
-      marker.on('click', (e) => {
-        e?.originEvent?.stopPropagation?.();
-        onSelectPoint?.(pt);
-      });
-      marker.on('mousemove', (e) => {
-        const rect = wrapRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        setTip({ x: e.pixel.x, y: e.pixel.y, text: pt.name });
-      });
-      marker.on('mouseout', () => setTip(null));
-      add(marker);
+      dot.on('click', () => cbRef.current.onSelectPoint?.(p));
+      map.add(dot);
+      created.push(dot);
     });
 
-    /* 区县 / 地市聚合气泡 */
-    bubbles.forEach((b, bi) => {
+    (bubbles || []).forEach((b) => {
       const lon = Number(b.lon);
       const lat = Number(b.lat);
       if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
-      /* 偶数个气泡加上 alt 类，CSS 里整体上抬，缓解相邻地市气泡压叠 */
-      const html = `<div class="amap-bubble${bi % 2 ? ' alt' : ''}"><b>${b.value}</b><span>${b.name}</span></div>`;
+      const tone = CYAN_2;
+      const nameHtml = showBubbleName(b)
+        ? `<span style="font:500 9px/1.2 system-ui,-apple-system,'Segoe UI',sans-serif;color:${TEXT_3};`
+          + `text-shadow:0 1px 4px rgba(2,8,18,.9)">${escapeHtml(b.name)}</span>`
+        : '';
+      const html = `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;`
+        + `transform:translate(-50%,-50%);cursor:pointer;white-space:nowrap">`
+        + nameHtml
+        + `<span title="${escapeHtml(b.name)}" style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;`
+        + `padding:1px 6px;border-radius:8px;background:rgba(5,14,28,.86);border:1px solid ${tone};`
+        + `color:${tone};font:600 10px/1.3 system-ui,-apple-system,'Segoe UI',sans-serif;`
+        + `box-shadow:0 2px 10px rgba(2,8,18,.55)">${escapeHtml(fmtNum(b.value))}</span></div>`;
       const marker = new AMap.Marker({
         position: [lon, lat],
         content: html,
-        anchor: 'bottom-center',
         offset: new AMap.Pixel(0, 0),
-        zIndex: 130,
-        bubble: true,
-        cursor: 'pointer'
+        zIndex: 110
       });
-      marker.on('click', (e) => {
-        e?.originEvent?.stopPropagation?.();
-        onDrill?.(b.code);
+      marker.on('click', () => {
+        if (b.code && String(b.code) !== String(code)) cbRef.current.onDrill?.(b.code);
+        else cbRef.current.onSelectRegion?.(b);
       });
-      add(marker);
+      map.add(marker);
+      created.push(marker);
     });
 
-    /* 测量（测距/测面） */
-    if (measure?.points?.length) {
-      const path = measure.points.map(([lon, lat]) => [lon, lat]);
-      if (path.length > 1) {
-        add(new AMap.Polyline({
-          path: measure.closed && path.length > 2 ? [...path, path[0]] : path,
-          strokeColor: '#7fe3ff', strokeWeight: 2, strokeStyle: 'dashed', zIndex: 140
-        }));
+    const mPts = (measure?.points || []).filter((pt) => pt && pt.length >= 2);
+    if (measure?.mode !== 'none' && mPts.length) {
+      const line = new AMap.Polyline({
+        path: mPts.map(([lon, lat]) => [lon, lat]),
+        strokeColor: '#ffcc44',
+        strokeWeight: 2,
+        strokeOpacity: 0.95,
+        zIndex: 130
+      });
+      map.add(line);
+      created.push(line);
+      if (measure.mode === 'area' && mPts.length >= 3) {
+        const poly = new AMap.Polygon({
+          path: mPts.map(([lon, lat]) => [lon, lat]),
+          fillColor: '#ffcc44',
+          fillOpacity: 0.12,
+          strokeColor: '#ffcc44',
+          strokeWeight: 1.6,
+          strokeOpacity: 0.9,
+          zIndex: 125
+        });
+        map.add(poly);
+        created.push(poly);
       }
-      if (measure.closed && path.length > 2) {
-        add(new AMap.Polygon({
-          path, strokeColor: '#7fe3ff', strokeWeight: 1.6, fillColor: 'rgba(73,195,255,0.16)', fillOpacity: 0.4, zIndex: 135
-        }));
-      }
-      path.forEach(([lon, lat]) => {
-        add(new AMap.CircleMarker({
-          center: [lon, lat], radius: 4, fillColor: '#ffffff', fillOpacity: 1,
-          strokeColor: '#49c3ff', strokeWeight: 1.5, zIndex: 150
-        }));
+      mPts.forEach(([lon, lat]) => {
+        const v = new AMap.CircleMarker({
+          center: [lon, lat],
+          radius: 4,
+          fillColor: '#ffcc44',
+          fillOpacity: 1,
+          strokeColor: '#050e1c',
+          strokeWeight: 1,
+          zIndex: 135
+        });
+        map.add(v);
+        created.push(v);
       });
     }
 
-    overlaysRef.current.forEach((o) => o.setMap(map));
+    overlaysRef.current = created;
     return () => {
-      overlaysRef.current.forEach((o) => o.setMap && o.setMap(null));
+      created.forEach((o) => {
+        try { map.remove(o); } catch { /* ignore */ }
+      });
+      overlaysRef.current = [];
     };
-  }, [overlaySig, mode, onSelectPoint, onDrill]);
+  }, [mode, points, bubbles, selected, measure, code]);
 
-  /* ---------------- 降级：SVG 矢量底图 */
-  const proj = useMemo(() => (geo ? buildProjection(geo.features) : null), [geo]);
-  const paths = useMemo(() => {
-    if (!geo || !proj) return [];
-    return geo.features.map((f) => ({
-      adcode: f.properties.adcode,
-      name: f.properties.name,
-      center: f.properties.center,
-      short: f.properties.short,
-      d: featureToPath(f, proj.project)
-    }));
-  }, [geo, proj]);
+  const measurePoints = measure?.points || [];
+  const measureMode = measure?.mode || 'none';
 
-  const mineRing = useMemo(() => {
-    if (!selected || !proj || !selected.lon || !selected.lat) return null;
-    return ringToPath(minePolygon(Number(selected.lon), Number(selected.lat), Number(selected.area_km2 || selected.area || 0.5), Number(selected.id || 1)), proj.project);
-  }, [selected, proj]);
+  const handleSvgClick = useCallback((e) => {
+    const svg = svgRef.current;
+    if (!svg || !projection) return;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const loc = pt.matrixTransform(ctm.inverse());
+    const [lon, lat] = projection.unproject(loc.x, loc.y);
+    cbRef.current.onMapClick?.([lon, lat]);
+  }, [projection]);
 
-  const measurePts = useMemo(() => {
-    if (!measure?.points?.length || !proj) return [];
-    return measure.points.map(([lon, lat]) => proj.project(lon, lat));
-  }, [measure, proj]);
-
-  const onSvgTip = useCallback((e, text) => {
-    const rect = wrapRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setTip({ x: e.clientX - rect.left, y: e.clientY - rect.top, text });
-  }, []);
-
-  const handleSvgClick = (e) => {
-    if (!onMapClick || !proj || !svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const scale = Math.min(rect.width / W, rect.height / H);
-    const dx = (rect.width - W * scale) / 2;
-    const dy = (rect.height - H * scale) / 2;
-    const vx = (e.clientX - rect.left - dx) / scale;
-    const vy = (e.clientY - rect.top - dy) / scale;
-    if (vx < 0 || vy < 0 || vx > W || vy > H) return;
-    const [lon, lat] = proj.unproject(vx, vy);
-    onMapClick([Number(lon.toFixed(6)), Number(lat.toFixed(6))]);
+  const handleRegionEnter = (e, name) => {
+    const box = stageRef.current?.getBoundingClientRect();
+    if (!box) return;
+    setTip({ x: e.clientX - box.left + 12, y: e.clientY - box.top + 12, text: name });
   };
 
+  const hasGeo = features.length > 0;
+
   return (
-    <div
-      ref={wrapRef}
-      className="geomap"
-      role="img"
-      aria-label="四川省矿山分布地图，可点击地图下钻查看市州与区县"
-      style={{ position: 'absolute', inset: 0 }}
-    >
-      {mode === 'amap' && <div ref={boxRef} className="geomap-canvas" style={{ position: 'absolute', inset: 0 }} />}
+    <div className="dash-map" style={style}>
+      <div
+        ref={stageRef}
+        style={{ position: 'relative', flex: '1 1 auto', minHeight: 0, overflow: 'hidden' }}
+      >
+        {mode === 'amap' && (
+          <div
+            ref={boxRef}
+            data-amap-canvas="1"
+            style={{ position: 'absolute', inset: 0 }}
+          />
+        )}
 
-      {mode === 'svg' && (
-        <svg
-          ref={svgRef}
-          className="geo-svg"
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="xMidYMid meet"
-          role="img"
-          aria-label="行政区划空间底图"
-          onClick={handleSvgClick}
-        >
-          <defs>
-            <radialGradient id="mapGlow" cx="50%" cy="46%" r="56%">
-              <stop offset="0%" stopColor="#1d5c93" stopOpacity="0.72" />
-              <stop offset="62%" stopColor="#0b2745" stopOpacity="0.5" />
-              <stop offset="100%" stopColor="#050f21" stopOpacity="0" />
-            </radialGradient>
-            <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
-              <feGaussianBlur stdDeviation="3" result="b" />
-              <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          </defs>
-          <ellipse cx={W / 2} cy={H / 2} rx={W * 0.47} ry={H * 0.46} fill="url(#mapGlow)" />
-          {showRings && (
-            <>
-              <ellipse className="geo-ring" cx={W / 2} cy={H / 2} rx={W * 0.4} ry={H * 0.39} />
-              <ellipse className="geo-ring" cx={W / 2} cy={H / 2} rx={W * 0.455} ry={H * 0.445} />
-            </>
-          )}
-          {paths.map((p) => (
-            <path
-              key={p.adcode}
-              d={p.d}
-              className={`geo-region${String(selectedRegion) === String(p.adcode) ? ' on' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onDrill) onDrill(p.adcode);
-                else if (onSelectRegion) onSelectRegion(p.adcode);
-              }}
-              onMouseMove={(e) => onSvgTip(e, p.name)}
-              onMouseLeave={() => setTip(null)}
-            />
-          ))}
-          {mineRing && <path d={mineRing} className="geo-mine-poly" />}
-          {proj && points.map((pt) => {
-            if (!pt.lon || !pt.lat) return null;
-            const [x, y] = proj.project(Number(pt.lon), Number(pt.lat));
-            const isSel = selected && String(selected.id) === String(pt.id);
-            const tone = markerTone(pt);
-            return (
-              <g key={`${pt.id}-${pt.name}`} transform={`translate(${x},${y})`} style={{ cursor: 'pointer' }}
-                onClick={(e) => { e.stopPropagation(); onSelectPoint?.(pt); }}
-                onMouseMove={(e) => onSvgTip(e, pt.name)} onMouseLeave={() => setTip(null)}>
-                <circle r={isSel ? 9 : 5} fill={tone} opacity={0.2} filter="url(#softGlow)" />
-                <circle r={isSel ? 3.6 : 2.3} fill={isSel ? '#ffffff' : tone} />
-              </g>
-            );
-          })}
-          {proj && bubbles.map((b) => {
-            const path = paths.find((p) => String(p.adcode).slice(0, 6) === String(b.code).slice(0, 6));
-            const center = path?.center || (b.lon && b.lat ? [b.lon, b.lat] : null);
-            if (!center) return null;
-            const [x, y] = proj.project(center[0], center[1]);
-            return (
-              <g key={b.code} transform={`translate(${x},${y})`} style={{ cursor: 'pointer' }}
-                onClick={(e) => { e.stopPropagation(); onDrill?.(b.code); }}
-                onMouseMove={(e) => onSvgTip(e, `${b.name} · ${b.value} 座矿山`)} onMouseLeave={() => setTip(null)}>
-                <circle r="17" fill="rgba(46,168,255,0.14)" stroke="rgba(126,214,255,0.42)" strokeWidth="0.6" />
-                <circle r="9.5" fill="rgba(24,86,150,0.92)" stroke="rgba(160,235,255,0.9)" strokeWidth="0.8" />
-                <text className="geo-num" y="1" style={{ fontSize: '7.6px' }}>{b.value}</text>
-                <text className="geo-num" y="-21" style={{ fontSize: '8.2px', fill: '#d5ecff' }}>{b.name}</text>
-              </g>
-            );
-          })}
-          {measurePts.length > 0 && (
-            <g>
-              {measurePts.length > 1 && (
-                <polyline
-                  points={measurePts.map(([x, y]) => `${x},${y}`).join(' ')}
-                  fill={measure?.closed ? 'rgba(73,195,255,0.14)' : 'none'}
-                  stroke="#7fe3ff" strokeWidth="1.4" strokeDasharray="5 4"
-                />
-              )}
-              {measurePts.map(([x, y], i) => (
-                <circle key={i} cx={x} cy={y} r="3" fill="#ffffff" stroke="#49c3ff" strokeWidth="1.2" />
-              ))}
-            </g>
-          )}
-        </svg>
-      )}
+        {mode !== 'amap' && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(circle at 50% 44%, rgba(10,31,54,0.92), #050e1c 72%)'
+          }}>
+            {projection && hasGeo ? (
+              <svg
+                ref={svgRef}
+                data-geo-svg="1"
+                viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+                style={{ width: '100%', height: '100%', display: 'block' }}
+                onClick={handleSvgClick}
+                role="img"
+                aria-label="行政区划专题图"
+              >
+                <defs>
+                  <radialGradient id="kq-map-glow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="rgba(46,168,255,0.30)" />
+                    <stop offset="100%" stopColor="rgba(46,168,255,0)" />
+                  </radialGradient>
+                </defs>
+                <ellipse cx={VIEW_W / 2} cy={VIEW_H / 2} rx={VIEW_W * 0.46} ry={VIEW_H * 0.4} fill="url(#kq-map-glow)" />
+                {showRings && [0.74, 0.96].map((k, i) => (
+                  <ellipse
+                    key={k}
+                    cx={VIEW_W / 2}
+                    cy={VIEW_H / 2}
+                    rx={VIEW_W * 0.42 * k}
+                    ry={VIEW_H * 0.36 * k}
+                    fill="none"
+                    stroke="rgba(73,195,255,0.16)"
+                    strokeWidth="1"
+                    strokeDasharray={i ? '2 7' : 'none'}
+                  />
+                ))}
 
-      {mode === 'loading' && (
-        <div className="loading" style={{ position: 'absolute', inset: 0, zIndex: 3 }}>
-          <span className="spinner" />
-          {failed ? '空间底图加载失败，请检查网络或静态资源' : '正在加载空间底图 …'}
-        </div>
-      )}
+                {/* 行政区面 */}
+                {features.map((f) => {
+                  const on = String(f.adcode) === selectRegion;
+                  return (
+                    <g key={f.adcode || f.name}>
+                      {f.rings.map((ring, ri) => (
+                        <path
+                          key={ri}
+                          d={ringPath(ring, projection.project)}
+                          fill={on ? 'rgba(73,195,255,0.20)' : 'rgba(46,168,255,0.08)'}
+                          stroke={on ? CYAN_2 : 'rgba(73,195,255,0.42)'}
+                          strokeWidth={on ? 1.6 : 1}
+                          style={{ cursor: 'pointer', transition: 'fill .16s ease' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cbRef.current.onDrill?.(f.adcode);
+                          }}
+                          onMouseEnter={(e) => handleRegionEnter(e, f.name)}
+                          onMouseMove={(e) => handleRegionEnter(e, f.name)}
+                          onMouseLeave={() => setTip(null)}
+                        />
+                      ))}
+                    </g>
+                  );
+                })}
 
-      {tip && <div className="geo-tip" style={{ left: tip.x, top: tip.y }}>{tip.text}</div>}
+                {/* 矿区范围示意 */}
+                {points.map((p) => {
+                  const lon = Number(p.lon);
+                  const lat = Number(p.lat);
+                  if (!Number.isFinite(lon) || !Number.isFinite(lat) || !p.area) return null;
+                  const tone = markerTone(p);
+                  return (
+                    <path
+                      key={`poly-${p.id ?? `${lon}-${lat}`}`}
+                      d={ringPath(minePolygon(lon, lat, p.area, Number(p.id) || 1), projection.project)}
+                      fill={`${tone}1f`}
+                      stroke={`${tone}b3`}
+                      strokeWidth="0.9"
+                      pointerEvents="none"
+                    />
+                  );
+                })}
 
-      <div className="map-legend" style={{ position: 'absolute', right: 12, bottom: 206, display: 'flex', gap: 10, fontSize: 11, color: '#8fb4d9' }}>
-        <span><i style={{ background: '#49c3ff' }} />矿业权</span>
-        <span><i style={{ background: '#35d39a' }} />生产矿山</span>
-        <span><i style={{ background: '#ffcc44' }} />探矿权</span>
+                {/* 点位 */}
+                {points.map((p) => {
+                  const lon = Number(p.lon);
+                  const lat = Number(p.lat);
+                  if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
+                  const [x, y] = projection.project(lon, lat);
+                  const tone = markerTone(p);
+                  const isSel = selected && String(selected.id) === String(p.id);
+                  return (
+                    <g
+                      key={`pt-${p.id ?? `${lon}-${lat}`}`}
+                      style={{ cursor: 'pointer' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        cbRef.current.onSelectPoint?.(p);
+                      }}
+                    >
+                      <circle cx={x} cy={y} r={isSel ? 9 : 6.5} fill={tone} opacity="0.22" />
+                      <circle
+                        cx={x}
+                        cy={y}
+                        r={isSel ? 4.6 : 3.2}
+                        fill={tone}
+                        stroke="#050e1c"
+                        strokeWidth="0.8"
+                      />
+                    </g>
+                  );
+                })}
+
+                {/* 聚合气泡 */}
+                {bubbles.map((b) => {
+                  const lon = Number(b.lon);
+                  const lat = Number(b.lat);
+                  if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
+                  const [x, y] = projection.project(lon, lat);
+                  const r = Math.min(20, 6 + Math.sqrt(Math.max(0, Number(b.value) || 0)) * 1.05);
+                  const clickable = b.code && String(b.code) !== String(code);
+                  return (
+                    <g
+                      key={`bub-${b.code || b.name}`}
+                      style={{ cursor: clickable ? 'pointer' : 'default' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (clickable) cbRef.current.onDrill?.(b.code);
+                        else cbRef.current.onSelectRegion?.(b);
+                      }}
+                    >
+                      <title>{`${b.name}：${fmtNum(b.value)}`}</title>
+                      <circle cx={x} cy={y} r={r} fill="rgba(73,195,255,0.12)" stroke="rgba(73,195,255,0.55)" strokeWidth="1" />
+                      <text
+                        x={x}
+                        y={y + 1}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill={TEXT_1}
+                        fontSize="10"
+                        fontWeight="600"
+                      >
+                        {fmtNum(b.value)}
+                      </text>
+                      {showBubbleName(b) ? (
+                        <text x={x} y={y - r - 5} textAnchor="middle" fill={TEXT_3} fontSize="9">
+                          {b.name}
+                        </text>
+                      ) : null}
+                    </g>
+                  );
+                })}
+
+                {/* 测距 / 测面 */}
+                {measureMode !== 'none' && measurePoints.length > 0 && (
+                  <g>
+                    {measureMode === 'area' && measurePoints.length >= 3 && (
+                      <polygon
+                        points={ringPoints(measurePoints, projection.project)}
+                        fill="rgba(255,204,68,0.12)"
+                        stroke="#ffcc44"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 3"
+                      />
+                    )}
+                    <polyline
+                      points={ringPoints(measurePoints, projection.project)}
+                      fill="none"
+                      stroke="#ffcc44"
+                      strokeWidth="1.6"
+                      strokeLinejoin="round"
+                    />
+                    {measurePoints.map(([lon, lat], i) => {
+                      const [x, y] = projection.project(lon, lat);
+                      return <circle key={i} cx={x} cy={y} r="3.4" fill="#ffcc44" stroke="#050e1c" strokeWidth="1" />;
+                    })}
+                  </g>
+                )}
+              </svg>
+            ) : (
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 12,
+                color: TEXT_4
+              }}>
+                {geoReady ? '当前视角暂无可用底图' : '底图加载中 …'}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tip && (
+          <div style={{
+            position: 'absolute',
+            left: tip.fixed ? 16 : tip.x,
+            top: tip.fixed ? 16 : tip.y,
+            zIndex: 4,
+            padding: '3px 8px',
+            fontSize: 11,
+            color: TEXT_1,
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+            background: 'rgba(5,14,28,0.86)',
+            border: '1px solid rgba(73,195,255,0.35)',
+            borderRadius: 8
+          }}>
+            {tip.text}
+          </div>
+        )}
+
+        {children}
       </div>
     </div>
   );
 }
+

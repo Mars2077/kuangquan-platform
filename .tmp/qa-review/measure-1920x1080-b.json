@@ -1,0 +1,926 @@
+[
+  {
+    "viewport": {
+      "w": 1920,
+      "h": 1080,
+      "dpr": 1
+    },
+    "overflow": {
+      "docSW": 1920,
+      "bodySW": 1920,
+      "innerW": 1920,
+      "docDelta": 0,
+      "bodyDelta": 0
+    },
+    "oob": {
+      "count": 0,
+      "uniqCount": 0,
+      "samples": [],
+      "amapCount": 0
+    },
+    "text": {
+      "checked": 44,
+      "intentional": 0,
+      "suspiciousCount": 0,
+      "samples": []
+    },
+    "whitespace": {
+      "gap": 20,
+      "lastEl": {
+        "tag": "p",
+        "cls": "tiny.muted",
+        "id": "",
+        "text": "说明：本页功能点与《功能设计文档》章节一一对应；演示数据由 seed 生成，仅用于功能验证，不代表真实统计口径。",
+        "bottom": 1060,
+        "top": 1040,
+        "h": 20,
+        "rawBottom": 1060
+      },
+      "mainScrollH": 972,
+      "mainClientH": 972,
+      "mainScrollable": false,
+      "mainScrollTop": 0,
+      "docScrollH": 1080,
+      "docScrollable": false,
+      "topGap": 0
+    },
+    "cardPad": {
+      "over80": [],
+      "max": [
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "按矿种类别、勘查程度（待查/在查/查明/规划）及省市县行政区划，以图表和空间热力展示资源家底与分布格局。346 条记录",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 177
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "「一矿一档」全息数字档案：基础地质特征、历年储量变化、开发利用现状、空间压覆及管理制度文件，可生成专属二维码扫码查看。346 条记录",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 177
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "县级管理员在线填报清查表单、绘制或导入空间范围矢量上图，流转至市级、省级在线审核，支持退回补正。38 条记录",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 177
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "储量核实报告线上申报、受理、专家评审意见上传、备案文号自动生成及储量估算范围矢量图斑入库，支持多条件检索与电子档案调阅。90 条记录",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 177
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "内置资源储量核算与空间叠置分析工具：导入矿体块段参数或三维地质模型自动计算保有储量、动用储量、损失量及三率指标；在地图上自定义绘制多边形自动",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 177
+        },
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "业务功能点5项覆盖功能设计对应章节",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        }
+      ]
+    },
+    "cardSlack": {
+      "over80": []
+    },
+    "panelOverflow": {
+      "count": 0,
+      "top": []
+    },
+    "structure": {
+      "h1Count": 1,
+      "h1Text": [
+        "矿产地智能管理"
+      ],
+      "mainScrollWorks": "n/a",
+      "docScrollable": false
+    },
+    "targets": {
+      "total": 23,
+      "smallCount": 1,
+      "samples": [
+        {
+          "tag": "a",
+          "cls": "",
+          "id": "",
+          "text": "平台分布",
+          "w": 48,
+          "h": 18
+        }
+      ]
+    },
+    "chart": {
+      "canvasCount": 0,
+      "withRoleImg": 0,
+      "detail": []
+    },
+    "extras": {
+      "skeletonVisible": 0,
+      "empties": [],
+      "cards": 6,
+      "kpis": 4,
+      "rows": 0,
+      "tags": 11,
+      "tiles": 0,
+      "bodyTextLen": 1104,
+      "bodyTextHead": "省域空间治理数字化平台 · 绿矿智用 四川省矿产资源数字化管理 2026-11-18 星期三 03:15 指标监测 问题监测 赵 赵丹蕾 成都市规划和自然资源局 平台分布 首页驾驶舱 矿产地 保护与规划 矿业权 绿色矿山 智慧监管 数智地勘"
+    },
+    "slug": "biz-deposit",
+    "path": "/biz/deposit",
+    "textLen": 1104,
+    "ready": true
+  },
+  {
+    "viewport": {
+      "w": 1920,
+      "h": 1080,
+      "dpr": 1
+    },
+    "overflow": {
+      "docSW": 1920,
+      "bodySW": 1920,
+      "innerW": 1920,
+      "docDelta": 0,
+      "bodyDelta": 0
+    },
+    "oob": {
+      "count": 0,
+      "uniqCount": 0,
+      "samples": [],
+      "amapCount": 0
+    },
+    "text": {
+      "checked": 97,
+      "intentional": 0,
+      "suspiciousCount": 0,
+      "samples": []
+    },
+    "whitespace": {
+      "gap": 33,
+      "lastEl": {
+        "tag": "button",
+        "cls": "pager-btn",
+        "id": "",
+        "text": "上一页",
+        "bottom": 1047,
+        "top": 1019,
+        "h": 28,
+        "rawBottom": 1047
+      },
+      "mainScrollH": 1458,
+      "mainClientH": 972,
+      "mainScrollable": true,
+      "mainScrollTop": 486,
+      "docScrollH": 1080,
+      "docScrollable": false,
+      "topGap": 0
+    },
+    "cardPad": {
+      "over80": [],
+      "max": [
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "记录总数40条按行政区划权限隔离",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        },
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "办理中27条占全部 68%",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        },
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "已办结11条占全部 28%",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        },
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "已退回2条占全部 5%",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "共 40 条 · 第 1/2 页上一页12下一页",
+          "pt": 10,
+          "pb": 12,
+          "sum": 22,
+          "h": 50
+        },
+        {
+          "tag": "div",
+          "cls": "card",
+          "id": "",
+          "text": "净矿出让台账共 40 条点击行查看详情编号名称/标题行政区划矿种办理环节状态发生/申报日期操作RIGHTS20240040东兴区万山建筑用砂",
+          "pt": 0,
+          "pb": 0,
+          "sum": 0,
+          "h": 1118
+        }
+      ]
+    },
+    "cardSlack": {
+      "over80": []
+    },
+    "panelOverflow": {
+      "count": 0,
+      "top": []
+    },
+    "structure": {
+      "h1Count": 1,
+      "h1Text": [
+        "净矿出让"
+      ],
+      "mainScrollWorks": true,
+      "docScrollable": false
+    },
+    "targets": {
+      "total": 87,
+      "smallCount": 1,
+      "samples": [
+        {
+          "tag": "a",
+          "cls": "",
+          "id": "",
+          "text": "矿业权管理",
+          "w": 60,
+          "h": 18
+        }
+      ]
+    },
+    "chart": {
+      "canvasCount": 0,
+      "withRoleImg": 0,
+      "detail": []
+    },
+    "extras": {
+      "skeletonVisible": 0,
+      "empties": [],
+      "cards": 1,
+      "kpis": 4,
+      "rows": 20,
+      "tags": 20,
+      "tiles": 0,
+      "bodyTextLen": 1887,
+      "bodyTextHead": "省域空间治理数字化平台 · 绿矿智用 四川省矿产资源数字化管理 2026-11-18 星期三 03:15 指标监测 问题监测 赵 赵丹蕾 成都市规划和自然资源局 平台分布 首页驾驶舱 矿产地 保护与规划 矿业权 绿色矿山 智慧监管 数智地勘"
+    },
+    "slug": "biz-rights-rights-clean-sale",
+    "path": "/biz/rights/rights-clean-sale",
+    "textLen": 1887,
+    "ready": true
+  },
+  {
+    "viewport": {
+      "w": 1920,
+      "h": 1080,
+      "dpr": 1
+    },
+    "overflow": {
+      "docSW": 1920,
+      "bodySW": 1920,
+      "innerW": 1920,
+      "docDelta": 0,
+      "bodyDelta": 0
+    },
+    "oob": {
+      "count": 0,
+      "uniqCount": 0,
+      "samples": [],
+      "amapCount": 0
+    },
+    "text": {
+      "checked": 48,
+      "intentional": 0,
+      "suspiciousCount": 0,
+      "samples": []
+    },
+    "whitespace": {
+      "gap": 37,
+      "lastEl": {
+        "tag": "table",
+        "cls": "data-table.is-dense",
+        "id": "",
+        "text": "来源事项结果/状态时间责任人巡查成都市三季度网格化巡查计划正常2024-11-16 09:27沈立群",
+        "bottom": 1043,
+        "top": 978,
+        "h": 65,
+        "rawBottom": 1043
+      },
+      "mainScrollH": 1939,
+      "mainClientH": 972,
+      "mainScrollable": true,
+      "mainScrollTop": 967,
+      "docScrollH": 1080,
+      "docScrollable": false,
+      "topGap": 0
+    },
+    "cardPad": {
+      "over80": [],
+      "max": [
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "矿山名称四川省成都锦江梅溪地热矿业有限公司所在区划锦江区（510104）采矿权人四川省成都锦江梅溪地热矿业有限公司经济类型股份有限公司开采矿",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 417
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "类型许可证号权利人矿种面积(km²)有效期状态采矿权C5100002021050620001四川省成都锦江梅溪地热矿业有限公司地热0.964",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 97
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "备案文号报告名称备案资源量(万吨)备案日期状态川储备〔2024〕100号四川省成都锦江梅溪地热矿业有限公司储量核实报告2,658.27—已受",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 97
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "设备名称类型实时读数接入状态锦江区粉尘在线监测01粉尘在线监测3.34 mg/m³在线锦江区GNSS位移02GNSS位移27.05 mm在线",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 271
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "暂无预警记录。",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 50
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "监管指标结果信用评分98.5 分信用等级A名单类型红名单行政处罚次数0 次异常名录未列入",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 221
+        }
+      ]
+    },
+    "cardSlack": {
+      "over80": []
+    },
+    "panelOverflow": {
+      "count": 0,
+      "top": []
+    },
+    "structure": {
+      "h1Count": 1,
+      "h1Text": [
+        "四川省成都锦江梅溪地热矿业有限公司生产中省级绿色矿山"
+      ],
+      "mainScrollWorks": true,
+      "docScrollable": false
+    },
+    "targets": {
+      "total": 18,
+      "smallCount": 0,
+      "samples": []
+    },
+    "chart": {
+      "canvasCount": 0,
+      "withRoleImg": 0,
+      "detail": []
+    },
+    "extras": {
+      "skeletonVisible": 0,
+      "empties": [],
+      "cards": 10,
+      "kpis": 4,
+      "rows": 13,
+      "tags": 14,
+      "tiles": 0,
+      "bodyTextLen": 1327,
+      "bodyTextHead": "省域空间治理数字化平台 · 绿矿智用 四川省矿产资源数字化管理 2026-11-18 星期三 03:15 指标监测 问题监测 赵 赵丹蕾 成都市规划和自然资源局 平台分布 首页驾驶舱 矿产地 保护与规划 矿业权 绿色矿山 智慧监管 数智地勘"
+    },
+    "slug": "archive-1",
+    "path": "/archive/1",
+    "textLen": 1327,
+    "ready": true
+  },
+  {
+    "viewport": {
+      "w": 1920,
+      "h": 1080,
+      "dpr": 1
+    },
+    "overflow": {
+      "docSW": 1920,
+      "bodySW": 1920,
+      "innerW": 1920,
+      "docDelta": 0,
+      "bodyDelta": 0
+    },
+    "oob": {
+      "count": 0,
+      "uniqCount": 0,
+      "samples": [],
+      "amapCount": 0
+    },
+    "text": {
+      "checked": 74,
+      "intentional": 0,
+      "suspiciousCount": 0,
+      "samples": []
+    },
+    "whitespace": {
+      "gap": 37,
+      "lastEl": {
+        "tag": "span",
+        "cls": "desc-key",
+        "id": "",
+        "text": "当前账号",
+        "bottom": 1043,
+        "top": 1023,
+        "h": 20,
+        "rawBottom": 1043
+      },
+      "mainScrollH": 1066,
+      "mainClientH": 972,
+      "mainScrollable": true,
+      "mainScrollTop": 94,
+      "docScrollH": 1080,
+      "docScrollable": false,
+      "topGap": 0
+    },
+    "cardPad": {
+      "over80": [],
+      "max": [
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "所属专题库地质勘查专题库储量评审备案范围专题库矿山开发利用统计年报专题库在采矿山专题库数据年度点击选择文件报告、图件、报表与空间数据，单文件",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 489
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "地质勘查专题库历年地勘项目报告、钻孔柱状图、物化探成果及财政/社会资金投入明细。储量评审备案库全量储量评审备案矢量边界、块段储量台账及历史储",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 217
+        },
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "专题库4个勘查 / 储量 / 年报 / 在采矿山",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        },
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "数据表13张按业务主题编目的结构化表",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        },
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "记录总量125,542行演示数据规模",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        },
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "入库资产78份报告、图件、报表与空间数据",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        }
+      ]
+    },
+    "cardSlack": {
+      "over80": []
+    },
+    "panelOverflow": {
+      "count": 0,
+      "top": []
+    },
+    "structure": {
+      "h1Count": 1,
+      "h1Text": [
+        "绿矿智用数据仓"
+      ],
+      "mainScrollWorks": true,
+      "docScrollable": false
+    },
+    "targets": {
+      "total": 22,
+      "smallCount": 0,
+      "samples": []
+    },
+    "chart": {
+      "canvasCount": 0,
+      "withRoleImg": 0,
+      "detail": []
+    },
+    "extras": {
+      "skeletonVisible": 0,
+      "empties": [],
+      "cards": 4,
+      "kpis": 4,
+      "rows": 43,
+      "tags": 55,
+      "tiles": 0,
+      "bodyTextLen": 3179,
+      "bodyTextHead": "省域空间治理数字化平台 · 绿矿智用 四川省矿产资源数字化管理 2026-11-18 星期三 03:15 指标监测 问题监测 赵 赵丹蕾 成都市规划和自然资源局 平台分布 首页驾驶舱 矿产地 保护与规划 矿业权 绿色矿山 智慧监管 数智地勘"
+    },
+    "slug": "warehouse",
+    "path": "/warehouse",
+    "textLen": 3179,
+    "ready": true
+  },
+  {
+    "viewport": {
+      "w": 1920,
+      "h": 1080,
+      "dpr": 1
+    },
+    "overflow": {
+      "docSW": 1920,
+      "bodySW": 1920,
+      "innerW": 1920,
+      "docDelta": 0,
+      "bodyDelta": 0
+    },
+    "oob": {
+      "count": 0,
+      "uniqCount": 0,
+      "samples": [],
+      "amapCount": 0
+    },
+    "text": {
+      "checked": 169,
+      "intentional": 0,
+      "suspiciousCount": 0,
+      "samples": []
+    },
+    "whitespace": {
+      "gap": 37,
+      "lastEl": {
+        "tag": "span",
+        "cls": "list-meta",
+        "id": "",
+        "text": "四川省南充蓬安鹤顶高岭土矿业开发有限公司 · 2024-12-17 09:49",
+        "bottom": 1043,
+        "top": 1035,
+        "h": 8,
+        "rawBottom": 1052
+      },
+      "mainScrollH": 1121,
+      "mainClientH": 972,
+      "mainScrollable": true,
+      "mainScrollTop": 149,
+      "docScrollH": 1080,
+      "docScrollable": false,
+      "topGap": 0
+    },
+    "cardPad": {
+      "over80": [],
+      "max": [
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "矿山名称巡查结论正常发现隐患疑似违法停产现场情况现场照片（张） 定位并打卡演示环境使用固定坐标（119.9000, 30.9000），生产对",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 392
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "凉山彝族自治州一季度网格化巡查计划四川省凉山彝族冕宁青山建筑石料矿业开发有限公司 · 2024-12-27 09:53发现问题已整改成都市四",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 452
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "掌上应用以同一套接口驱动，演示环境用网页内的手机外框模拟；生产可打包为天府通办/微信小程序并复用 /api/mobile/* 接口。",
+          "pt": 16,
+          "pb": 16,
+          "sum": 32,
+          "h": 54
+        },
+        {
+          "tag": "div",
+          "cls": "card",
+          "id": "",
+          "text": "巡查打卡现场记录实时回写巡查台账矿山名称巡查结论正常发现隐患疑似违法停产现场情况现场照片（张） 定位并打卡演示环境使用固定坐标（119.90",
+          "pt": 0,
+          "pb": 0,
+          "sum": 0,
+          "h": 442
+        },
+        {
+          "tag": "div",
+          "cls": "card",
+          "id": "",
+          "text": "移动端台账共 50 条 · 列表内滚动巡查记录待整改工单绿色申报待核实预警凉山彝族自治州一季度网格化巡查计划四川省凉山彝族冕宁青山建筑石料矿",
+          "pt": 0,
+          "pb": 0,
+          "sum": 0,
+          "h": 548
+        },
+        {
+          "tag": "div",
+          "cls": "card",
+          "id": "",
+          "text": "接入说明掌上应用以同一套接口驱动，演示环境用网页内的手机外框模拟；生产可打包为天府通办/微信小程序并复用 /api/mobile/* 接口。",
+          "pt": 0,
+          "pb": 0,
+          "sum": 0,
+          "h": 104
+        }
+      ]
+    },
+    "cardSlack": {
+      "over80": []
+    },
+    "panelOverflow": {
+      "count": 0,
+      "top": []
+    },
+    "structure": {
+      "h1Count": 1,
+      "h1Text": [
+        "政务移动端（掌上应用）"
+      ],
+      "mainScrollWorks": true,
+      "docScrollable": false
+    },
+    "targets": {
+      "total": 30,
+      "smallCount": 0,
+      "samples": []
+    },
+    "chart": {
+      "canvasCount": 0,
+      "withRoleImg": 0,
+      "detail": []
+    },
+    "extras": {
+      "skeletonVisible": 0,
+      "empties": [],
+      "cards": 3,
+      "kpis": 0,
+      "rows": 0,
+      "tags": 56,
+      "tiles": 0,
+      "bodyTextLen": 3636,
+      "bodyTextHead": "省域空间治理数字化平台 · 绿矿智用 四川省矿产资源数字化管理 2026-11-18 星期三 03:15 指标监测 问题监测 赵 赵丹蕾 成都市规划和自然资源局 平台分布 首页驾驶舱 矿产地 保护与规划 矿业权 绿色矿山 智慧监管 数智地勘"
+    },
+    "slug": "mobile",
+    "path": "/mobile",
+    "textLen": 3636,
+    "ready": true
+  },
+  {
+    "viewport": {
+      "w": 1920,
+      "h": 1080,
+      "dpr": 1
+    },
+    "overflow": {
+      "docSW": 1920,
+      "bodySW": 1920,
+      "innerW": 1920,
+      "docDelta": 0,
+      "bodyDelta": 0
+    },
+    "oob": {
+      "count": 0,
+      "uniqCount": 0,
+      "samples": [],
+      "amapCount": 0
+    },
+    "text": {
+      "checked": 96,
+      "intentional": 0,
+      "suspiciousCount": 0,
+      "samples": []
+    },
+    "whitespace": {
+      "gap": 21,
+      "lastEl": {
+        "tag": "table",
+        "cls": "data-table.is-dense",
+        "id": "",
+        "text": "账号姓名角色所属单位行政区划最近登录状态操作admin赵丹蕾系统管理员成都市规划和自然资源局成都市2026-11-18 02:59:37正常",
+        "bottom": 1059,
+        "top": 108,
+        "h": 951,
+        "rawBottom": 1059
+      },
+      "mainScrollH": 1501,
+      "mainClientH": 972,
+      "mainScrollable": true,
+      "mainScrollTop": 529,
+      "docScrollH": 1080,
+      "docScrollable": false,
+      "topGap": 0
+    },
+    "cardPad": {
+      "over80": [],
+      "max": [
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "当前账号赵丹蕾系统管理员 · 成都市规划和自然资源局",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        },
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "账号总数27个停用 0 个 · 按行政区划可见范围统计",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        },
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "数据表27张SQLite（node:sqlite）",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        },
+        {
+          "tag": "div",
+          "cls": "kpi-card",
+          "id": "",
+          "text": "服务时间2026-11-18 03:15接口健康检查通过",
+          "pt": 14,
+          "pb": 14,
+          "sum": 28,
+          "h": 113
+        },
+        {
+          "tag": "div",
+          "cls": "card",
+          "id": "",
+          "text": "用户与分权27 个账号 · 停用 0 个账号姓名角色所属单位行政区划最近登录状态操作admin赵丹蕾系统管理员成都市规划和自然资源局成都市2",
+          "pt": 0,
+          "pb": 0,
+          "sum": 0,
+          "h": 1195
+        },
+        {
+          "tag": "div",
+          "cls": "card-body",
+          "id": "",
+          "text": "账号姓名角色所属单位行政区划最近登录状态操作admin赵丹蕾系统管理员成都市规划和自然资源局成都市2026-11-18 02:59:37正常",
+          "pt": 0,
+          "pb": 0,
+          "sum": 0,
+          "h": 1145
+        }
+      ]
+    },
+    "cardSlack": {
+      "over80": []
+    },
+    "panelOverflow": {
+      "count": 0,
+      "top": []
+    },
+    "structure": {
+      "h1Count": 1,
+      "h1Text": [
+        "系统管理"
+      ],
+      "mainScrollWorks": true,
+      "docScrollable": false
+    },
+    "targets": {
+      "total": 47,
+      "smallCount": 0,
+      "samples": []
+    },
+    "chart": {
+      "canvasCount": 0,
+      "withRoleImg": 0,
+      "detail": []
+    },
+    "extras": {
+      "skeletonVisible": 0,
+      "empties": [],
+      "cards": 1,
+      "kpis": 4,
+      "rows": 27,
+      "tags": 54,
+      "tiles": 0,
+      "bodyTextLen": 1541,
+      "bodyTextHead": "省域空间治理数字化平台 · 绿矿智用 四川省矿产资源数字化管理 2026-11-18 星期三 03:15 指标监测 问题监测 赵 赵丹蕾 成都市规划和自然资源局 平台分布 首页驾驶舱 矿产地 保护与规划 矿业权 绿色矿山 智慧监管 数智地勘"
+    },
+    "slug": "system",
+    "path": "/system",
+    "textLen": 1541,
+    "ready": true
+  }
+]

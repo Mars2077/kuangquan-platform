@@ -1,23 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Ic } from '../components/Icon';
-import CountUp from '../components/reactbits/CountUp.jsx';
-import SpotlightCard from '../components/reactbits/SpotlightCard.jsx';
 import { useApp } from '../store.jsx';
-import {
-  ArrowUpRight01Icon, Building01Icon, Database01Icon, Layers01Icon, MapsLocation01Icon,
-  Rocket01Icon, Shield01Icon, Task01Icon, Leaf01Icon, SatelliteIcon, ChartLineData01Icon,
-  RulerIcon, SmartPhone01Icon
-} from '@hugeicons/core-free-icons';
+import { Database01Icon, Settings01Icon, SmartPhone01Icon, Task01Icon } from '@hugeicons/core-free-icons';
 
 /* ---------------- 缩略示意图（自绘，不用外部截屏） ---------------- */
 function Art({ kind }) {
-  const L = (x1, y1, x2, y2, o = 0.35) => (
-    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={`rgba(120,205,255,${o})`} strokeWidth="1" />
-  );
   const vb = kind === 'dashboardBig' ? '0 0 240 240' : '0 0 240 120';
   return (
-    <svg viewBox={vb} className="thumb-art" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <svg
+      viewBox={vb}
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+      style={{ display: 'block', width: '100%', height: '100%' }}
+    >
       <defs>
         <linearGradient id={`g-${kind}`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#10406e" />
@@ -124,7 +120,6 @@ function Art({ kind }) {
           <rect x="150" y="30" width="56" height="16" rx="8" fill="none" stroke="rgba(73,195,255,0.5)" />
         </>
       )}
-      {L(0, 0, 0, 0, 0)}
     </svg>
   );
 }
@@ -172,128 +167,186 @@ const LEGACY = [
 const BUILT = [
   {
     key: 'dashboard', title: '数字驾驶舱', kind: 'dashboardBig', big: true,
-    to: '/dashboard', desc: '省—市—县三级下钻，专题图与图层控制，矿山图斑一张图',
-    icon: ChartLineData01Icon
+    to: '/dashboard', desc: '省—市—县三级下钻，专题图与图层控制，矿山图斑一张图，关键指标一屏总览',
+    icon: 'ChartLineData01Icon'
   },
-  { key: 'supervise', title: '矿产资源智慧监管', kind: 'supervise', to: '/scene/supervise', desc: '智能巡查 · 动态监测 · 问题闭环', icon: Shield01Icon },
-  { key: 'green', title: '绿色矿山管理', kind: 'green', to: '/scene/green', desc: '申报入库 · 动态提升 · 出库管理', icon: Leaf01Icon },
-  { key: 'deposit', title: '矿产地智能管理', kind: 'deposit', to: '/scene/deposit', desc: '一矿一档 · 清查 · 储量评审备案', icon: Database01Icon },
-  { key: 'plan', title: '保护与规划管理', kind: 'plan', to: '/scene/plan', desc: '规划成果 · 动态调整 · 压覆矿产', icon: Layers01Icon },
-  { key: 'rights', title: '矿业权管理', kind: 'rights', to: '/scene/rights', desc: '一张图 · 净矿出让 · 全流程审查', icon: MapsLocation01Icon },
-  { key: 'geology', title: '数智地勘管理', kind: 'geology', to: '/scene/geology', desc: '攻深找盲 · 农业地质 · 地质文化', icon: SatelliteIcon }
+  { key: 'supervise', title: '矿产资源智慧监管', kind: 'supervise', to: '/scene/supervise', desc: '智能巡查 · 动态监测 · 问题闭环' },
+  { key: 'green', title: '绿色矿山管理', kind: 'green', to: '/scene/green', desc: '申报入库 · 动态提升 · 出库管理' },
+  { key: 'deposit', title: '矿产地智能管理', kind: 'deposit', to: '/scene/deposit', desc: '一矿一档 · 清查 · 储量评审备案' },
+  { key: 'plan', title: '保护与规划管理', kind: 'plan', to: '/scene/plan', desc: '规划成果 · 动态调整 · 压覆矿产' },
+  { key: 'rights', title: '矿业权管理', kind: 'rights', to: '/scene/rights', desc: '一张图 · 净矿出让 · 全流程审查' },
+  { key: 'geology', title: '数智地勘管理', kind: 'geology', to: '/scene/geology', desc: '攻深找盲 · 农业地质 · 地质文化' }
 ];
+
+/* 门户底部横条：非场景入口（数据仓 / 移动端 / 系统），铺满首屏留白 */
+const QUICK = [
+  { key: 'warehouse', name: '数据仓', to: '/warehouse', icon: Database01Icon, desc: '报表下载、指标口径与数据资源目录' },
+  { key: 'mobile', name: '政务移动端', to: '/mobile', icon: SmartPhone01Icon, desc: '巡查打卡、掌上申报、信用公示与政策法规' },
+  { key: 'system', name: '系统管理', to: '/system', icon: Settings01Icon, desc: '组织权限、账号角色与操作审计' }
+];
+
+/* .tile-name 契约样式为单行省略，长系统名改为两行显示以保留全称 */
+const TILE_NAME_STYLE = { whiteSpace: 'normal', overflow: 'visible', textOverflow: 'clip' };
 
 export default function Portal() {
   const nav = useNavigate();
   const { bootMeta, user } = useApp();
-  const featureCount = (bootMeta?.modules || []).reduce((s, m) => s + m.features.length, 0);
+  const modules = bootMeta?.modules || [];
+  const featureCount = modules.reduce((s, m) => s + m.features.length, 0);
+  const roleName = bootMeta?.roles?.[user?.role] || '—';
+  const hero = BUILT[0];
+  const scenes = BUILT.slice(1);
 
   return (
-    <div className="page portal-page">
-      <header className="portal-head">
+    <div
+      className="content"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--sp-4)',
+        flex: '1 1 auto',
+        minHeight: 'calc(100vh - 148px)'
+      }}
+    >
+      <header className="page-head" style={{ marginBottom: 0 }}>
         <div>
-          <h1>平台分布</h1>
-          <p>
-            存量系统集成区与新建核心场景矩阵的统一入口。当前身份 {user?.name}（{bootMeta?.roles?.[user?.role] || '—'}），
-            可按行政区划权限下钻至地市与区县。
+          <h1 className="page-title">平台分布</h1>
+          <p className="page-desc">
+            存量系统集成区与新建核心场景矩阵的统一入口。当前身份 {user?.name}（{roleName}），可按行政区划权限下钻至地市与区县。
           </p>
         </div>
-        <div className="portal-stats">
-          <div>
-            <b><CountUp to={3} duration={0.8} /></b>
-            <span>存量系统</span>
-          </div>
-          <div>
-            <b><CountUp to={BUILT.length} duration={1} /></b>
-            <span>新建场景</span>
-          </div>
-          <div>
-            <b><CountUp to={featureCount} duration={1.3} /></b>
-            <span>功能点</span>
-          </div>
+        <div className="page-actions">
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => nav('/battle')}>
-            <Ic icon={Task01Icon} size={14} /> 指标监测
+            <Ic icon={Task01Icon} size={14} /> 重点任务作战图
           </button>
         </div>
       </header>
 
-      <div className="portal-cols">
-        <section>
-          <div className="portal-col-title">
+      <div className="kpi-row">
+        <div className="kpi-card">
+          <span className="kpi-label">存量系统</span>
+          <b className="kpi-value">{LEGACY.length}<i className="kpi-unit">个</i></b>
+          <span className="kpi-delta">单点登录 · 已上线</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label">新建场景</span>
+          <b className="kpi-value">{BUILT.length}<i className="kpi-unit">个</i></b>
+          <span className="kpi-delta">驾驶舱 + 六大业务域</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label">业务域</span>
+          <b className="kpi-value">{modules.length}<i className="kpi-unit">个</i></b>
+          <span className="kpi-delta">与《功能设计》逐条对应</span>
+        </div>
+        <div className="kpi-card">
+          <span className="kpi-label">业务功能点</span>
+          <b className="kpi-value">{featureCount}<i className="kpi-unit">项</i></b>
+          <span className="kpi-delta up">全部可实操验证</span>
+        </div>
+      </div>
+
+      <div
+        className="content-grid"
+        style={{ flex: '1 1 auto', alignItems: 'stretch', gridTemplateRows: 'minmax(min-content, 1fr)' }}
+      >
+        <section className="portal-section span-4">
+          <div className="portal-section-head">
             <h2>迭代</h2>
-            <i />
-            <span>存量系统集成区 · 统一身份认证免登跳转</span>
+            <span className="tag tag--grey">{LEGACY.length} 个存量系统</span>
           </div>
-          <div>
+          <div className="stack" style={{ flex: '1 1 auto' }}>
             {LEGACY.map((c) => (
-              <button type="button" key={c.title} className="door door-legacy" onClick={() => nav('/warehouse')}>
-                <div className="door-thumb">
-                  <Art kind={c.kind} />
-                  <span className="badge">{c.tag}</span>
-                </div>
-                <div className="door-name">
-                  <b>{c.title}</b>
-                  <small>{c.meta}</small>
+              <button
+                key={c.title}
+                type="button"
+                className="tile"
+                title={c.title}
+                onClick={() => nav('/warehouse')}
+                style={{ flex: '1 1 auto', textAlign: 'left' }}
+              >
+                <span className="tile-thumb" style={{ width: 52, height: 52 }}><Art kind={c.kind} /></span>
+                <div>
+                  <div className="tile-name" style={{ ...TILE_NAME_STYLE, fontSize: 15 }} title={c.title}>{c.title}</div>
+                  <div className="tile-desc" style={{ fontSize: 12 }}>{c.meta} · {c.tag}</div>
                 </div>
               </button>
             ))}
           </div>
-          <div className="portal-hint">
-            <Ic icon={ArrowUpRight01Icon} size={13} />
-            <span>存量系统以单点登录方式接入，点击经统一身份认证跳转；演示环境以数据仓页面代替外部系统地址。</span>
-          </div>
+          <p className="tiny muted">
+            存量系统以单点登录方式接入，点击经统一身份认证免登跳转；演示环境以数据仓页面代替外部系统地址。
+          </p>
         </section>
 
-        <section>
-          <div className="portal-col-title">
+        <section className="portal-section span-8">
+          <div className="portal-section-head">
             <h2>新建</h2>
-            <i />
-            <span>核心场景矩阵 · 点击进入业务驾驶舱</span>
+            <span className="tag tag--blue">{BUILT.length} 个场景</span>
           </div>
-          <div className="portal-built">
-            {BUILT.map((c) => (
-              <SpotlightCard
+
+          <button
+            type="button"
+            className="tile"
+            title={hero.title}
+            onClick={() => nav(hero.to)}
+            style={{ minHeight: 108, padding: 16, gap: 16, textAlign: 'left' }}
+          >
+            <span className="tile-thumb" style={{ width: 84, height: 84 }}><Art kind={hero.kind} /></span>
+            <div>
+              <div className="row" style={{ alignItems: 'center', gap: 8 }}>
+                <div className="tile-name" style={{ ...TILE_NAME_STYLE, fontSize: 18 }}>{hero.title}</div>
+                <span className="tag tag--blue">主入口</span>
+              </div>
+              <div className="tile-desc" style={{ fontSize: 12, marginTop: 4 }}>{hero.desc}</div>
+            </div>
+          </button>
+
+          <div
+            className="content-grid"
+            style={{ flex: '1 1 auto', alignItems: 'stretch', gridAutoRows: 'minmax(min-content, 1fr)' }}
+          >
+            {scenes.map((c) => (
+              <button
                 key={c.key}
-                className={`door door-built${c.big ? ' big' : ''}`}
-                spotlightColor="rgba(73,195,255,0.3)"
+                type="button"
+                className="tile span-4"
+                title={c.title}
                 onClick={() => nav(c.to)}
+                style={{ textAlign: 'left' }}
               >
-                <div className="door-thumb">
-                  <Art kind={c.kind} />
+                <span className="tile-thumb" style={{ width: 56, height: 56 }}><Art kind={c.kind} /></span>
+                <div>
+                  <div className="tile-name" style={{ ...TILE_NAME_STYLE, fontSize: 15 }} title={c.title}>{c.title}</div>
+                  <div className="tile-desc" style={{ fontSize: 12 }}>{c.desc}</div>
                 </div>
-                <div className="door-name">
-                  <b>{c.title}</b>
-                  <small>{c.desc}</small>
-                </div>
-              </SpotlightCard>
+              </button>
             ))}
           </div>
         </section>
       </div>
 
-      <section className="portal-foot">
-        <div className="foot-item">
-          <Ic icon={Building01Icon} size={16} />
-          <div>
-            <b>省市县三级数据权限</b>
-            <span>按行政区划自动隔离数据，跨级可下钻不可越权</span>
+      <div className="content-grid">
+        {QUICK.map((q) => (
+          <div className="card span-4" key={q.key}>
+            <div className="card-head" style={{ minHeight: 48 }}>
+              <h3 className="card-title">
+                <Ic icon={q.icon} size={14} />
+                {q.name}
+              </h3>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => nav(q.to)}>
+                进入
+              </button>
+            </div>
+            <div className="card-body" style={{ padding: '12px var(--sp-4) 16px' }}>
+              <p className="tiny muted">{q.desc}</p>
+            </div>
           </div>
-        </div>
-        <div className="foot-item">
-          <Ic icon={Rocket01Icon} size={16} />
-          <div>
-            <b>六大业务域 {featureCount} 个功能点</b>
-            <span>与《功能设计》逐条对应，均可实操验证</span>
-          </div>
-        </div>
-        <div className="foot-item">
-          <Ic icon={SmartPhone01Icon} size={16} />
-          <div>
-            <b>政务移动端</b>
-            <span>巡查打卡、掌上申报、信用公示与政策法规</span>
-          </div>
-        </div>
-      </section>
+        ))}
+      </div>
+
+      <p className="page-desc">
+        省市县三级数据权限按行政区划自动隔离，跨级可下钻不可越权；六大业务域 {featureCount} 个功能点与《功能设计》逐条对应；
+        政务移动端支持巡查打卡、掌上申报、信用公示与政策法规查阅。
+      </p>
     </div>
   );
 }

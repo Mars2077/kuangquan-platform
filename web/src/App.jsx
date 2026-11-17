@@ -13,6 +13,7 @@ const Warehouse = lazy(() => import('./pages/Warehouse.jsx'));
 const Mobile = lazy(() => import('./pages/Mobile.jsx'));
 const Archive = lazy(() => import('./pages/Archive.jsx'));
 const SystemPage = lazy(() => import('./pages/SystemPage.jsx'));
+const UiKit = lazy(() => import('./pages/UiKit.jsx'));
 
 function Splash({ text = '正在初始化绿矿智用平台 …' }) {
   return (
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/warehouse" element={<Warehouse />} />
           <Route path="/mobile" element={<Mobile />} />
           <Route path="/system" element={<SystemPage />} />
+          <Route path="/ui-kit" element={<UiKit />} />
           <Route path="*" element={<Navigate to="/portal" replace />} />
         </Route>
       </Routes>

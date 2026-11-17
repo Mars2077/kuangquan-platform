@@ -1,25 +1,30 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+/* 驾驶舱（7 个专题场景共用）：契约 §5 两行栅格
+ *   第一行：左栏（.dash-col--l）| 地图（.dash-map）| 右栏（.dash-col--r）
+ *   第二行：底部列表（.dash-list，跨满三列，可折叠）
+ * 面板只用 .panel / .stat-list / .ring-card / .ring-legend / .bars / .chart。
+ */
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import GeoMap from '../components/GeoMap.jsx';
-import Chart, { COLORS, donutOption, barOption, indicatorOption } from '../components/Chart.jsx';
-import { Tabs } from '../components/Panel.jsx';
-import { Ic, QuarterFlag } from '../components/Icon';
+import Chart, {
+  COLORS, donutOption, barOption, indicatorOption, formatValue
+} from '../components/Chart.jsx';
+import { Ic } from '../components/Icon';
 import { useApp, useFetch } from '../store.jsx';
 import { meta as metaApi, screen as screenApi } from '../api';
 import {
-  ArrowLeft01Icon, Camera01Icon, ChevronDownIcon, Download01Icon, FilterIcon, Layers01Icon,
+  Camera01Icon, ChevronDownIcon, Download01Icon, FilterIcon, Layers01Icon,
   Location01Icon, More01Icon, Refresh01Icon, RulerIcon, Search01Icon, Task01Icon, ToolsIcon
 } from '@hugeicons/core-free-icons';
 
-/* ------------------------------------------------------------------ 工具函数 */
+/* ------------------------------------------------------------------ 常量 */
+const PALETTE = COLORS;
 const nf = (v, d = 2) => {
   const n = Number(v);
   if (!Number.isFinite(n)) return v ?? '—';
   return n.toLocaleString('zh-CN', { minimumFractionDigits: d, maximumFractionDigits: d });
 };
 const int = (v) => (Number.isFinite(Number(v)) ? Number(v).toLocaleString('zh-CN') : '—');
-
-const PALETTE = COLORS;
 
 const THEMES = [
   { key: 'online', label: '在线矿山', tone: '#35d39a' },
@@ -39,7 +44,8 @@ const SCENE_META = {
   geology: { title: '地勘项目', module: 'geology', theme: 'hazard' }
 };
 
-const LIST_COLUMNS = {  dashboard: [
+const LIST_COLUMNS = {
+  dashboard: [
     { key: 'region_name', label: '区县名称', width: 96 },
     { key: 'name', label: '矿山名称', flex: true },
     { key: 'devices_total', label: '设备接入总数', width: 110, align: 'right' },
@@ -109,60 +115,134 @@ const POPUP_FIELDS = {
   hazard: [['type', '灾害类型'], ['level', '风险等级'], ['status', '状态'], ['region_name', '行政区划']]
 };
 
-/* ------------------------------------------------------------------ 面板内容 */
-function PanelBody({ panel, onMore }) {
-  const [tab, setTab] = useState(panel.tabs?.[0]?.key);
+/* ------------------------------------------------------------------ 小工具组件 */
+function Tabs({ items = [], value, onChange }) {
+  return (
+    <div className="tabs" style={{ marginBottom: 2 }}>
+      {items.map((it) => (
+        <button
+          key={it.key}
+          type="button"
+          role="tab"
+          aria-selected={it.key === value}
+          className={`tab${it.key === value ? ' is-on' : ''}`}
+          style={{ height: 26, padding: '0 8px', fontSize: 12 }}
+          onClick={() => onChange(it.key)}
+        >
+          {it.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Delta({ value }) {
+  if (value === undefined || value === null || !Number.isFinite(Number(value))) return null;
+  const n = Number(value);
+  return (
+    <span className={`d ${n >= 0 ? 'up' : 'down'}`}>
+      {n >= 0 ? '▲' : '▼'} {Math.abs(n).toFixed(1)}%
+    </span>
+  );
+}
+
+/* 统计行：.stat-list > .stat-row > .k / .v / .u / .d（契约 §5） */
+function StatRows({ rows = [], compact = false }) {
+  return (
+    <div className="stat-list">
+      {rows.map((r, i) => {
+        const numeric = r.value !== null && r.value !== undefined && Number.isFinite(Number(r.value));
+        return (
+          <div
+            className="stat-row"
+            key={`${r.label || r.name}-${i}`}
+            style={compact ? { minHeight: 20, padding: '1px 0' } : undefined}
+          >
+            <span className="k" title={r.label}>
+              {r.label}
+              {r.sub ? <span className="muted tiny" style={{ marginLeft: 4 }}>{r.sub}</span> : null}
+            </span>
+            {r.suffix ? <span className="u" style={{ flex: 'none' }}>{r.suffix}</span> : null}
+            <span
+              className="v"
+              style={{
+                ...(compact ? { fontSize: 14 } : null),
+                ...(r.tone === 'warm' ? { color: 'var(--orange)' } : null)
+              }}
+            >
+              {numeric ? formatValue(r.value, r.unit, r.decimals) : (r.value ?? '—')}
+            </span>
+            {r.unit ? <span className="u">{r.unit}</span> : null}
+            <Delta value={r.delta} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RingLegend({ rows = [], unit, decimals, dense = false }) {
+  return (
+    <div
+      className="ring-legend"
+      style={{
+        width: '100%',
+        gap: dense ? '2px 8px' : '2px 10px',
+        marginTop: dense ? 2 : 4,
+        fontSize: dense ? 10 : undefined,
+        lineHeight: 1.3
+      }}
+    >
+      {rows.map((r, i) => (
+        <span key={`${r.name}-${i}`}>
+          <i style={{ background: PALETTE[i % PALETTE.length] }} />
+          <span className="ellipsis" style={{ maxWidth: 108 }} title={r.name}>{r.name}</span>
+          <b>{formatValue(r.value, r.unit || unit, r.decimals ?? decimals)}</b>
+          {(r.unit || unit) ? <span className="muted tiny">{r.unit || unit}</span> : null}
+          {r.delta !== undefined && r.delta !== null ? (
+            <span
+              className="tiny"
+              style={{ color: Number(r.delta) >= 0 ? 'var(--green)' : 'var(--red)' }}
+            >
+              {Number(r.delta) >= 0 ? '▲' : '▼'}{Math.abs(Number(r.delta)).toFixed(1)}%
+            </span>
+          ) : null}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* 面板内容：按后端 /api/screen/:scene 的 type 渲染（6 型 + plan 的指标预警） */
+function PanelBody({ panel, extra, dense = false }) {
+  const [tab, setTab] = useState(panel?.tabs?.[0]?.key);
+
   useEffect(() => {
-    if (panel.tabs && !panel.tabs.some((t) => t.key === tab)) setTab(panel.tabs[0]?.key);
+    if (panel?.tabs && !panel.tabs.some((t) => t.key === tab)) setTab(panel.tabs[0]?.key);
   }, [panel, tab]);
 
   if (!panel) return null;
 
   if (panel.type === 'stat-list') {
-    return (
-      <div className="stat-list">
-        {(panel.rows || []).map((r, i) => (
-          <div className="stat-row" key={r.label + i}>
-            <span className="k">{r.label}</span>
-            {r.suffix && <span className="muted tiny" style={{ marginLeft: 4 }}>{r.suffix}</span>}
-            <span className={`v${r.tone === 'warm' ? ' warm' : ''}`}>
-              {typeof r.value === 'number' ? nf(r.value, r.decimals ?? (r.unit === '亿元' ? 2 : 0)) : r.value}
-            </span>
-            {r.unit && <span className="u">{r.unit}</span>}
-            {r.delta !== undefined && r.delta !== null && (
-              <span className={`d ${r.delta >= 0 ? 'up' : 'down'}`}>
-                {r.delta >= 0 ? '▲' : '▼'} {Math.abs(Number(r.delta)).toFixed(1)}%
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
-    );
+    return <StatRows rows={panel.rows || []} />;
   }
 
   if (panel.type === 'tabbed') {
     const cur = panel.tabs?.find((t) => t.key === tab) || panel.tabs?.[0];
     return (
       <>
-        <Tabs items={(panel.tabs || []).map((t) => ({ key: t.key, label: t.label }))} value={cur?.key} onChange={setTab} />
-        <div className="tab-groups">
+        <Tabs
+          items={(panel.tabs || []).map((t) => ({ key: t.key, label: t.label }))}
+          value={cur?.key}
+          onChange={setTab}
+        />
+        <div className="stat-list">
           {(cur?.groups || []).map((g) => (
-            <div key={g.title} className="tab-group">
-              <div className="tab-group-title">{g.title}</div>
-              <div className="stat-list tight">
-                {(g.rows || []).map((r, i) => (
-                  <div className="stat-row" key={r.label + i}>
-                    <span className="k">{r.label}</span>
-                    <span className="v">{nf(r.value, r.decimals ?? (r.unit === '亿元' ? 2 : 0))}</span>
-                    {r.unit && <span className="u">{r.unit}</span>}
-                    {r.delta !== undefined && r.delta !== null && (
-                      <span className={`d ${r.delta >= 0 ? 'up' : 'down'}`}>
-                        {r.delta >= 0 ? '▲' : '▼'} {Math.abs(Number(r.delta)).toFixed(1)}%
-                      </span>
-                    )}
-                  </div>
-                ))}
+            <div key={g.title}>
+              <div className="stat-row" style={{ minHeight: 15, padding: '1px 0 0', borderBottom: 0 }}>
+                <span className="k" style={{ color: 'var(--text-4)', fontSize: 10 }}>{g.title}</span>
               </div>
+              <StatRows rows={g.rows || []} compact />
             </div>
           ))}
         </div>
@@ -172,53 +252,55 @@ function PanelBody({ panel, onMore }) {
 
   if (panel.type === 'ring-split') {
     const parts = panel.rows || [];
+    const ring = panel.ring || {};
     return (
-      <div className="ring-card">
-        <Chart
-          className="ring-chart"
-          height={96}
-          style={{ width: 96, flex: "0 0 96px" }}
-          option={donutOption(parts, { center: Number(panel.ring?.center ?? panel.ring?.total), unit: panel.ring?.unit })}
-        />
-        <div className="ring-legend">
-          {parts.map((r, i) => (
-            <div className="ring-row" key={r.name + i}>
-              <i style={{ background: PALETTE[i % PALETTE.length] }} />
-              <span className="n">{r.name}</span>
-              <span className="v">{nf(r.value, r.decimals ?? (r.unit === '亿元' ? 2 : 0))}</span>
-              {r.unit && <span className="muted tiny">{r.unit}</span>}
-              {r.delta !== undefined && r.delta !== null && (
-                <span className={`d ${r.delta >= 0 ? 'up' : 'down'}`}>{Math.abs(Number(r.delta)).toFixed(1)}%</span>
-              )}
-            </div>
-          ))}
+      <div
+        className="ring-card"
+        style={{ flex: '1 1 auto', flexDirection: 'column', minHeight: 0, width: '100%', padding: 0, gap: 2 }}
+      >
+        {ring.label ? (
+          <div className="tiny muted" style={{ textAlign: 'center' }}>{ring.label}</div>
+        ) : null}
+        <div style={{ display: 'flex', flex: '1 1 auto', minHeight: dense ? 56 : 72, width: '100%' }}>
+          <Chart
+            height="100%"
+            style={{ flex: '1 1 auto', minHeight: 0 }}
+            label={`${panel.title || ''}占比`}
+            option={donutOption(parts, {
+              center: ring.center ?? ring.total,
+              unit: ring.unit,
+              decimals: ring.decimals
+            })}
+          />
         </div>
+        <RingLegend rows={parts} unit={ring.unit} decimals={ring.decimals} dense={dense} />
       </div>
     );
   }
 
   if (panel.type === 'tabbed-ring') {
     const cur = panel.tabs?.find((t) => t.key === tab) || panel.tabs?.[0];
+    const parts = cur?.parts || [];
     return (
       <>
-        <Tabs items={(panel.tabs || []).map((t) => ({ key: t.key, label: t.label }))} value={cur?.key} onChange={setTab} />
-        <div className="ring-card">
-          <Chart
-            className="ring-chart"
-            height={96}
-            style={{ width: 96, flex: "0 0 96px" }}
-            option={donutOption(cur?.parts || [], { center: Number(cur?.total), unit: cur?.unit })}
-          />
-          <div className="ring-legend">
-            {(cur?.parts || []).map((r, i) => (
-              <div className="ring-row" key={r.name + i}>
-                <i style={{ background: PALETTE[i % PALETTE.length] }} />
-                <span className="n">{r.name}</span>
-                <span className="v">{nf(r.value, cur?.unit === '亿元' ? 2 : 0)}</span>
-                <span className="muted tiny">{cur?.unit}</span>
-              </div>
-            ))}
+        <Tabs
+          items={(panel.tabs || []).map((t) => ({ key: t.key, label: t.label }))}
+          value={cur?.key}
+          onChange={setTab}
+        />
+        <div
+          className="ring-card"
+          style={{ flex: '1 1 auto', flexDirection: 'column', minHeight: 0, width: '100%', padding: 0, gap: 2 }}
+        >
+          <div style={{ display: 'flex', flex: '1 1 auto', minHeight: dense ? 56 : 72, width: '100%' }}>
+            <Chart
+              height="100%"
+              style={{ flex: '1 1 auto', minHeight: 0 }}
+              label={`${cur?.label || ''}结构`}
+              option={donutOption(parts, { center: cur?.total, unit: cur?.unit, decimals: cur?.decimals })}
+            />
           </div>
+          <RingLegend rows={parts} unit={cur?.unit} decimals={cur?.decimals} dense={dense} />
         </div>
       </>
     );
@@ -226,30 +308,27 @@ function PanelBody({ panel, onMore }) {
 
   if (panel.type === 'stat-grid') {
     return (
-      <div className="stack-sm">
+      <div className="stat-list">
         {(panel.blocks || []).map((b) => (
           <div key={b.title}>
-            <div className="block-label">{b.title}</div>
-            {b.title.includes('预警') ? (
-              <div className="warn-grid">
-                {(b.items || []).map((it, i) => (
-                  <div className="warn-card" key={it.label + i}>
-                    <div className="k">{it.label}</div>
-                    <div className="v">{int(it.value)}</div>
-                    {it.sub && <div className="s">{it.sub}</div>}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="sensor-grid">
-                {(b.items || []).map((it, i) => (
-                  <div className="c" key={it.label + i}>
-                    <div className="v">{int(it.value)}<small>{it.unit}</small></div>
-                    <div className="k">{it.label}</div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="stat-row" style={{ minHeight: 18, padding: '2px 0', borderBottom: 0 }}>
+              <span
+                className="k"
+                style={{ color: 'var(--text-2)', fontWeight: 600, fontSize: 12 }}
+              >
+                <span
+                  className="dot"
+                  style={{ background: b.icon === 'alert' ? 'var(--orange)' : 'var(--cyan)', marginRight: 6 }}
+                />
+                {b.title}
+              </span>
+            </div>
+            <StatRows
+              rows={(b.items || []).map((it) => ({
+                label: it.label, sub: it.sub, value: it.value, unit: it.unit, tone: it.tone
+              }))}
+              compact
+            />
           </div>
         ))}
       </div>
@@ -257,12 +336,12 @@ function PanelBody({ panel, onMore }) {
   }
 
   if (panel.type === 'bars') {
-    const rows = panel.rows || [];
     return (
       <Chart
-        className="bars-chart"
-        height={Math.max(96, rows.length * 26 + 14)}
-        option={barOption(rows, { unit: panel.unit || '', colorBy: true })}
+        height="100%"
+        style={{ flex: '1 1 auto', minHeight: 0 }}
+        label={`${panel.title || ''}分布`}
+        option={barOption(panel.rows || [], { unit: panel.unit || '', colorBy: true })}
       />
     );
   }
@@ -270,15 +349,27 @@ function PanelBody({ panel, onMore }) {
   return null;
 }
 
-/* ------------------------------------------------------------------ 测距 / 测面（与后端同口径） */
-const R = 6371;
+function Panel({ title, action, children, bodyStyle, style }) {
+  return (
+    <section className="panel" style={style}>
+      <header className="panel-head">
+        <h2 className="panel-title">{title}</h2>
+        {action}
+      </header>
+      <div className="panel-body" style={bodyStyle}>{children}</div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ 测距 / 测面 */
+const R_EARTH = 6371;
 function haversine(a, b) {
   const dLat = ((b[1] - a[1]) * Math.PI) / 180;
   const dLon = ((b[0] - a[0]) * Math.PI) / 180;
   const la1 = (a[1] * Math.PI) / 180;
   const la2 = (b[1] * Math.PI) / 180;
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLon / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
+  return 2 * R_EARTH * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 function polygonAreaKm2(ring) {
   if (!ring || ring.length < 3) return 0;
@@ -294,7 +385,7 @@ function polygonAreaKm2(ring) {
   return Math.abs(sum / 2);
 }
 
-/* ------------------------------------------------------------------ 主页面 */
+/* ------------------------------------------------------------------ 列表取值 */
 const LIST_KEYS = {
   online: ['online', 'green', 'deposit', 'right'],
   green: ['green', 'online'],
@@ -304,21 +395,41 @@ const LIST_KEYS = {
   topo: ['topo', 'zone']
 };
 
-/* 后端 /api/screen/:scene 的 list 是「列表类型 → 行数组」的对象 */
 function pickListArray(raw, theme, scene) {
+  if (Array.isArray(raw)) return raw;
   if (!raw || typeof raw !== 'object') return [];
   const tries = [...(LIST_KEYS[theme] || []), theme, scene, 'online', 'list'];
   for (const k of tries) {
     if (Array.isArray(raw[k])) return raw[k];
   }
-  const first = Object.values(raw).find((v) => Array.isArray(v));
-  return first || [];
+  return Object.values(raw).find((v) => Array.isArray(v)) || [];
 }
 
+const MAP_TITLE_STYLE = {
+  position: 'absolute',
+  left: 12,
+  top: 10,
+  zIndex: 5,
+  maxWidth: 'calc(100% - 92px)',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 13,
+  fontWeight: 600,
+  color: 'var(--text-1)',
+  letterSpacing: '.02em',
+  pointerEvents: 'none',
+  textShadow: '0 1px 8px rgba(2,8,18,.85)',
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis'
+};
+
+const FLOAT_DARK = 'rgba(5,14,28,.78)';
+
+/* ------------------------------------------------------------------ 页面 */
 export default function Cockpit({ sceneKey }) {
   const params = useParams();
   const nav = useNavigate();
-  const { user, bootMeta, toast } = useApp();
+  const { user, toast } = useApp();
   const scene = sceneKey || params.scene || 'dashboard';
   const meta0 = SCENE_META[scene] || SCENE_META.dashboard;
 
@@ -329,21 +440,34 @@ export default function Cockpit({ sceneKey }) {
   const [listOpen, setListOpen] = useState(true);
   const [sel, setSel] = useState(null);
   const [kw, setKw] = useState('');
+  const [stages, setStages] = useState({});
   const [measure, setMeasure] = useState({ mode: 'none', points: [], closed: false });
   const [locate, setLocate] = useState('');
-  const stageRef = useRef({});
+
+  /* 视口：≤1360 收成单列，避免三栏把面板压到内容以下（与 pages.css 断点协同） */
+  const [vw, setVw] = useState(() => (typeof window === 'undefined' ? 1920 : window.innerWidth));
+  useEffect(() => {
+    const onResize = () => setVw(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  const narrow = vw <= 1360;
+  /* 1361–1500 档：右栏三块面板高度被压到 ~185，环图卡片需收紧以不裁切 */
+  const midRange = vw >= 1361 && vw <= 1500;
+  const isPhone = vw < 620;
 
   useEffect(() => {
     setTheme(meta0.theme);
     setSel(null);
-  }, [scene]);
+    setStages({});
+  }, [scene, meta0.theme]);
 
-  const regions = useFetch(() => metaApi.regions(), []);
+  const regionsQ = useFetch(() => metaApi.regions(), []);
   const regionMap = useMemo(() => {
     const m = new Map();
-    (regions.data?.list || []).forEach((r) => m.set(String(r.code), r));
+    (regionsQ.data?.list || []).forEach((r) => m.set(String(r.code), r));
     return m;
-  }, [regions.data]);
+  }, [regionsQ.data]);
 
   const screenQ = useFetch(() => screenApi.get(scene, { code }), [scene, code]);
   const pointsQ = useFetch(() => screenApi.layers(theme, { code }), [theme, code]);
@@ -353,20 +477,19 @@ export default function Cockpit({ sceneKey }) {
 
   const points = useMemo(() => {
     if (theme !== 'deposit') return allPoints;
-    const stages = stageRef.current;
     const keys = Object.keys(stages).filter((k) => stages[k]);
-    if (keys.length === 0) return allPoints;
+    if (!keys.length) return allPoints;
     return allPoints.filter((p) => keys.includes(p.stage));
-  }, [allPoints, theme, layerOpen]);
+  }, [allPoints, theme, stages]);
 
   const scopeName = code === '510000' ? '全省' : regionMap.get(String(code))?.name || '四川省';
   const themeLabel = THEMES.find((t) => t.key === theme)?.label || meta0.title;
   const mapTitle = `${scopeName}${themeLabel}分布专题图`;
+  const columns = LIST_COLUMNS[scene] || LIST_COLUMNS.dashboard;
 
   const list = useMemo(() => {
-    const raw = data?.list;
-    const rows = Array.isArray(raw) ? raw : pickListArray(raw, theme, scene);
-    if (!kw) return rows;
+    const rows = pickListArray(data?.list, theme, scene);
+    if (!kw.trim()) return rows;
     const k = kw.trim();
     return rows.filter((r) => JSON.stringify(r).includes(k));
   }, [data, kw, theme, scene]);
@@ -376,7 +499,7 @@ export default function Cockpit({ sceneKey }) {
     const isProvince = String(code) === '510000';
     const isCity = String(code).endsWith('00') && !isProvince;
     if (isProvince) {
-      /* 省级视角：把区县气泡聚合成 11 个地市气泡 */
+      /* 省级视角：区县气泡按地市聚合（11 个地市），坐标取行政区中心 */
       const acc = new Map();
       raw.forEach((b) => {
         const lv = String(b.level || b.bubble_level || '').toLowerCase();
@@ -405,53 +528,69 @@ export default function Cockpit({ sceneKey }) {
         };
       }).filter((b) => b.name);
     }
-    if (isCity) return raw.filter((b) => String(b.code).slice(0, 4) === String(code).slice(0, 4) && String(b.code) !== String(code));
+    if (isCity) {
+      return raw.filter((b) => String(b.code).slice(0, 4) === String(code).slice(0, 4)
+        && String(b.code) !== String(code));
+    }
     return raw.filter((b) => String(b.code) === String(code));
   }, [data, code, regionMap]);
 
-  const columns = LIST_COLUMNS[scene] || LIST_COLUMNS.dashboard;
-
-  const drill = (adcode) => {
-    const c = String(adcode);
+  const drill = useCallback((adcode) => {
+    const c = String(adcode || '');
     if (!/^\d{6}$/.test(c)) return;
     setCode(c);
     setSel(null);
     setMeasure({ mode: 'none', points: [], closed: false });
-  };
+    setToolOpen(false);
+    setLayerOpen(false);
+  }, []);
 
-  const backTo = (c) => {
-    setCode(c);
-    setSel(null);
-  };
+  const resetMeasure = () => setMeasure({ mode: 'none', points: [], closed: false });
 
   const breadcrumb = useMemo(() => {
     const c = String(code);
-    const listPath = [];
-    if (c === '510000') return listPath;
-    listPath.push({ code: '510000', name: '四川省' });
+    if (c === '510000') return [];
+    const path = [{ code: '510000', name: '四川省' }];
     if (!c.endsWith('0000')) {
       const city = regionMap.get(`${c.slice(0, 4)}00`);
-      if (city) listPath.push({ code: city.code, name: city.name });
+      if (city) path.push({ code: city.code, name: city.name });
       if (!c.endsWith('00')) {
         const county = regionMap.get(c);
-        if (county) listPath.push({ code: c, name: county.name });
+        if (county) path.push({ code: county.code, name: county.name });
       }
     }
-    return listPath;
+    return path;
   }, [code, regionMap]);
 
+  const regionOptions = useMemo(() => {
+    const regionList = regionsQ.data?.list || [];
+    const opts = [{ code: '510000', name: '四川省（全省）' }];
+    regionList.filter((r) => r.level === 'city').forEach((r) => opts.push({ code: r.code, name: r.name }));
+    regionList
+      .filter((r) => r.level === 'county' && String(r.code).slice(0, 4) === String(code).slice(0, 4))
+      .forEach((r) => opts.push({ code: r.code, name: r.name }));
+    if (!opts.some((o) => String(o.code) === String(code))) {
+      const cur = regionMap.get(String(code));
+      if (cur) opts.unshift({ code: cur.code, name: cur.name });
+    }
+    const seen = new Set();
+    return opts.filter((o) => {
+      if (seen.has(String(o.code))) return false;
+      seen.add(String(o.code));
+      return true;
+    });
+  }, [regionsQ.data, code, regionMap]);
+
   /* -------- 地图交互 -------- */
-  const onMapClick = useCallback(
-    (pt) => {
-      if (measure.mode === 'none') return;
-      setMeasure((m) => {
-        const pts = [...m.points, pt];
-        if (m.mode === 'dist') return { ...m, points: pts.slice(-2), closed: false };
-        return { ...m, points: pts, closed: pts.length >= 3 };
-      });
-    },
-    [measure.mode]
-  );
+  const onMapClick = useCallback((pt) => {
+    if (!Array.isArray(pt) || pt.length < 2) return;
+    setMeasure((m) => {
+      if (m.mode === 'none') return m;
+      const pts = [...m.points, pt];
+      if (m.mode === 'dist') return { ...m, points: pts.slice(-2) };
+      return { ...m, points: pts, closed: pts.length >= 3 };
+    });
+  }, []);
 
   const measureText = useMemo(() => {
     const pts = measure.points;
@@ -464,15 +603,15 @@ export default function Cockpit({ sceneKey }) {
       for (let i = 0; i < pts.length; i += 1) peri += haversine(pts[i], pts[(i + 1) % pts.length]);
       return `面积 ${nf(area, 3)} km² · 周长 ${nf(peri, 2)} km`;
     }
-    if (measure.mode !== 'none') return measure.mode === 'dist' ? '请在地图上依次点击两点' : '请在地图上连续点击至少三点';
+    if (measure.mode === 'dist') return `测距：已取 ${pts.length} 点，共需 2 点`;
+    if (measure.mode === 'area') return `测面：已取 ${pts.length} 点，至少 3 点`;
     return '';
   }, [measure]);
 
   const exportPng = () => {
-    const svg = document.querySelector('.map-stage .geo-svg');
+    const svg = document.querySelector('[data-geo-svg]');
     if (!svg) {
-      // 高德底图模式：尝试直接导出地图 canvas；瓦片为跨域资源时不放开 CORS，故失败时明确提示
-      const canvasEl = document.querySelector('.geomap-canvas canvas');
+      const canvasEl = document.querySelector('[data-amap-canvas] canvas');
       if (!canvasEl) {
         toast('未找到地图画布', 'err');
         return;
@@ -544,323 +683,580 @@ export default function Cockpit({ sceneKey }) {
     toast(`已导出 ${list.length} 条记录`);
   };
 
-  const popupRows = (POPUP_FIELDS[theme] || POPUP_FIELDS.online).filter(([k]) => sel?.[k] !== undefined && sel?.[k] !== null);
+  const locateGo = () => {
+    const nums = locate.split(/[,，\s]+/).map(Number).filter((n) => Number.isFinite(n));
+    if (nums.length < 2) {
+      toast('请输入「经度,纬度」，例如 120.09,30.89', 'err');
+      return;
+    }
+    setMeasure({ mode: 'dist', points: [[nums[0], nums[1]]], closed: false });
+    const near = [...(points || [])]
+      .filter((p) => p.lon && p.lat)
+      .map((p) => ({ p, d: haversine([nums[0], nums[1]], [Number(p.lon), Number(p.lat)]) }))
+      .sort((a, b) => a.d - b.d)[0];
+    toast(near ? `已定位，最近要素：${near.p.name}（${nf(near.d, 2)} km）` : '已定位');
+  };
+
+  const popupRows = (POPUP_FIELDS[theme] || POPUP_FIELDS.online)
+    .filter(([k]) => sel?.[k] !== undefined && sel?.[k] !== null);
+
+  const leftPanels = data?.left || [];
+  const rightPanels = data?.right || [];
+  /* 宽屏：左右栏面板等高（flex-basis 0）；窄屏：高度随内容，避免溢出裁切 */
+  const panelStyle = narrow ? undefined : { flex: '1 1 0' };
+  const bodyStyleFor = (p) => {
+    if (p.type === 'bars') return { display: 'flex', flexDirection: 'column', minHeight: 0, paddingBottom: 8 };
+    if (p.type === 'ring-split' || p.type === 'tabbed-ring') {
+      /* 1361–1500 档允许面板内部滚动，避免 4px 级裁切 */
+      return { display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: midRange ? 'auto' : 'hidden', overflowX: 'hidden' };
+    }
+    return { overflow: 'auto' };
+  };
+  const indicators = data?.extra?.indicators || [];
+  const warnCount = data?.extra?.warnCount;
+
+  const tableMinWidth = columns.reduce((s, c) => s + (c.width || (c.flex ? 220 : 100)), 48);
+
+  const panelSkeleton = (n) => [0, 1, 2].slice(0, n).map((i) => (
+    <section className="panel" key={`sk-${i}`}>
+      <header className="panel-head"><h2 className="panel-title">加载中</h2></header>
+      <div className="panel-body">
+        <div className="skeleton">
+          <span className="skeleton-line" />
+          <span className="skeleton-line" />
+          <span className="skeleton-line" />
+        </div>
+      </div>
+    </section>
+  ));
 
   return (
-    <div className="screen">
-      <aside className="screen-col">
-        {(data?.left || []).map((p) => (
-          <section className="panel" key={p.key}>
-            <header className="panel-head">
-              <h2>{p.title}</h2>
+    <div
+      className="dash"
+      style={narrow ? {
+        minHeight: 'calc(100vh - var(--header-h) - var(--nav-h))',
+        gridTemplateColumns: 'minmax(0, 1fr)',
+        gridTemplateRows: 'auto'
+      } : {
+        minHeight: 'calc(100vh - var(--header-h) - var(--nav-h))',
+        gridTemplateRows: 'minmax(0, 1fr) auto'
+      }}
+    >
+      {/* ---------------- 左栏 ---------------- */}
+      <aside className="dash-col--l">
+        {leftPanels.map((p) => (
+          <Panel
+            key={p.key}
+            title={p.title}
+            action={(
               <button type="button" className="panel-more" onClick={() => nav(`/biz/${meta0.module}`)}>
-                详情 <Ic icon={ChevronDownIcon} size={11} />
+                详情 <Ic icon={ChevronDownIcon} size={10} />
               </button>
-            </header>
-            <div className="panel-body"><PanelBody panel={p} /></div>
-          </section>
+            )}
+            bodyStyle={bodyStyleFor(p)}
+            style={panelStyle}
+          >
+            <PanelBody panel={p} extra={data?.extra} dense={midRange} />
+          </Panel>
         ))}
-        {!data && <div className="loading"><span className="spinner" />加载中 …</div>}
+        {!data && panelSkeleton(3)}
       </aside>
 
-      <div className="map-stage">
-        <GeoMap
-          code={code}
-          onDrill={drill}
-          bubbles={bubbles}
-          points={points}
-          selected={sel}
-          onSelectPoint={(pt) => setSel(pt)}
-          onMapClick={onMapClick}
-          measure={measure}
-          selectedRegion={code}
-        />
+      {/* ---------------- 地图 ---------------- */}
+      <GeoMap
+        code={code}
+        onDrill={measure.mode === 'none' ? drill : undefined}
+        bubbles={bubbles}
+        points={points}
+        selected={sel}
+        onSelectPoint={(pt) => setSel(pt)}
+        onSelectRegion={measure.mode === 'none' ? (b) => { if (b?.code) drill(b.code); } : undefined}
+        selectedRegion={code}
+        onMapClick={onMapClick}
+        measure={measure}
+        style={narrow ? { order: -1 } : undefined}
+      >
+        <div style={MAP_TITLE_STYLE}>{mapTitle}</div>
 
-        <div className="map-title">{mapTitle}</div>
+        {breadcrumb.length > 0 ? (
+          <nav className="breadcrumb" style={{ position: 'absolute', left: 12, top: 34, zIndex: 5 }}>
+            {breadcrumb.map((b, i) => {
+              const last = i === breadcrumb.length - 1;
+              return (
+                <React.Fragment key={b.code}>
+                  {i > 0 ? <span className="sep">/</span> : null}
+                  {last ? (
+                    <span>{b.name}</span>
+                  ) : (
+                    <a
+                      href="#back"
+                      onClick={(e) => { e.preventDefault(); setCode(b.code); setSel(null); resetMeasure(); }}
+                    >
+                      {b.name}
+                    </a>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </nav>
+        ) : null}
 
-        {breadcrumb.length > 0 && (
-          <div className="map-breadcrumb">
-            {breadcrumb.map((b, i) => (
-              <React.Fragment key={b.code}>
-                {i > 0 && <i>/</i>}
-                <button type="button" onClick={() => backTo(b.code)}>{b.name}</button>
-              </React.Fragment>
-            ))}
-            {measure.mode !== 'none' && <button type="button" onClick={() => setMeasure({ mode: 'none', points: [], closed: false })}>结束量算</button>}
-          </div>
-        )}
-
-        <div className="map-float-left">
+        <div style={{
+          position: 'absolute',
+          left: 12,
+          top: breadcrumb.length ? 60 : 34,
+          zIndex: 6,
+          display: 'flex',
+          flexWrap: 'nowrap',
+          alignItems: 'center',
+          gap: 6,
+          maxWidth: 'calc(100% - 96px)'
+        }}>
           <select
             className="select"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => { setCode(e.target.value); setSel(null); resetMeasure(); }}
             aria-label="选择行政区划"
+            style={{ height: 28, width: isPhone ? 116 : 168, fontSize: isPhone ? 11 : 12, flex: 'none' }}
           >
-            <option value="510000">四川省（全省）</option>
-            {(regions.data?.list || []).filter((r) => r.level === 'city').map((r) => (
-              <option key={r.code} value={r.code}>{r.name}</option>
-            ))}
-            {(regions.data?.list || []).filter((r) => r.level === 'county' && String(r.code).slice(0, 4) === String(code).slice(0, 4)).map((r) => (
-              <option key={r.code} value={r.code}>{r.name}</option>
+            {regionOptions.map((o) => (
+              <option key={o.code} value={o.code}>{o.name}</option>
             ))}
           </select>
-          <div className="float-btns">
+          <div
+            data-theme-bar="1"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              flex: '1 1 auto',
+              minWidth: 0,
+              flexWrap: isPhone ? 'nowrap' : 'wrap',
+              overflowX: isPhone ? 'auto' : 'visible',
+              overflowY: 'hidden',
+              height: isPhone ? 34 : undefined
+            }}
+          >
             {THEMES.map((t) => (
               <button
                 key={t.key}
                 type="button"
-                className={`map-btn${theme === t.key ? ' on' : ''}`}
-                onClick={() => {
-                  setTheme(t.key);
-                  setSel(null);
-                }}
+                className={`chip${theme === t.key ? ' is-on' : ''}`}
+                style={{ height: 28, background: FLOAT_DARK, flex: '0 0 auto', fontSize: isPhone ? 11 : undefined, padding: isPhone ? '0 8px' : undefined }}
+                onClick={() => { setTheme(t.key); setSel(null); }}
               >
                 <span className="dot" style={{ background: t.tone }} />
                 {t.label}
               </button>
             ))}
-            <button type="button" className="map-btn" onClick={() => nav('/battle')}>
-              <Ic icon={Task01Icon} size={13} />
+            <button
+              type="button"
+              className="chip"
+              style={{ height: 28, background: FLOAT_DARK, flex: '0 0 auto', fontSize: isPhone ? 11 : undefined, padding: isPhone ? '0 8px' : undefined }}
+              onClick={() => nav('/battle')}
+            >
+              <Ic icon={Task01Icon} size={12} />
               重大任务
             </button>
           </div>
         </div>
 
-        <div className="map-float-right">
-          <button type="button" className={`icon-btn${toolOpen ? ' on' : ''}`} aria-label="工具" onClick={() => { setToolOpen((v) => !v); setLayerOpen(false); }}>
+        <div style={{ position: 'absolute', right: 12, top: 10, zIndex: 7, display: 'flex', gap: 6 }}>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="工具"
+            aria-pressed={toolOpen}
+            style={{
+              background: FLOAT_DARK,
+              borderColor: toolOpen ? 'var(--cyan)' : 'var(--line)',
+              color: toolOpen ? 'var(--cyan)' : 'var(--text-2)'
+            }}
+            onClick={() => { setToolOpen((v) => !v); setLayerOpen(false); }}
+          >
             <Ic icon={ToolsIcon} size={16} />
           </button>
-          <button type="button" className={`icon-btn${layerOpen ? ' on' : ''}`} aria-label="图层控制" onClick={() => { setLayerOpen((v) => !v); setToolOpen(false); }}>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="图层控制"
+            aria-pressed={layerOpen}
+            style={{
+              background: FLOAT_DARK,
+              borderColor: layerOpen ? 'var(--cyan)' : 'var(--line)',
+              color: layerOpen ? 'var(--cyan)' : 'var(--text-2)'
+            }}
+            onClick={() => { setLayerOpen((v) => !v); setToolOpen(false); }}
+          >
             <Ic icon={Layers01Icon} size={16} />
           </button>
         </div>
 
         {toolOpen && (
-          <div className="layer-panel" style={{ right: 56 }}>
-            <div className="layer-head">
-              <h3>工具</h3>
-              <button type="button" className="btn-link" onClick={() => setToolOpen(false)}>关闭</button>
-            </div>
-            <div className="layer-body">
-              <button type="button" className="tool-item" onClick={() => setMeasure({ mode: 'dist', points: [], closed: false })}>
-                <Ic icon={RulerIcon} size={14} /> 测距
-              </button>
-              <button type="button" className="tool-item" onClick={() => setMeasure({ mode: 'area', points: [], closed: false })}>
-                <Ic icon={FilterIcon} size={14} /> 测面
-              </button>
-              <div className="tool-item-box">
-                <div className="muted tiny">坐标定位（经度,纬度）</div>
-                <div className="row">
-                  <input className="input" value={locate} onChange={(e) => setLocate(e.target.value)} placeholder="120.09,30.89" />
-                  <button
-                    type="button"
-                    className="btn btn-sm"
-                    onClick={() => {
-                      const m = locate.split(/[,，\s]+/).map(Number).filter((n) => Number.isFinite(n));
-                      if (m.length < 2) {
-                        toast('请输入「经度,纬度」，例如 120.09,30.89', 'err');
-                        return;
-                      }
-                      setMeasure({ mode: 'dist', points: [[m[0], m[1]]], closed: false });
-                      const near = [...(points || [])]
-                        .filter((p) => p.lon && p.lat)
-                        .map((p) => ({ p, d: haversine([m[0], m[1]], [Number(p.lon), Number(p.lat)]) }))
-                        .sort((a, b) => a.d - b.d)[0];
-                      toast(near ? `已定位，最近要素：${near.p.name}（${nf(near.d, 2)} km）` : '已定位');
-                    }}
-                  >
-                    定位
-                  </button>
+          <div className="card" style={{ position: 'absolute', right: 12, top: 50, width: 272, zIndex: 8 }}>
+            <header className="card-head" style={{ minHeight: 40, padding: '0 12px' }}>
+              <h3 className="card-title" style={{ fontSize: 13 }}>工具</h3>
+              <button type="button" className="btn btn-text btn-sm" onClick={() => setToolOpen(false)}>关闭</button>
+            </header>
+            <div className="card-body" style={{ padding: 10 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <button
+                  type="button"
+                  className="btn btn-text btn-sm"
+                  style={{ justifyContent: 'flex-start', gap: 8 }}
+                  onClick={() => setMeasure({ mode: 'dist', points: [], closed: false })}
+                >
+                  <Ic icon={RulerIcon} size={14} /> 测距
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-text btn-sm"
+                  style={{ justifyContent: 'flex-start', gap: 8 }}
+                  onClick={() => setMeasure({ mode: 'area', points: [], closed: false })}
+                >
+                  <Ic icon={FilterIcon} size={14} /> 测面
+                </button>
+                <div style={{ margin: '6px 0 2px' }}>
+                  <div className="tiny muted" style={{ marginBottom: 4 }}>坐标定位（经度,纬度）</div>
+                  <div className="row gap-2">
+                    <input
+                      className="input"
+                      style={{ height: 28, flex: 1, minWidth: 0, fontSize: 12 }}
+                      value={locate}
+                      onChange={(e) => setLocate(e.target.value)}
+                      placeholder="120.09,30.89"
+                      aria-label="坐标定位"
+                    />
+                    <button type="button" className="btn btn-sm" onClick={locateGo}>定位</button>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-text btn-sm"
+                  style={{ justifyContent: 'flex-start', gap: 8 }}
+                  onClick={exportPng}
+                >
+                  <Ic icon={Camera01Icon} size={14} /> 截图导出 PNG
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-text btn-sm"
+                  style={{ justifyContent: 'flex-start', gap: 8 }}
+                  onClick={exportCsv}
+                >
+                  <Ic icon={Download01Icon} size={14} /> 导出当前列表
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-text btn-sm"
+                  style={{ justifyContent: 'flex-start', gap: 8 }}
+                  onClick={() => { setCode(user?.region_code || '510000'); setSel(null); resetMeasure(); }}
+                >
+                  <Ic icon={Refresh01Icon} size={14} /> 回到本辖区视角
+                </button>
               </div>
-              <button type="button" className="tool-item" onClick={exportPng}>
-                <Ic icon={Camera01Icon} size={14} /> 截图导出 PNG
-              </button>
-              <button type="button" className="tool-item" onClick={exportCsv}>
-                <Ic icon={Download01Icon} size={14} /> 导出当前列表
-              </button>
-              <button type="button" className="tool-item" onClick={() => { setCode(user?.region_code || '510000'); setSel(null); }}>
-                <Ic icon={Refresh01Icon} size={14} /> 回到本辖区视角
-              </button>
             </div>
           </div>
         )}
 
         {layerOpen && (
-          <div className="layer-panel">
-            <div className="layer-head">
-              <h3>图层控制</h3>
+          <div className="card" style={{ position: 'absolute', right: 12, top: 50, width: 272, zIndex: 8 }}>
+            <header className="card-head" style={{ minHeight: 40, padding: '0 12px' }}>
+              <h3 className="card-title" style={{ fontSize: 13 }}>图层控制</h3>
               <button
                 type="button"
-                className="btn-link"
-                onClick={() => {
-                  stageRef.current = {};
-                  setTheme(meta0.theme);
-                  setSel(null);
-                }}
+                className="btn btn-text btn-sm"
+                onClick={() => { setStages({}); setTheme(meta0.theme); setSel(null); }}
               >
                 清除
               </button>
-            </div>
-            <div className="layer-body">
-              <div className="layer-group">
-                <div className="layer-group-title">专题图层</div>
-                {THEMES.map((t) => (
-                  <label className="layer-item" key={t.key}>
-                    <input
-                      type="checkbox"
-                      checked={theme === t.key}
-                      onChange={() => setTheme(t.key)}
-                    />
-                    <span>{t.label}</span>
-                    <span className="muted tiny">{t.key === theme ? `${points.length} 个要素` : ''}</span>
-                  </label>
-                ))}
-              </div>
-              <div className="layer-group">
-                <div className="layer-group-title">矿产地（按勘查程度）</div>
-                {['待查', '在查', '查明', '规划'].map((st) => (
-                  <label className="layer-item" key={st}>
-                    <input
-                      type="checkbox"
-                      checked={!!stageRef.current[st]}
-                      onChange={(e) => {
-                        stageRef.current = { ...stageRef.current, [st]: e.target.checked };
-                        setTheme('deposit');
-                        setSel(null);
-                        // 触发重算
-                        setMeasure((m) => ({ ...m }));
-                      }}
-                    />
-                    <span>{st}矿产地</span>
-                  </label>
-                ))}
-              </div>
-              <div className="layer-group">
-                <div className="layer-group-title">基础参考图层</div>
-                {['清查家底', '三线（生态保护红线）', '辅助规划范围', '省级规划', '市级规划', '县级规划'].map((n) => (
-                  <label className="layer-item" key={n}>
-                    <input type="checkbox" disabled />
-                    <span className="muted">{n}</span>
-                    <span className="muted tiny">待接底图</span>
-                  </label>
-                ))}
-              </div>
-              <p className="muted tiny" style={{ lineHeight: 1.6, marginTop: 8 }}>
-                基础参考图层需接入省级二三维底图服务后开放；当前演示环境以真实行政区划边界与要素点位呈现。
+            </header>
+            <div className="card-body" style={{ padding: 10 }}>
+              <div className="tiny muted" style={{ margin: '0 0 2px', letterSpacing: '.04em' }}>专题图层</div>
+              {THEMES.map((t) => (
+                <label
+                  key={t.key}
+                  className="row center gap-2"
+                  style={{ minHeight: 26, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}
+                >
+                  <input type="checkbox" checked={theme === t.key} onChange={() => setTheme(t.key)} />
+                  <span>{t.label}</span>
+                  <span className="grow" />
+                  {theme === t.key ? <span className="tiny muted">{points.length} 个要素</span> : null}
+                </label>
+              ))}
+              <div className="tiny muted" style={{ margin: '10px 0 2px', letterSpacing: '.04em' }}>矿产地（按勘查程度）</div>
+              {['待查', '在查', '查明', '规划'].map((st) => (
+                <label
+                  key={st}
+                  className="row center gap-2"
+                  style={{ minHeight: 26, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!stages[st]}
+                    onChange={(e) => {
+                      setStages((prev) => ({ ...prev, [st]: e.target.checked }));
+                      setTheme('deposit');
+                      setSel(null);
+                    }}
+                  />
+                  <span>{st}矿产地</span>
+                </label>
+              ))}
+              <div className="tiny muted" style={{ margin: '10px 0 2px', letterSpacing: '.04em' }}>基础参考图层</div>
+              {['清查家底', '三线（生态保护红线）', '辅助规划范围', '省级规划', '市级规划', '县级规划'].map((n) => (
+                <label
+                  key={n}
+                  className="row center gap-2"
+                  style={{ minHeight: 24, fontSize: 12, color: 'var(--text-4)', cursor: 'not-allowed' }}
+                >
+                  <input type="checkbox" disabled />
+                  <span>{n}</span>
+                  <span className="grow" />
+                  <span className="tiny muted">待接底图</span>
+                </label>
+              ))}
+              <p className="muted tiny" style={{ lineHeight: 1.6, margin: '8px 0 0' }}>
+                基础参考图层需接入省级二三维底图服务后开放；当前以真实行政区划边界与要素点位呈现。
               </p>
             </div>
           </div>
         )}
 
-        {measureText && <div className="tool-tip">{measureText}</div>}
-
-        {sel && (
-          <div className="mine-popup">
-            <div className="mine-popup-head">
-              <h3>{sel.name}</h3>
-              <button type="button" className="close" onClick={() => setSel(null)} aria-label="关闭">✕</button>
-            </div>
-            <div className="mine-popup-body">
-              {popupRows.map(([k, label]) => (
-                <div className="mp-row" key={k}>
-                  <span className="k">{label}</span>
-                  <span className="v">{sel[k] === null || sel[k] === '' ? '—' : sel[k]}</span>
-                </div>
-              ))}
-              <button type="button" className="mp-more" onClick={() => nav(`/archive/${sel.id}`)}>
-                更多 <Ic icon={More01Icon} size={12} />
-              </button>
-            </div>
-            {theme === 'online' && (
-              <div className="badges">
-                <span className={sel.video_connected ? 'on' : 'off'}>
-                  <i><Ic icon={Camera01Icon} size={13} /></i>视频监控<small>{sel.video_connected ? '已接入' : '未接入'}</small>
-                </span>
-                <span className={sel.monitor_connected ? 'on' : 'off'}>
-                  <i><Ic icon={ToolsIcon} size={13} /></i>监测设备<small>{sel.monitor_connected ? '已接入' : '未接入'}</small>
-                </span>
-                <span className={sel.warn_connected ? 'on' : 'off'}>
-                  <i><Ic icon={Location01Icon} size={13} /></i>监测预警<small>{sel.warn_connected ? '已接入' : '未接入'}</small>
-                </span>
-              </div>
-            )}
+        {measureText && (
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: 14,
+            transform: 'translateX(-50%)',
+            zIndex: 6,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            maxWidth: 'calc(100% - 24px)',
+            padding: '6px 10px',
+            fontSize: 12,
+            color: 'var(--text-1)',
+            whiteSpace: 'nowrap',
+            background: 'rgba(5,14,28,.86)',
+            border: '1px solid var(--line-strong)',
+            borderRadius: 8
+          }}>
+            <span>{measureText}</span>
+            {measure.mode !== 'none' ? (
+              <button type="button" className="btn btn-text btn-sm" onClick={resetMeasure}>结束</button>
+            ) : null}
           </div>
         )}
 
-      </div>
-
-      <aside className="screen-col">
-        {(data?.right || []).map((p) => (
-          <section className="panel" key={p.key}>
-            <header className="panel-head">
-              <h2>{p.title}</h2>
-              <button type="button" className="panel-more" onClick={() => nav(`/biz/${meta0.module}`)}>
-                详情 <Ic icon={ChevronDownIcon} size={11} />
+        {sel && (
+          <div
+            className="card"
+            style={{
+              position: 'absolute',
+              right: 12,
+              bottom: 12,
+              zIndex: 9,
+              width: 'min(300px, calc(100% - 24px))',
+              maxHeight: 'calc(100% - 72px)'
+            }}
+          >
+            <header className="card-head" style={{ minHeight: 40, padding: '0 12px' }}>
+              <h3 className="card-title" style={{ fontSize: 13, minWidth: 0 }}>
+                <span className="ellipsis" title={sel.name || sel.mine_name || ''}>
+                  {sel.name || sel.mine_name || '要素详情'}
+                </span>
+              </h3>
+              <button type="button" className="icon-btn icon-btn--sm" aria-label="关闭" onClick={() => setSel(null)}>
+                ✕
               </button>
             </header>
-            <div className="panel-body"><PanelBody panel={p} /></div>
-          </section>
-        ))}
-        {data?.extra?.indicators && (
-          <section className="panel">
-            <header className="panel-head"><h2>指标执行预警</h2></header>
-            <div className="panel-body">
-              <Chart
-                className="indicator-chart"
-                height={Math.max(120, Math.min(5, data.extra.indicators.length) * 30 + 16)}
-                option={indicatorOption(data.extra.indicators.slice(0, 5))}
-              />
+            <div className="card-body" style={{ padding: 10, overflow: 'auto' }}>
+              <div className="desc-list">
+                {popupRows.map(([k, label]) => (
+                  <div className="desc-row" key={k}>
+                    <span className="desc-key">{label}</span>
+                    <span className="desc-value">{sel[k] === '' ? '—' : String(sel[k])}</span>
+                  </div>
+                ))}
+                {popupRows.length === 0 ? <div className="tiny muted">该要素暂无扩展字段</div> : null}
+              </div>
+
+              {theme === 'online' ? (
+                <div className="row" style={{ flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                  <span className={`tag ${sel.video_connected ? 'tag--green' : 'tag--grey'}`}>
+                    <Ic icon={Camera01Icon} size={12} /> 视频监控 · {sel.video_connected ? '已接入' : '未接入'}
+                  </span>
+                  <span className={`tag ${sel.monitor_connected ? 'tag--green' : 'tag--grey'}`}>
+                    <Ic icon={ToolsIcon} size={12} /> 监测设备 · {sel.monitor_connected ? '已接入' : '未接入'}
+                  </span>
+                  <span className={`tag ${sel.warn_connected ? 'tag--green' : 'tag--grey'}`}>
+                    <Ic icon={Location01Icon} size={12} /> 监测预警 · {sel.warn_connected ? '已接入' : '未接入'}
+                  </span>
+                </div>
+              ) : null}
+
+              {sel.id ? (
+                <button
+                  type="button"
+                  className="btn btn-text btn-sm"
+                  style={{ marginTop: 8, gap: 4 }}
+                  onClick={() => nav(`/archive/${sel.id}`)}
+                >
+                  更多 <Ic icon={More01Icon} size={12} />
+                </button>
+              ) : null}
             </div>
-          </section>
+          </div>
         )}
+
+        <div
+          data-map-legend="1"
+          style={{
+            position: 'absolute',
+            left: 12,
+            bottom: 12,
+            zIndex: 5,
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: isPhone ? 6 : 10,
+            maxWidth: isPhone ? 'calc(100% - 24px)' : 'calc(100% - 340px)',
+            padding: isPhone ? '4px 8px' : '5px 10px',
+            fontSize: isPhone ? 10 : 11,
+            lineHeight: 1.3,
+            color: 'var(--text-3)',
+            background: FLOAT_DARK,
+            border: '1px solid var(--line)',
+            borderRadius: 8
+          }}
+        >
+          {THEMES.map((t) => (
+            <span key={t.key} className="row center" style={{ gap: 5 }}>
+              <i style={{ width: 8, height: 8, borderRadius: 2, background: t.tone }} />
+              {t.label}
+            </span>
+          ))}
+          {pointsQ.error ? <span style={{ color: 'var(--red)' }}>要素加载失败</span> : null}
+          {screenQ.error ? <span style={{ color: 'var(--red)' }}>面板数据加载失败</span> : null}
+        </div>
+      </GeoMap>
+
+      {/* ---------------- 右栏 ---------------- */}
+      <aside className="dash-col--r">
+        {rightPanels.map((p) => (
+          <Panel
+            key={p.key}
+            title={p.title}
+            action={(
+              <button type="button" className="panel-more" onClick={() => nav(`/biz/${meta0.module}`)}>
+                详情 <Ic icon={ChevronDownIcon} size={10} />
+              </button>
+            )}
+            bodyStyle={bodyStyleFor(p)}
+            style={panelStyle}
+          >
+            <PanelBody panel={p} extra={data?.extra} dense={midRange} />
+            {p.key === 'warn' && indicators.length ? (
+              <div style={{ marginTop: 10, borderTop: '1px solid var(--line-soft)', paddingTop: 8 }}>
+                <div className="panel-title" style={{ fontSize: 12, marginBottom: 2, display: 'flex' }}>
+                  指标执行预警
+                  <span className="muted tiny" style={{ fontWeight: 400 }}>
+                    {warnCount ? `· 黄牌 ${warnCount} 项` : ''}
+                  </span>
+                </div>
+                <Chart
+                  height={Math.max(108, Math.min(6, indicators.length) * 26 + 14)}
+                  style={{ minHeight: 0 }}
+                  label="指标执行预警"
+                  option={indicatorOption(indicators.slice(0, 6))}
+                />
+              </div>
+            ) : null}
+          </Panel>
+        ))}
+        {!data && panelSkeleton(2)}
       </aside>
 
-      <section className={`map-list${listOpen ? '' : ' collapsed'}`}>
-        <header className="map-list-head">
-          <h3>{themeLabel}列表</h3>
-          <div className="map-list-tools">
-            <div className="search-mini">
-              <Ic icon={Search01Icon} size={12} />
-              <input value={kw} onChange={(e) => setKw(e.target.value)} placeholder="筛选当前列表" aria-label="筛选当前列表" />
-            </div>
-            <button type="button" className="btn-link" onClick={exportCsv}>
+      {/* ---------------- 底部列表（跨满三列） ---------------- */}
+      <section className={`panel dash-list${listOpen ? '' : ' is-collapsed'}`}>
+        <header className="panel-head" style={{ minHeight: 38 }}>
+          <h2 className="panel-title">
+            {meta0.title}列表
+            <span className="muted tiny" style={{ fontWeight: 400 }}>· {list.length} 条</span>
+          </h2>
+          <div className="row center gap-2">
+            <label className="input-icon" style={{ width: 180 }}>
+              <Ic icon={Search01Icon} size={13} />
+              <input
+                className="input"
+                style={{ height: 28, fontSize: 12 }}
+                value={kw}
+                onChange={(e) => setKw(e.target.value)}
+                placeholder="筛选当前列表"
+                aria-label="筛选当前列表"
+              />
+            </label>
+            <button type="button" className="btn btn-text btn-sm" onClick={exportCsv}>
               <Ic icon={Download01Icon} size={12} /> 导出
             </button>
-            <button type="button" className="btn-link" onClick={() => setListOpen((v) => !v)}>
+            <button type="button" className="btn btn-text btn-sm" onClick={() => setListOpen((v) => !v)}>
               {listOpen ? '收起' : '展开'}
             </button>
           </div>
         </header>
-        <div className="map-list-body">
-          <table className="data-table dense map-table">
-            <thead>
-              <tr>
-                <th style={{ width: 48 }}>序号</th>
-                {columns.map((c) => (
-                  <th key={c.key} className={c.align === 'right' ? 'num' : ''} style={c.width ? { width: c.width } : undefined}>
-                    {c.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {list.slice(0, 200).map((row, i) => (
-                <tr key={row.id ?? i} onClick={() => setSel(row)} className={sel && sel.id === row.id ? 'selected' : ''}>
-                  <td className="num">{i + 1}</td>
+        <div
+          className="panel-body"
+          style={{ padding: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}
+        >
+          <div
+            className="table-wrap"
+            style={{ flex: '1 1 auto', minHeight: 0, border: 0, borderRadius: 0, overflow: 'auto' }}
+          >
+            <table className="data-table is-dense" style={{ minWidth: tableMinWidth }}>
+              <thead>
+                <tr>
+                  <th style={{ width: 48 }}>序号</th>
                   {columns.map((c) => (
-                    <td key={c.key} className={c.align === 'right' ? 'num' : ''}>
-                      {c.align === 'right' && Number.isFinite(Number(row[c.key])) ? int(row[c.key]) : row[c.key] ?? '—'}
-                    </td>
+                    <th
+                      key={c.key}
+                      className={c.align === 'right' ? 'num' : ''}
+                      style={c.width ? { width: c.width } : undefined}
+                    >
+                      {c.label}
+                    </th>
                   ))}
                 </tr>
-              ))}
-              {list.length === 0 && (
-                <tr><td colSpan={columns.length + 1}><div className="table-empty">当前视角下没有要素</div></td></tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {list.slice(0, 200).map((row, i) => (
+                  <tr
+                    key={row.id ?? i}
+                    onClick={() => setSel(row)}
+                    className={sel && sel.id === row.id ? 'selected' : ''}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td className="num">{i + 1}</td>
+                    {columns.map((c) => (
+                      <td key={c.key} className={c.align === 'right' ? 'num' : ''}>
+                        {c.align === 'right' && Number.isFinite(Number(row[c.key]))
+                          ? int(row[c.key])
+                          : row[c.key] ?? '—'}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                {list.length === 0 ? (
+                  <tr>
+                    <td colSpan={columns.length + 1}>
+                      <div className="table-empty">当前视角下没有要素</div>
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     </div>

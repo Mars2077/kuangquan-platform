@@ -2,12 +2,12 @@ import React, { useMemo, useState } from 'react';
 import { Ic } from '../components/Icon';
 import { useApp } from '../store.jsx';
 import { tools } from '../api';
-import { ChevronDownIcon, PlayCircleIcon, Tick02Icon, Alert02Icon, Target02Icon } from '@hugeicons/core-free-icons';
+import { Alert02Icon, PlayCircleIcon, Tick02Icon } from '@hugeicons/core-free-icons';
 
 /**
- * 功能点附带的辅助分析面板。
- * 交互型功能（储量核算、选址合规、绿色矿山评分、开发利用校验、信用评分、指标配额、超时督办）
- * 直接调用 /api/tools/*；其余聚合型功能给出真实判定规则与口径说明，不编造数字。
+ * 功能点附带的辅助分析面板（抽屉内使用）。
+ * 交互型功能调用 /api/tools/*，表单与结果分区呈现，未测算前不展示任何数字；
+ * 聚合型功能只呈现真实判定规则与统计口径说明，不编造数据。
  */
 
 const nf = (v, d = 2) =>
@@ -145,18 +145,106 @@ const RULES = {
   }
 };
 
-function Field({ label, children }) {
+const TOOL_TITLE = {
+  calc: '辅助计算 · 储量核算与空间叠置',
+  precheck: '辅助规划实施 · 选址合规一键审查',
+  compliance: '规划动态调整 · 合规性预检',
+  scopeArgument: '范围论证 · 空间叠置与避让建议',
+  greenScore: '申报指标辅助评价（六大维度）',
+  developCheck: '开发利用方案技术指标校验',
+  credit: '矿企信用评分测算',
+  quota: '保护矿种年度开采总量控制',
+  order: '超时未处置工单督办'
+};
+
+const INTERACTIVE = Object.keys(TOOL_TITLE);
+
+const GRID = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+  gap: 'var(--sp-3)'
+};
+const FULL = { gridColumn: '1 / -1' };
+const ROW = { display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', flexWrap: 'wrap' };
+const NOTE = { margin: 0, fontSize: 12, lineHeight: 1.7, color: 'var(--text-3)' };
+
+function Field({ label, htmlFor, children, full }) {
   return (
-    <div className="fld">
-      <label>{label}</label>
+    <div className="field" style={full ? FULL : undefined}>
+      <label className="field-label" htmlFor={htmlFor}>{label}</label>
       {children}
+    </div>
+  );
+}
+
+function RuleCard({ rule }) {
+  return (
+    <div className="card">
+      <div className="card-head">
+        <h3 className="card-title">{rule.title}</h3>
+        <span className="card-sub">判定规则与统计口径</span>
+      </div>
+      <div className="card-body">
+        <p className="page-desc" style={{ marginTop: 0, marginBottom: 12 }}>{rule.intro}</p>
+        <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, lineHeight: 1.75, color: 'var(--text-2)' }}>
+          {rule.items.map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+function ResultCard({ title, sub, children }) {
+  return (
+    <div className="card">
+      <div className="card-head">
+        <h3 className="card-title">{title}</h3>
+        {sub ? <span className="card-sub">{sub}</span> : null}
+      </div>
+      <div className="card-body">{children}</div>
+    </div>
+  );
+}
+
+function MiniKpi({ items }) {
+  return (
+    <div className="kpi-row kpi-row--compact">
+      {items.map((it) => (
+        <div className="kpi-card" key={it.label}>
+          <span className="kpi-label">{it.label}</span>
+          <b className={`kpi-value${it.warn ? ' is-warn' : ''}`}>
+            {it.value}
+            {it.unit ? <i className="kpi-unit">{it.unit}</i> : null}
+          </b>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DataTable({ head, rows, minWidth }) {
+  return (
+    <div className="table-wrap">
+      <table className="data-table is-dense" style={{ minWidth: minWidth || 480 }}>
+        <thead>
+          <tr>
+            {head.map((h) => (
+              <th key={h.label} align={h.right ? 'right' : undefined} className={h.right ? 'num' : undefined}>
+                {h.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>{rows}</tbody>
+      </table>
     </div>
   );
 }
 
 export default function SpecialPanel({ kind, spec, onChanged }) {
   const { toast } = useApp();
-  const [open, setOpen] = useState(kind === 'calc' || kind === 'greenScore');
   const [busy, setBusy] = useState(false);
 
   /* 储量核算 */
@@ -196,6 +284,7 @@ export default function SpecialPanel({ kind, spec, onChanged }) {
   const [overdue, setOverdue] = useState(null);
 
   const rule = RULES[kind];
+  const title = useMemo(() => TOOL_TITLE[kind] || rule?.title || '功能说明', [kind, rule]);
 
   const run = async (fn, setter) => {
     setBusy(true);
@@ -229,336 +318,465 @@ export default function SpecialPanel({ kind, spec, onChanged }) {
   const loadQuota = () => run(() => tools.quota(), setQuota);
   const loadOverdue = () => run(() => tools.overdue(), setOverdue);
 
-  const title = useMemo(() => {
-    if (kind === 'calc') return '辅助计算 · 储量核算与空间叠置';
-    if (kind === 'precheck') return '辅助规划实施 · 选址合规一键审查';
-    if (kind === 'compliance') return '规划动态调整 · 合规性预检';
-    if (kind === 'scopeArgument') return '范围论证 · 空间叠置与避让建议';
-    if (kind === 'greenScore') return '申报指标辅助评价（六大维度）';
-    if (kind === 'developCheck') return '开发利用方案技术指标校验';
-    if (kind === 'credit') return '矿企信用评分测算';
-    if (kind === 'quota') return '保护矿种年度开采总量控制';
-    if (kind === 'order') return '超时未处置工单督办';
-    return rule?.title || '功能说明';
-  }, [kind, rule]);
+  if (!INTERACTIVE.includes(kind) && !rule) return null;
 
-  const interactive = ['calc', 'precheck', 'compliance', 'scopeArgument', 'greenScore', 'developCheck', 'credit', 'quota', 'order'].includes(kind);
+  const head = (
+    <div className="alert-line" style={{ marginTop: 0 }}>
+      <b style={{ color: 'var(--text-1)' }}>{title}</b>
+      {spec?.name ? ` · ${spec.name}` : ''}
+      {INTERACTIVE.includes(kind)
+        ? '：填写参数后在线试算，结果由后端工具接口实时计算。'
+        : '：以下为该功能的判定规则与统计口径。'}
+    </div>
+  );
 
-  if (!interactive && !rule) return null;
+  /* —— 非交互型：仅规则说明 —— */
+  if (!INTERACTIVE.includes(kind)) {
+    return (
+      <div className="content">
+        {head}
+        <RuleCard rule={rule} />
+      </div>
+    );
+  }
 
   return (
-    <section className="card" style={{ marginBottom: 14 }}>
-      <h3 style={{ justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setOpen((v) => !v)}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Ic icon={Target02Icon} size={14} />
-          {title}
-        </span>
-        <span className="muted tiny" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {interactive ? '展开试算' : '查看规则'}
-          <Ic icon={ChevronDownIcon} size={12} />
-        </span>
-      </h3>
+    <div className="content">
+      {head}
+      {rule && <RuleCard rule={rule} />}
 
-      {!open && <p className="muted tiny" style={{ lineHeight: 1.7 }}>{rule?.intro || '该功能提供在线试算，展开后可输入参数查看测算结果。'}</p>}
-
-      {open && (
+      {kind === 'calc' && (
         <>
-          {rule && (
-            <>
-              <p className="muted tiny" style={{ lineHeight: 1.8, marginBottom: 10 }}>{rule.intro}</p>
-              <ul className="rule-list">
-                {rule.items.map((t) => (<li key={t}>{t}</li>))}
-              </ul>
-            </>
-          )}
-
-          {kind === 'calc' && (
-            <div style={{ marginTop: 14 }}>
-              <div className="form-grid cols-3">
-                <Field label="矿区面积（km²）"><input className="input" type="number" step="0.01" value={calc.areaKm2} onChange={(e) => setCalc({ ...calc, areaKm2: e.target.value })} /></Field>
-                <Field label="矿体平均厚度（m）"><input className="input" type="number" step="0.1" value={calc.thickness} onChange={(e) => setCalc({ ...calc, thickness: e.target.value })} /></Field>
-                <Field label="矿石体重（t/m³）"><input className="input" type="number" step="0.1" value={calc.density} onChange={(e) => setCalc({ ...calc, density: e.target.value })} /></Field>
-                <Field label="累计动用（万吨）"><input className="input" type="number" value={calc.mined} onChange={(e) => setCalc({ ...calc, mined: e.target.value })} /></Field>
-                <Field label="累计损失（万吨）"><input className="input" type="number" value={calc.loss} onChange={(e) => setCalc({ ...calc, loss: e.target.value })} /></Field>
-                <Field label="开采回采率（%）"><input className="input" type="number" value={calc.recovery} onChange={(e) => setCalc({ ...calc, recovery: e.target.value })} /></Field>
-                <Field label="矿石贫化率（%）"><input className="input" type="number" value={calc.dilution} onChange={(e) => setCalc({ ...calc, dilution: e.target.value })} /></Field>
-                <Field label="选矿回收率（%）"><input className="input" type="number" value={calc.utilization} onChange={(e) => setCalc({ ...calc, utilization: e.target.value })} /></Field>
-                <Field label="设计年产量（万吨）"><input className="input" type="number" value={calc.annualOutput} onChange={(e) => setCalc({ ...calc, annualOutput: e.target.value })} /></Field>
+          <div className="card">
+            <div className="card-head">
+              <h3 className="card-title">储量核算参数</h3>
+              <span className="card-sub">三率指标参与校验</span>
+            </div>
+            <div className="card-body">
+              <div style={GRID}>
+                <Field label="矿区面积（km²）" htmlFor="c-area">
+                  <input id="c-area" className="input" type="number" step="0.01" value={calc.areaKm2} onChange={(e) => setCalc({ ...calc, areaKm2: e.target.value })} />
+                </Field>
+                <Field label="矿体平均厚度（m）" htmlFor="c-thick">
+                  <input id="c-thick" className="input" type="number" step="0.1" value={calc.thickness} onChange={(e) => setCalc({ ...calc, thickness: e.target.value })} />
+                </Field>
+                <Field label="矿石体重（t/m³）" htmlFor="c-density">
+                  <input id="c-density" className="input" type="number" step="0.1" value={calc.density} onChange={(e) => setCalc({ ...calc, density: e.target.value })} />
+                </Field>
+                <Field label="累计动用（万吨）" htmlFor="c-mined">
+                  <input id="c-mined" className="input" type="number" value={calc.mined} onChange={(e) => setCalc({ ...calc, mined: e.target.value })} />
+                </Field>
+                <Field label="累计损失（万吨）" htmlFor="c-loss">
+                  <input id="c-loss" className="input" type="number" value={calc.loss} onChange={(e) => setCalc({ ...calc, loss: e.target.value })} />
+                </Field>
+                <Field label="开采回采率（%）" htmlFor="c-recovery">
+                  <input id="c-recovery" className="input" type="number" value={calc.recovery} onChange={(e) => setCalc({ ...calc, recovery: e.target.value })} />
+                </Field>
+                <Field label="矿石贫化率（%）" htmlFor="c-dilution">
+                  <input id="c-dilution" className="input" type="number" value={calc.dilution} onChange={(e) => setCalc({ ...calc, dilution: e.target.value })} />
+                </Field>
+                <Field label="选矿回收率（%）" htmlFor="c-util">
+                  <input id="c-util" className="input" type="number" value={calc.utilization} onChange={(e) => setCalc({ ...calc, utilization: e.target.value })} />
+                </Field>
+                <Field label="设计年产量（万吨）" htmlFor="c-output">
+                  <input id="c-output" className="input" type="number" value={calc.annualOutput} onChange={(e) => setCalc({ ...calc, annualOutput: e.target.value })} />
+                </Field>
               </div>
-              <div className="actions" style={{ marginTop: 12 }}>
-                <button type="button" className="btn" disabled={busy} onClick={doCalc}>
+              <div style={{ ...ROW, marginTop: 12 }}>
+                <button type="button" className="btn btn-primary" disabled={busy} onClick={doCalc}>
                   <Ic icon={PlayCircleIcon} size={14} /> 计算保有储量与三率
                 </button>
-              </div>
-              {calcRes && (
-                <div className="calc-result">
-                  <div className="grid-4">
-                    <div className="kpi"><div className="k">累计查明资源量</div><div className="v">{nf(calcRes.result.resourceTotal)}<small>万吨</small></div></div>
-                    <div className="kpi"><div className="k">保有资源量</div><div className="v">{nf(calcRes.result.remaining)}<small>万吨</small></div></div>
-                    <div className="kpi"><div className="k">累计动用</div><div className="v">{nf(calcRes.result.mined)}<small>万吨</small></div></div>
-                    <div className="kpi"><div className="k">可服务年限</div><div className="v">{calcRes.result.serviceYears ?? '—'}<small>年</small></div></div>
-                  </div>
-                  <div className="tag-list" style={{ marginTop: 10 }}>
-                    {calcRes.checks.map((c) => (
-                      <span key={c.key} className={`tag tone-${c.ok ? 'green' : 'red'}`}>
-                        {c.label} {c.value}%（标准 {c.standard}）
-                      </span>
-                    ))}
-                  </div>
-                  <p className="muted tiny" style={{ marginTop: 8, lineHeight: 1.7 }}>{calcRes.conclusion}</p>
-                </div>
-              )}
-
-              <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px dashed rgba(64,158,255,0.2)' }}>
-                <div className="block-label">空间叠置测算（绘制多边形，测算与矿产地、矿业权的重叠面积与压覆资源量）</div>
-                <textarea className="textarea" rows={4} value={polyText} onChange={(e) => setPolyText(e.target.value)} placeholder="每行一个顶点：经度,纬度" />
-                <div className="actions" style={{ marginTop: 10 }}>
-                  <button type="button" className="btn btn-ghost" disabled={busy} onClick={doOverlay}>
-                    <Ic icon={PlayCircleIcon} size={14} /> 测算重叠面积
-                  </button>
-                </div>
-                {overlayRes && (
-                  <div style={{ marginTop: 12 }}>
-                    <div className="grid-4">
-                      <div className="kpi"><div className="k">查询面积</div><div className="v">{nf(overlayRes.summary.area, 4)}<small>km²</small></div></div>
-                      <div className="kpi"><div className="k">重叠面积</div><div className="v">{nf(overlayRes.summary.overlapArea, 4)}<small>km²</small></div></div>
-                      <div className="kpi"><div className="k">重叠比例</div><div className="v">{nf(overlayRes.summary.overlapRatio)}<small>%</small></div></div>
-                      <div className="kpi"><div className="k">压覆资源量</div><div className="v">{nf(overlayRes.summary.reserveOverlap)}<small>万吨</small></div></div>
-                    </div>
-                    {overlayRes.hits.length > 0 && (
-                      <table className="data-table dense" style={{ marginTop: 10 }}>
-                        <thead><tr><th>名称</th><th>类型</th><th className="num">重叠面积(km²)</th><th className="num">重叠比例</th></tr></thead>
-                        <tbody>
-                          {overlayRes.hits.slice(0, 8).map((h) => (
-                            <tr key={`${h.kind}-${h.id}`}>
-                              <td>{h.name}</td>
-                              <td>{h.kind}</td>
-                              <td className="num">{nf(h.overlapArea, 4)}</td>
-                              <td className="num">{nf(h.overlapRatio * 100, 1)}%</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                    <p className="muted tiny" style={{ marginTop: 8, lineHeight: 1.7 }}>{overlayRes.conclusion}</p>
-                  </div>
-                )}
+                <span className="card-sub">未点击测算前不产生任何数值</span>
               </div>
             </div>
+          </div>
+
+          {calcRes && (
+            <ResultCard title="储量核算结果" sub="单位：万吨 / 年">
+              <MiniKpi
+                items={[
+                  { label: '累计查明资源量', value: nf(calcRes.result.resourceTotal), unit: '万吨' },
+                  { label: '保有资源量', value: nf(calcRes.result.remaining), unit: '万吨' },
+                  { label: '累计动用', value: nf(calcRes.result.mined), unit: '万吨' },
+                  { label: '可服务年限', value: calcRes.result.serviceYears ?? '—', unit: '年' }
+                ]}
+              />
+              <div style={{ ...ROW, marginTop: 10 }}>
+                {calcRes.checks.map((c) => (
+                  <span key={c.key} className={`tag ${c.ok ? 'tag--green' : 'tag--red'}`}>
+                    {c.label} {c.value}%（标准 {c.standard}）
+                  </span>
+                ))}
+              </div>
+              <div className={`alert-line ${calcRes.checks.every((c) => c.ok) ? 'ok' : 'err'}`}>{calcRes.conclusion}</div>
+            </ResultCard>
           )}
 
-          {(kind === 'precheck' || kind === 'compliance' || kind === 'scopeArgument') && (
-            <div style={{ marginTop: 14 }}>
-              <div className="form-grid cols-3">
-                <Field label="拟选址经度"><input className="input" type="number" step="0.0001" value={pre.lon} onChange={(e) => setPre({ ...pre, lon: e.target.value })} /></Field>
-                <Field label="拟选址纬度"><input className="input" type="number" step="0.0001" value={pre.lat} onChange={(e) => setPre({ ...pre, lat: e.target.value })} /></Field>
-                <Field label="区块面积（km²）"><input className="input" type="number" step="0.01" value={pre.areaKm2} onChange={(e) => setPre({ ...pre, areaKm2: e.target.value })} /></Field>
-              </div>
-              <div className="actions" style={{ marginTop: 12 }}>
-                <button type="button" className="btn" disabled={busy} onClick={doPre}>
-                  <Ic icon={PlayCircleIcon} size={14} /> 一键合规审查
+          <div className="card">
+            <div className="card-head">
+              <h3 className="card-title">空间叠置测算</h3>
+              <span className="card-sub">多边形与矿产地、矿业权重叠</span>
+            </div>
+            <div className="card-body">
+              <p style={NOTE}>每行一个顶点，格式「经度,纬度」，至少 3 行。</p>
+              <textarea
+                className="textarea"
+                rows={4}
+                style={{ marginTop: 8 }}
+                value={polyText}
+                onChange={(e) => setPolyText(e.target.value)}
+                placeholder="120.05,30.92"
+                aria-label="多边形顶点"
+              />
+              <div style={{ ...ROW, marginTop: 10 }}>
+                <button type="button" className="btn btn-ghost" disabled={busy} onClick={doOverlay}>
+                  <Ic icon={PlayCircleIcon} size={14} /> 测算重叠面积
                 </button>
               </div>
-              {preRes && (
-                <div style={{ marginTop: 12 }}>
-                  <div className={`alert-line ${preRes.blocking.length ? 'err' : preRes.limiting.length ? 'warn' : 'ok'}`} style={{ marginBottom: 10 }}>
-                    {preRes.conclusion}
-                  </div>
-                  <table className="data-table dense">
-                    <thead><tr><th>审查规则</th><th>判定结果</th><th style={{ width: 80 }}>结论</th></tr></thead>
-                    <tbody>
-                      {preRes.rules.map((r) => (
-                        <tr key={r.rule}>
-                          <td>{r.rule}</td>
-                          <td>{r.result}</td>
-                          <td>{r.ok ? <span className="tag tone-green">通过</span> : <span className="tag tone-red">不通过</span>}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {preRes.zones.length > 0 && (
-                    <p className="muted tiny" style={{ marginTop: 8, lineHeight: 1.7 }}>
-                      涉及规划区块：{preRes.zones.slice(0, 3).map((z) => `${z.name}（${z.zone_type}）`).join('、')}
-                    </p>
-                  )}
+            </div>
+          </div>
+
+          {overlayRes && (
+            <ResultCard title="空间叠置结果" sub={`命中 ${overlayRes.hits.length} 个对象`}>
+              <MiniKpi
+                items={[
+                  { label: '查询面积', value: nf(overlayRes.summary.area, 4), unit: 'km²' },
+                  { label: '重叠面积', value: nf(overlayRes.summary.overlapArea, 4), unit: 'km²' },
+                  { label: '重叠比例', value: nf(overlayRes.summary.overlapRatio), unit: '%' },
+                  { label: '压覆资源量', value: nf(overlayRes.summary.reserveOverlap), unit: '万吨' }
+                ]}
+              />
+              {overlayRes.hits.length > 0 && (
+                <div style={{ marginTop: 10 }}>
+                  <DataTable
+                    head={[
+                      { label: '名称' },
+                      { label: '类型' },
+                      { label: '重叠面积(km²)', right: true },
+                      { label: '重叠比例', right: true }
+                    ]}
+                    rows={overlayRes.hits.slice(0, 8).map((h) => (
+                      <tr key={`${h.kind}-${h.id}`}>
+                        <td>{h.name}</td>
+                        <td>{h.kind}</td>
+                        <td align="right" className="num">{nf(h.overlapArea, 4)}</td>
+                        <td align="right" className="num">{nf(h.overlapRatio * 100, 1)}%</td>
+                      </tr>
+                    ))}
+                  />
                 </div>
               )}
-            </div>
+              <div className="alert-line">{overlayRes.conclusion}</div>
+            </ResultCard>
           )}
+        </>
+      )}
 
-          {kind === 'greenScore' && (
-            <div style={{ marginTop: 14 }}>
-              <div className="dim-list">
+      {(kind === 'precheck' || kind === 'compliance' || kind === 'scopeArgument') && (
+        <>
+          <div className="card">
+            <div className="card-head">
+              <h3 className="card-title">拟选址参数</h3>
+              <span className="card-sub">与三区三线、规划区块、矿产地叠置</span>
+            </div>
+            <div className="card-body">
+              <div style={GRID}>
+                <Field label="拟选址经度" htmlFor="p-lon">
+                  <input id="p-lon" className="input" type="number" step="0.0001" value={pre.lon} onChange={(e) => setPre({ ...pre, lon: e.target.value })} />
+                </Field>
+                <Field label="拟选址纬度" htmlFor="p-lat">
+                  <input id="p-lat" className="input" type="number" step="0.0001" value={pre.lat} onChange={(e) => setPre({ ...pre, lat: e.target.value })} />
+                </Field>
+                <Field label="区块面积（km²）" htmlFor="p-area">
+                  <input id="p-area" className="input" type="number" step="0.01" value={pre.areaKm2} onChange={(e) => setPre({ ...pre, areaKm2: e.target.value })} />
+                </Field>
+              </div>
+              <div style={{ ...ROW, marginTop: 12 }}>
+                <button type="button" className="btn btn-primary" disabled={busy} onClick={doPre}>
+                  <Ic icon={PlayCircleIcon} size={14} /> 一键合规审查
+                </button>
+                <span className="card-sub">未点击审查前不产生任何判定</span>
+              </div>
+            </div>
+          </div>
+
+          {preRes && (
+            <ResultCard title="合规审查结果">
+              <div className={`alert-line ${preRes.blocking.length ? 'err' : preRes.limiting.length ? '' : 'ok'}`} style={{ marginTop: 0 }}>
+                {preRes.conclusion}
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <DataTable
+                  head={[{ label: '审查规则' }, { label: '判定结果' }, { label: '结论', right: true }]}
+                  rows={preRes.rules.map((r) => (
+                    <tr key={r.rule}>
+                      <td>{r.rule}</td>
+                      <td>{r.result}</td>
+                      <td align="right">
+                        <span className={`tag ${r.ok ? 'tag--green' : 'tag--red'}`}>{r.ok ? '通过' : '不通过'}</span>
+                      </td>
+                    </tr>
+                  ))}
+                />
+              </div>
+              {preRes.zones.length > 0 && (
+                <p style={{ ...NOTE, marginTop: 10 }}>
+                  涉及规划区块：{preRes.zones.slice(0, 3).map((z) => `${z.name}（${z.zone_type}）`).join('、')}
+                </p>
+              )}
+            </ResultCard>
+          )}
+        </>
+      )}
+
+      {kind === 'greenScore' && (
+        <>
+          <div className="card">
+            <div className="card-head">
+              <h3 className="card-title">六大维度自评</h3>
+              <span className="card-sub">权重内置，拖动分值后核算</span>
+            </div>
+            <div className="card-body">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {DIMS.map((d) => (
-                  <div className="dim-row" key={d.key}>
-                    <div className="t"><span>{d.name}（权重 {(d.weight * 100).toFixed(0)}%）</span><b>{green[d.key]} 分</b></div>
+                  <div key={d.key}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                      <span className="field-label">{d.name}（权重 {(d.weight * 100).toFixed(0)}%）</span>
+                      <b style={{ fontSize: 13, color: 'var(--cyan-2)' }}>{green[d.key]} 分</b>
+                    </div>
                     <input
                       type="range"
                       min="0"
                       max="100"
                       value={green[d.key]}
                       onChange={(e) => setGreen({ ...green, [d.key]: Number(e.target.value) })}
-                      style={{ width: '100%' }}
+                      style={{ width: '100%', accentColor: 'var(--cyan)' }}
                       aria-label={d.name}
                     />
                   </div>
                 ))}
               </div>
-              <div className="actions" style={{ marginTop: 12 }}>
-                <button type="button" className="btn" disabled={busy} onClick={doGreen}>
+              <div style={{ ...ROW, marginTop: 12 }}>
+                <button type="button" className="btn btn-primary" disabled={busy} onClick={doGreen}>
                   <Ic icon={PlayCircleIcon} size={14} /> 核算综合得分
                 </button>
               </div>
-              {greenRes && (
-                <div style={{ marginTop: 12 }}>
-                  <div className="score-ring">
-                    <div className="num">{greenRes.total}<small>分</small></div>
-                    <span className={`tag tone-${greenRes.grade === '优秀' ? 'green' : greenRes.grade === '良好' ? 'cyan' : greenRes.grade === '合格' ? 'yellow' : 'red'}`}>{greenRes.grade}</span>
-                  </div>
-                  <ul className="rule-list" style={{ marginTop: 10 }}>
-                    {greenRes.suggestions.map((s) => (<li key={s}>{s}</li>))}
-                  </ul>
-                </div>
-              )}
             </div>
-          )}
+          </div>
 
-          {kind === 'developCheck' && (
-            <div style={{ marginTop: 14 }}>
-              <div className="form-grid cols-3">
-                <Field label="设计生产规模（万吨/年）"><input className="input" type="number" value={dev.scale} onChange={(e) => setDev({ ...dev, scale: e.target.value })} /></Field>
-                <Field label="设计服务年限（年）"><input className="input" type="number" value={dev.years} onChange={(e) => setDev({ ...dev, years: e.target.value })} /></Field>
-                <Field label="剩余可采储量（万吨）"><input className="input" type="number" value={dev.reserve} onChange={(e) => setDev({ ...dev, reserve: e.target.value })} /></Field>
-                <Field label="开采回采率（%）"><input className="input" type="number" value={dev.recovery} onChange={(e) => setDev({ ...dev, recovery: e.target.value })} /></Field>
-                <Field label="矿石贫化率（%）"><input className="input" type="number" value={dev.dilution} onChange={(e) => setDev({ ...dev, dilution: e.target.value })} /></Field>
-                <Field label="选矿回收率（%）"><input className="input" type="number" value={dev.utilization} onChange={(e) => setDev({ ...dev, utilization: e.target.value })} /></Field>
+          {greenRes && (
+            <ResultCard title="评价结果" sub={greenRes.grade}>
+              <MiniKpi items={[{ label: '综合得分', value: greenRes.total, unit: '分' }, { label: '评价等级', value: greenRes.grade }]} />
+              {greenRes.suggestions.length > 0 && (
+                <ol style={{ margin: '12px 0 0', paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, lineHeight: 1.7, color: 'var(--text-2)' }}>
+                  {greenRes.suggestions.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ol>
+              )}
+            </ResultCard>
+          )}
+        </>
+      )}
+
+      {kind === 'developCheck' && (
+        <>
+          <div className="card">
+            <div className="card-head">
+              <h3 className="card-title">开发利用方案参数</h3>
+              <span className="card-sub">技术指标与服务年限匹配校验</span>
+            </div>
+            <div className="card-body">
+              <div style={GRID}>
+                <Field label="设计生产规模（万吨/年）" htmlFor="d-scale">
+                  <input id="d-scale" className="input" type="number" value={dev.scale} onChange={(e) => setDev({ ...dev, scale: e.target.value })} />
+                </Field>
+                <Field label="设计服务年限（年）" htmlFor="d-years">
+                  <input id="d-years" className="input" type="number" value={dev.years} onChange={(e) => setDev({ ...dev, years: e.target.value })} />
+                </Field>
+                <Field label="剩余可采储量（万吨）" htmlFor="d-reserve">
+                  <input id="d-reserve" className="input" type="number" value={dev.reserve} onChange={(e) => setDev({ ...dev, reserve: e.target.value })} />
+                </Field>
+                <Field label="开采回采率（%）" htmlFor="d-recovery">
+                  <input id="d-recovery" className="input" type="number" value={dev.recovery} onChange={(e) => setDev({ ...dev, recovery: e.target.value })} />
+                </Field>
+                <Field label="矿石贫化率（%）" htmlFor="d-dilution">
+                  <input id="d-dilution" className="input" type="number" value={dev.dilution} onChange={(e) => setDev({ ...dev, dilution: e.target.value })} />
+                </Field>
+                <Field label="选矿回收率（%）" htmlFor="d-util">
+                  <input id="d-util" className="input" type="number" value={dev.utilization} onChange={(e) => setDev({ ...dev, utilization: e.target.value })} />
+                </Field>
               </div>
-              <div className="actions" style={{ marginTop: 12 }}>
-                <button type="button" className="btn" disabled={busy} onClick={doDev}>
+              <div style={{ ...ROW, marginTop: 12 }}>
+                <button type="button" className="btn btn-primary" disabled={busy} onClick={doDev}>
                   <Ic icon={PlayCircleIcon} size={14} /> 校验技术指标
                 </button>
               </div>
-              {devRes && (
-                <table className="data-table dense" style={{ marginTop: 12 }}>
-                  <thead><tr><th>校验项</th><th>取值</th><th>判定说明</th><th style={{ width: 70 }}>结果</th></tr></thead>
-                  <tbody>
-                    {devRes.items.map((i) => (
-                      <tr key={i.name}>
-                        <td>{i.name}</td>
-                        <td>{i.value}</td>
-                        <td>{i.note}</td>
-                        <td>{i.ok ? <span className="tag tone-green">符合</span> : <span className="tag tone-red">不符合</span>}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
             </div>
-          )}
+          </div>
 
-          {kind === 'credit' && (
-            <div style={{ marginTop: 14 }}>
-              <div className="form-grid cols-3">
-                <Field label="行政处罚次数"><input className="input" type="number" value={credit.punishCount} onChange={(e) => setCredit({ ...credit, punishCount: Number(e.target.value) })} /></Field>
-                <Field label="是否列入异常名录">
-                  <select className="select" value={credit.abnormal} onChange={(e) => setCredit({ ...credit, abnormal: Number(e.target.value) })}>
+          {devRes && (
+            <ResultCard title="校验结果">
+              <DataTable
+                head={[{ label: '校验项' }, { label: '取值' }, { label: '判定说明' }, { label: '结果', right: true }]}
+                minWidth={520}
+                rows={devRes.items.map((i) => (
+                  <tr key={i.name}>
+                    <td>{i.name}</td>
+                    <td>{i.value}</td>
+                    <td>{i.note}</td>
+                    <td align="right">
+                      <span className={`tag ${i.ok ? 'tag--green' : 'tag--red'}`}>{i.ok ? '符合' : '不符合'}</span>
+                    </td>
+                  </tr>
+                ))}
+              />
+            </ResultCard>
+          )}
+        </>
+      )}
+
+      {kind === 'credit' && (
+        <>
+          <div className="card">
+            <div className="card-head">
+              <h3 className="card-title">信用评分参数</h3>
+              <span className="card-sub">处罚、异常名录、绿色等级、年报公示</span>
+            </div>
+            <div className="card-body">
+              <div style={GRID}>
+                <Field label="行政处罚次数" htmlFor="cr-punish">
+                  <input id="cr-punish" className="input" type="number" value={credit.punishCount} onChange={(e) => setCredit({ ...credit, punishCount: Number(e.target.value) })} />
+                </Field>
+                <Field label="是否列入异常名录" htmlFor="cr-abnormal">
+                  <select id="cr-abnormal" className="select" value={credit.abnormal} onChange={(e) => setCredit({ ...credit, abnormal: Number(e.target.value) })}>
                     <option value={0}>否</option>
                     <option value={1}>是</option>
                   </select>
                 </Field>
-                <Field label="绿色矿山等级">
-                  <select className="select" value={credit.greenLevel} onChange={(e) => setCredit({ ...credit, greenLevel: e.target.value })}>
-                    {['未入库', '市级', '省级', '国家级'].map((g) => <option key={g} value={g}>{g}</option>)}
+                <Field label="绿色矿山等级" htmlFor="cr-green">
+                  <select id="cr-green" className="select" value={credit.greenLevel} onChange={(e) => setCredit({ ...credit, greenLevel: e.target.value })}>
+                    {['未入库', '市级', '省级', '国家级'].map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
                   </select>
                 </Field>
-                <Field label="年报是否按期公示">
-                  <select className="select" value={String(credit.annualOk)} onChange={(e) => setCredit({ ...credit, annualOk: e.target.value === 'true' })}>
+                <Field label="年报是否按期公示" htmlFor="cr-annual">
+                  <select id="cr-annual" className="select" value={String(credit.annualOk)} onChange={(e) => setCredit({ ...credit, annualOk: e.target.value === 'true' })}>
                     <option value="true">是</option>
                     <option value="false">否</option>
                   </select>
                 </Field>
               </div>
-              <div className="actions" style={{ marginTop: 12 }}>
-                <button type="button" className="btn" disabled={busy} onClick={doCredit}>
+              <div style={{ ...ROW, marginTop: 12 }}>
+                <button type="button" className="btn btn-primary" disabled={busy} onClick={doCredit}>
                   <Ic icon={PlayCircleIcon} size={14} /> 测算信用评分
                 </button>
               </div>
-              {creditRes && (
-                <div style={{ marginTop: 12 }}>
-                  <div className="score-ring">
-                    <div className="num">{creditRes.score}<small>分</small></div>
-                    <span className="tag tone-cyan">{creditRes.level} 级</span>
-                    <span className={`tag tone-${creditRes.listType === '红名单' ? 'green' : creditRes.listType === '黑名单' ? 'red' : 'grey'}`}>{creditRes.listType}</span>
-                  </div>
-                  <div className="tag-list" style={{ marginTop: 10 }}>
-                    {creditRes.breakdown.map((b) => (
-                      <span className="tag tone-grey" key={b.name}>{b.name} {b.value > 0 ? `+${b.value}` : b.value}</span>
-                    ))}
-                  </div>
-                  <p className="muted tiny" style={{ marginTop: 8, lineHeight: 1.7 }}>监管措施：{creditRes.measure}</p>
-                </div>
-              )}
             </div>
-          )}
+          </div>
 
-          {kind === 'quota' && (
-            <div style={{ marginTop: 12 }}>
-              <button type="button" className="btn btn-ghost" disabled={busy} onClick={loadQuota}>
-                <Ic icon={PlayCircleIcon} size={14} /> 加载年度配额与核销情况
-              </button>
-              {quota && (
-                <table className="data-table dense" style={{ marginTop: 12 }}>
-                  <thead><tr><th>矿种</th><th className="num">矿山数</th><th className="num">控制指标</th><th className="num">已发放</th><th className="num">实际产量</th><th className="num">余量</th><th>状态</th></tr></thead>
-                  <tbody>
-                    {quota.list.map((q) => (
-                      <tr key={q.mineral}>
-                        <td>{q.mineral}</td>
-                        <td className="num">{q.mines}</td>
-                        <td className="num">{nf(q.quota)}</td>
-                        <td className="num">{nf(q.issued)}</td>
-                        <td className="num">{nf(q.actual)}</td>
-                        <td className="num">{nf(q.balance)}</td>
-                        <td><span className={`tag tone-${q.warn === '超指标' ? 'red' : 'green'}`}>{q.warn}</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-
-          {kind === 'order' && (
-            <div style={{ marginTop: 12 }}>
-              <button type="button" className="btn btn-ghost" disabled={busy} onClick={loadOverdue}>
-                <Ic icon={Alert02Icon} size={14} /> 加载超时未处置工单
-              </button>
-              {overdue && (
-                overdue.list.length === 0 ? (
-                  <p className="muted tiny" style={{ marginTop: 10 }}>
-                    <Ic icon={Tick02Icon} size={12} /> 当前没有超时未处置工单。
-                  </p>
-                ) : (
-                  <table className="data-table dense" style={{ marginTop: 12 }}>
-                    <thead><tr><th>工单编号</th><th>矿山</th><th>区县</th><th>状态</th><th>期限</th><th className="num">超期天数</th></tr></thead>
-                    <tbody>
-                      {overdue.list.slice(0, 8).map((o) => (
-                        <tr key={o.id}>
-                          <td>{o.order_no}</td>
-                          <td>{o.mine_name}</td>
-                          <td>{o.region_name}</td>
-                          <td>{o.status}</td>
-                          <td>{o.due_at}</td>
-                          <td className="num" style={{ color: 'var(--red)' }}>{o.overdueDays}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )
-              )}
-            </div>
+          {creditRes && (
+            <ResultCard title="信用评分结果" sub={creditRes.listType}>
+              <MiniKpi
+                items={[
+                  { label: '信用得分', value: creditRes.score, unit: '分' },
+                  { label: '信用等级', value: creditRes.level },
+                  { label: '名单类型', value: creditRes.listType }
+                ]}
+              />
+              <div style={{ ...ROW, marginTop: 10 }}>
+                {creditRes.breakdown.map((b) => (
+                  <span className="tag tag--grey" key={b.name}>{b.name} {b.value > 0 ? `+${b.value}` : b.value}</span>
+                ))}
+              </div>
+              <div className="alert-line">监管措施：{creditRes.measure}</div>
+            </ResultCard>
           )}
         </>
       )}
-    </section>
+
+      {kind === 'quota' && (
+        <div className="card">
+          <div className="card-head">
+            <h3 className="card-title">年度配额与核销</h3>
+            <span className="card-sub">按矿种统计控制指标执行情况</span>
+          </div>
+          <div className="card-body">
+            <div style={ROW}>
+              <button type="button" className="btn btn-ghost" disabled={busy} onClick={loadQuota}>
+                <Ic icon={PlayCircleIcon} size={14} /> 加载年度配额与核销情况
+              </button>
+            </div>
+            {quota && (
+              <div style={{ marginTop: 12 }}>
+                <DataTable
+                  head={[
+                    { label: '矿种' },
+                    { label: '矿山数', right: true },
+                    { label: '控制指标', right: true },
+                    { label: '已发放', right: true },
+                    { label: '实际产量', right: true },
+                    { label: '余量', right: true },
+                    { label: '状态' }
+                  ]}
+                  minWidth={620}
+                  rows={quota.list.map((q) => (
+                    <tr key={q.mineral}>
+                      <td>{q.mineral}</td>
+                      <td align="right" className="num">{q.mines}</td>
+                      <td align="right" className="num">{nf(q.quota)}</td>
+                      <td align="right" className="num">{nf(q.issued)}</td>
+                      <td align="right" className="num">{nf(q.actual)}</td>
+                      <td align="right" className="num">{nf(q.balance)}</td>
+                      <td><span className={`tag ${q.warn === '超指标' ? 'tag--red' : 'tag--green'}`}>{q.warn}</span></td>
+                    </tr>
+                  ))}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {kind === 'order' && (
+        <div className="card">
+          <div className="card-head">
+            <h3 className="card-title">超时未处置工单</h3>
+            <span className="card-sub">按超期天数排序</span>
+          </div>
+          <div className="card-body">
+            <div style={ROW}>
+              <button type="button" className="btn btn-ghost" disabled={busy} onClick={loadOverdue}>
+                <Ic icon={Alert02Icon} size={14} /> 加载超时未处置工单
+              </button>
+            </div>
+            {overdue && (overdue.list.length === 0 ? (
+              <div className="empty" style={{ minHeight: 96, marginTop: 12 }}>
+                <span className="empty-icon"><Ic icon={Tick02Icon} size={18} /></span>
+                <p className="empty-text">当前没有超时未处置工单</p>
+              </div>
+            ) : (
+              <div style={{ marginTop: 12 }}>
+                <DataTable
+                  head={[{ label: '工单编号' }, { label: '矿山' }, { label: '区县' }, { label: '状态' }, { label: '期限' }, { label: '超期天数', right: true }]}
+                  minWidth={620}
+                  rows={overdue.list.slice(0, 8).map((o) => (
+                    <tr key={o.id}>
+                      <td>{o.order_no}</td>
+                      <td>{o.mine_name}</td>
+                      <td>{o.region_name}</td>
+                      <td>{o.status}</td>
+                      <td>{o.due_at}</td>
+                      <td align="right" className="num" style={{ color: 'var(--red)' }}>{o.overdueDays}</td>
+                    </tr>
+                  ))}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

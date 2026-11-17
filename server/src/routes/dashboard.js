@@ -433,7 +433,11 @@ router.get('/task/battle', wrap((req, res) => {
     }
     map.get(r.category).items.push(r);
   });
-  ok(res, { list: rows, groups, stats });
+  // 组内按序号升序、组间按组内最小序号升序，保证表格里「序号」视觉连续（1..N）
+  groups.forEach((g) => g.items.sort((a, b) => a.seq - b.seq));
+  groups.sort((a, b) => a.items[0].seq - b.items[0].seq);
+  const ordered = groups.flatMap((g) => g.items);
+  ok(res, { list: ordered, groups, stats });
 }));
 
 export default router;

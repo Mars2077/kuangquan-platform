@@ -1,190 +1,132 @@
 /* ===================================================================
-   绿矿智用 · 矿权管理系统 — 设计令牌（Design Tokens）
-   规范来源：docs/DESIGN-SYSTEM.md（采纳 taste-skill 的反模板化约束）
+   绿矿智用 · 矿权管理系统 — v3 设计令牌（唯一数值来源）
+   契约：docs/11-组件契约-v3.md §1
+   规则：禁止紫色系 / 渐变文字 / 同屏超过 2 处发光 / 8·12·16 之外的圆角
    =================================================================== */
+
+/* base.css 由本文件统一引入，保证 main.jsx 的既有 import 顺序无需改动 */
+@import './base.css';
+
 :root {
-  /* 外壳尺寸：顶栏 / 一级导航 */
-  --topbar-h: 68px;
-  --nav-h: 39px;
+  color-scheme: dark;
 
-  /* 底色：深色科技蓝，政务 GIS 大屏 */
-  --bg-0: #050f21;
-  --bg-1: #071730;
-  --bg-2: #0a1a33;
-  --bg-3: #102a4a;
-  --bg-4: #16375c;
+  /* —— 底色 —— */
+  --bg-0: #050e1c;
+  --bg-1: #071729;
+  --bg-2: #0a1f36;
 
-  /* 面板与描边 */
-  --panel: rgba(10, 32, 64, 0.58);
-  --panel-solid: rgba(9, 26, 52, 0.92);
-  --panel-raise: rgba(16, 45, 82, 0.78);
-  --line: rgba(64, 158, 255, 0.35);
-  --line-soft: rgba(64, 158, 255, 0.16);
-  --line-strong: rgba(73, 195, 255, 0.55);
+  /* —— 面板（不透明，不铺底纹，保证地图/图表上的可读性） —— */
+  --panel: #0b2138;
+  --panel-2: #0d2941;
+  --panel-3: #102f4c;
 
-  /* 主色与语义色 */
+  /* —— 描边 —— */
+  --line: #1c4d78;
+  --line-strong: #2b6b9e;
+  --line-soft: rgba(28, 77, 120, 0.6);
+  --line-faint: rgba(28, 77, 120, 0.34);
+
+  /* —— 主色 —— */
   --cyan: #49c3ff;
-  --cyan-bright: #7fe3ff;
+  --cyan-2: #7fe3ff;
   --blue: #2ea8ff;
-  --blue-deep: #1c6fd6;
+
+  /* —— 语义色 —— */
   --green: #35d39a;
   --orange: #ff8a3d;
   --yellow: #ffcc44;
   --red: #ff5f57;
-  --purple-forbidden: none; /* 规范：禁止使用紫色系 */
 
-  /* 文字 */
-  --text-1: #f2f9ff;
-  --text-2: #cfe4ff;
-  --text-3: #8fb4d9;
-  --text-4: #5f85ab;
+  /* —— 文字 —— */
+  --text-1: #eaf4ff;
+  --text-2: #c2dbf2;
+  --text-3: #8fb0cc;
+  --text-4: #5d7d99;
 
-  /* 圆角刻度（只允许三档） */
-  --r-sm: 4px;
-  --r-md: 8px;
-  --r-lg: 14px;
+  /* —— 字号（七档，只有这七档） —— */
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-20: 20px;
+  --fs-28: 28px;
 
-  /* 字号刻度（只允许六档） */
-  --fs-xs: 11px;
-  --fs-sm: 12px;
-  --fs-md: 14px;
-  --fs-lg: 16px;
-  --fs-xl: 20px;
-  --fs-2xl: 28px;
-
-  /* 间距刻度 */
+  /* —— 间距（八档） —— */
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
   --sp-4: 16px;
   --sp-5: 24px;
   --sp-6: 32px;
+  --sp-7: 40px;
+  --sp-8: 56px;
 
-  --shadow-panel: 0 8px 28px rgba(0, 10, 28, 0.45);
-  --shadow-pop: 0 18px 48px rgba(0, 8, 24, 0.6);
-  --glow-cyan: 0 0 18px rgba(73, 195, 255, 0.35);
+  /* —— 圆角（三档；胶囊/头像/标签见各组件说明） —— */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
 
-  --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Source Han Sans SC', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-num: 'DIN Alternate', 'Bahnschrift', 'Roboto Condensed', 'PingFang SC', sans-serif;
+  /* —— 阴影 —— */
+  --sh-1: 0 8px 24px rgba(0, 0, 0, 0.32);
+  --sh-2: 0 20px 48px rgba(0, 0, 0, 0.45);
 
-  --header-h: 74px;
+  /* —— 布局 —— */
+  --header-h: 64px;
+  --nav-h: 44px;
+  --page-pad: 20px;
+
+  /* —— 图表（与 components/Chart.jsx 的 COLORS 同源） —— */
+  --chart-1: #49c3ff;
+  --chart-2: #35d39a;
+  --chart-3: #ff8a3d;
+  --chart-4: #ffcc44;
+  --chart-5: #5ee0d0;
+  --chart-6: #ff5f57;
+  --chart-7: #7fa6cc;
+  --chart-8: #2ea8ff;
+
+  /* —— 字体：正文无衬线，数字统一等宽栈 —— */
+  --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Source Han Sans SC', 'Noto Sans SC',
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'JetBrains Mono',
+    'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+
+  /* —— 半透明色阶（供描边/底纹/焦点环复用，避免散落魔法值） —— */
+  --cyan-a06: rgba(73, 195, 255, 0.06);
+  --cyan-a10: rgba(73, 195, 255, 0.1);
+  --cyan-a16: rgba(73, 195, 255, 0.16);
+  --cyan-a28: rgba(73, 195, 255, 0.28);
+  --green-a12: rgba(53, 211, 154, 0.12);
+  --green-a32: rgba(53, 211, 154, 0.32);
+  --red-a10: rgba(255, 95, 87, 0.1);
+  --red-a28: rgba(255, 95, 87, 0.28);
+  --orange-a12: rgba(255, 138, 61, 0.12);
+  --yellow-a12: rgba(255, 204, 68, 0.12);
+
+  /* —— 动效 / 层级 —— */
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
-}
+  --dur-1: 120ms;
+  --dur-2: 220ms;
+  --z-nav: 20;
+  --z-header: 40;
+  --z-popover: 60;
+  --z-drawer: 80;
+  --z-toast: 100;
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+  /* —— 焦点环与唯一允许的发光（全站至多两处同屏） —— */
+  --focus-ring: 0 0 0 3px rgba(73, 195, 255, 0.2);
+  --glow-cyan: 0 0 18px rgba(73, 195, 255, 0.32);
 
-html,
-body,
-#root {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-  font-size: var(--fs-md);
-  color: var(--text-2);
-  background:
-    radial-gradient(1200px 700px at 50% -10%, #13345c 0%, rgba(9, 26, 52, 0) 62%),
-    radial-gradient(900px 620px at 8% 108%, #0d2b50 0%, rgba(7, 23, 48, 0) 60%),
-    var(--bg-0);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5 {
-  margin: 0;
-  font-weight: 600;
-  color: var(--text-1);
-  letter-spacing: 0.02em;
-}
-
-a {
-  color: var(--cyan);
-  text-decoration: none;
-}
-
-button,
-input,
-select,
-textarea {
-  font-family: inherit;
-  font-size: inherit;
-  color: inherit;
-}
-
-/* 焦点环：全站统一，键盘可达 */
-:focus-visible {
-  outline: 2px solid var(--cyan);
-  outline-offset: 2px;
-}
-
-/* 滚动条 */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(73, 195, 255, 0.32);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(73, 195, 255, 0.55);
-}
-
-.num {
-  font-family: var(--font-num);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
-}
-
-.muted {
-  color: var(--text-3);
-}
-.tiny {
-  font-size: var(--fs-xs);
-}
-.up {
-  color: var(--red);
-}
-.down {
-  color: var(--green);
-}
-.center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.row {
-  display: flex;
-  align-items: center;
-}
-.gap-1 { gap: var(--sp-1); }
-.gap-2 { gap: var(--sp-2); }
-.gap-3 { gap: var(--sp-3); }
-.gap-4 { gap: var(--sp-4); }
-.grow { flex: 1; min-width: 0; }
-.nowrap { white-space: nowrap; }
-.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
-  }
+  /* —— v2 兼容别名（widgets.css 过渡期使用，随 _legacy 一并删除） —— */
+  --cyan-bright: var(--cyan-2);
+  --font-num: var(--font-mono);
+  --fs-xs: var(--fs-11);
+  --fs-sm: var(--fs-12);
+  --fs-md: var(--fs-14);
+  --fs-lg: var(--fs-16);
+  --fs-xl: var(--fs-20);
+  --fs-2xl: var(--fs-28);
+  --shadow-panel: var(--sh-1);
+  --shadow-pop: var(--sh-2);
 }

@@ -1,0 +1,16 @@
+﻿const fs=require('fs');
+const doc=fs.readFileSync('docs/10-交互规范-v3.md','utf8');
+const con=fs.readFileSync('docs/11-组件契约-v3.md','utf8');
+const routes=['/portal','/dashboard','/scene/:scene','/battle','/biz/:module','/biz/:module/:feature','/archive/:id','/warehouse','/mobile','/system','登录'];
+console.log('routes missing:', routes.filter(r=>!doc.includes(r)).join(' ')||'none');
+const tok=s=>new Set((s.match(/\.[a-zA-Z][\w-]*/g)||[]).map(x=>x));
+const D=tok(doc), C=tok(con);
+const orphans=[...D].filter(x=>!C.has(x)).sort();
+console.log('orphan tokens ('+orphans.length+'):', orphans.join(' '));
+const u=(doc.match(/U-\d\d/g)||[]); const uniq=[...new Set(u)].sort();
+console.log('U ids in doc:', uniq.join(' '), '| in contract:', [...new Set(con.match(/U-\d\d/g)||[])].sort().join(' '));
+console.log('contract has §10:', con.includes('## 10. 待补充'));
+['加载','空','错误','无权限','危险','抽屉','全屏','动词','名词','空话'].forEach(k=>{});
+console.log('sections:', ['## 1. 信息架构','## 2. 页面模板','## 3. 交互状态','## 4. 文案规则','## 5. 交互简洁清单','## 6. 验收与对照'].map(s=>s.replace('## ','')+':'+doc.includes(s)).join(' | '));
+console.log('TODO/PART:', /TODO|PART2|PART3/.test(doc));
+console.log('lines',doc.split('\n').length,'chars',doc.length,'contract lines',con.split('\n').length);
