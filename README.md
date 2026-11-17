@@ -5,7 +5,7 @@
 > **v2 演示版**：四川口径（21 市州 / 183 区县）+ 图表统一 ECharts + 高德地图 JS API 底图，改造说明见 [docs/07-三项改造说明.md](docs/07-三项改造说明.md)。
 > **v2.1 可用性修复**：11 条路由 × 7 档视口的 UI 评审（42 条问题）已全量修复并复测，报告见 [docs/08-UI评审-响应式适配.md](docs/08-UI评审-响应式适配.md)（§8 为修复清单与实测数据）。
 >
-> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-mp9pxngmeh.preview.iga-pages.com?iga_token=b5d6dd5966d62041acd52e63420dde58&iga_time=1795077269>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
+> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-5w4nq1t6y5.preview.iga-pages.com?iga_token=d7504f2cf4c0a3d6bcfb0532cfe3cd0a&iga_time=1795077572>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
 
 ![数字驾驶舱](docs/shots/v4-dashboard.png)
 
@@ -92,7 +92,7 @@ npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
 ```
 
 - 上线：`cd web && iga pages deploy --name kuangquan-platform`（需先 `iga login`，配置见 `web/iga.json`）
-- 线上：<https://kuangquan-platfo-541ysnljv4-mp9pxngmeh.preview.iga-pages.com?iga_token=b5d6dd5966d62041acd52e63420dde58&iga_time=1795077269>
+- 线上：<https://kuangquan-platfo-541ysnljv4-5w4nq1t6y5.preview.iga-pages.com?iga_token=d7504f2cf4c0a3d6bcfb0532cfe3cd0a&iga_time=1795077572>
 - 差异：静态版的新增/修改/删除写入浏览器 `localStorage`（键 `kq_demo_journal_v1`），刷新后仍在、换设备不共享；服务端版写真实 SQLite。
 - 两个形态共用同一份前端代码与同一套接口契约，页面、交互、算法完全一致。
 

@@ -186,7 +186,9 @@ export default function Shell() {
       </nav>
 
       <main className={`shell-main${bleed ? ' bleed' : ''}`}>
-        {bleed && <h1 className="sr-only">省域空间治理数字化平台 - 绿矿智用 · 四川省矿产资源数字化管理</h1>}
+        {/^\/(scene|dashboard)/.test(loc.pathname) && (
+          <h1 className="sr-only">省域空间治理数字化平台 - 绿矿智用 · 四川省矿产资源数字化管理</h1>
+        )}
         <Outlet />
       </main>
 
