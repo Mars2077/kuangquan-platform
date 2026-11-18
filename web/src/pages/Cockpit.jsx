@@ -804,7 +804,7 @@ export default function Cockpit({ sceneKey }) {
             key={p.key}
             title={p.title}
             action={(
-              <button type="button" className="panel-more" onClick={() => nav((DETAIL_ROUTE[scene] || {})[p.key] || `/biz/${meta0.module}`)}>
+              <button type="button" className="panel-more" onClick={() => nav((DETAIL_ROUTE[scene] || {})[p.key] || '/hub')}>
                 详情 <Ic icon={ChevronDownIcon} size={10} />
               </button>
             )}
@@ -1207,7 +1207,7 @@ export default function Cockpit({ sceneKey }) {
             key={p.key}
             title={p.title}
             action={(
-              <button type="button" className="panel-more" onClick={() => nav((DETAIL_ROUTE[scene] || {})[p.key] || `/biz/${meta0.module}`)}>
+              <button type="button" className="panel-more" onClick={() => nav((DETAIL_ROUTE[scene] || {})[p.key] || '/hub')}>
                 详情 <Ic icon={ChevronDownIcon} size={10} />
               </button>
             )}
