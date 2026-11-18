@@ -1,4 +1,5 @@
 import React from 'react';
+import { Segmented } from 'antd';
 import { Ic } from './Icon';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
 
@@ -40,21 +41,16 @@ export function StatRows({ rows }) {
   );
 }
 
+/** 面板内的分段切换：交给 antd Segmented，样式走 ConfigProvider token。 */
 export function Tabs({ items, value, onChange, className = '' }) {
   return (
-    <div className={`tabs ${className}`} role="tablist">
-      {items.map((it) => (
-        <button
-          key={it.key}
-          type="button"
-          role="tab"
-          aria-selected={value === it.key}
-          className={`tab${value === it.key ? ' on' : ''}`}
-          onClick={() => onChange(it.key)}
-        >
-          {it.label}
-        </button>
-      ))}
-    </div>
+    <Segmented
+      className={`kq-segmented ${className}`}
+      size="small"
+      block
+      value={value}
+      onChange={onChange}
+      options={items.map((it) => ({ label: it.label, value: it.key }))}
+    />
   );
 }

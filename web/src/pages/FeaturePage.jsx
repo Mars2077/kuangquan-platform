@@ -1,6 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Button, Tag, Select, DatePicker, Input, Pagination } from 'antd';
+import dayjs from 'dayjs';
 import Drawer from '../components/Drawer.jsx';
+import { DataTable } from '../components/DataTable.jsx';
 import { Ic } from '../components/Icon';
 import { useApp, useFetch } from '../store.jsx';
 import { biz, hub as hubApi } from '../api';
@@ -110,6 +113,8 @@ export default function FeaturePage({ hub: isHub = false }) {
   const [form, setForm] = useState({});
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
+  /* 状态分布快照：按状态筛选后接口只返回被选状态，胶囊需保留完整分布才能再次点击取消 */
+  const statusSnap = useRef([]);
 
   /* 统一纳管视图下，需要每个环节的记录数（来自 /api/hub/overview 的真实聚合） */
   const hubQ = useFetch(
@@ -151,6 +156,12 @@ export default function FeaturePage({ hub: isHub = false }) {
     [module, feature, JSON.stringify(query), spec?.key]
   );
 
+  /* 未按状态筛选时刷新快照；筛选状态时继续用快照渲染胶囊，保证分布不塌缩 */
+  useEffect(() => {
+    const list = listQ.data?.stats?.byStatus;
+    if (!filters.status && Array.isArray(list) && list.length) statusSnap.current = list;
+  }, [filters.status, listQ.data]);
+
   if (!bootMeta) {
     return (
       <div className="skeleton">
@@ -191,8 +202,11 @@ export default function FeaturePage({ hub: isHub = false }) {
   const wf = spec.workflow;
   const formFields = spec.form || [];
   const hasDate = spec.filters.includes('dateRange');
-  const filterKeys = spec.filters.filter((f) => f !== 'kw' && f !== 'dateRange');
+  const filterKeys = spec.filters.filter((f) => f !== 'kw' && f !== 'dateRange' && f !== 'status');
   const byStatus = stats.byStatus || [];
+  /* 状态分布：胶囊与 KPI 共用同一份概览，避免「chips / 下拉 / KPI」三处重复入口 */
+  const statusOverview = filters.status && statusSnap.current.length ? statusSnap.current : byStatus;
+  const statusTotal = statusOverview.reduce((s, x) => s + Number(x.value || 0), 0);
 
   const setF = (k, v) => {
     setFilters((s) => ({ ...s, [k]: v }));
@@ -304,10 +318,11 @@ export default function FeaturePage({ hub: isHub = false }) {
 
   const curStep = panel?.row ? wf?.steps[stepIndex(panel.row)] : null;
 
-  /* KPI：记录总数 + 状态分布（不足 4 张时用流程/合计信息补齐） */
+  /* KPI：记录总数 + 状态分布（概览，只读展示；筛选入口统一在工具条胶囊） */
   const kpis = [{ label: '记录总数', value: total.toLocaleString('zh-CN'), unit: '条', delta: '按行政区划权限隔离' }];
-  byStatus.slice(0, 3).forEach((s) => {
-    const pct = total ? Math.round((Number(s.value) / total) * 100) : 0;
+  statusOverview.slice(0, 3).forEach((s) => {
+    const base = statusTotal || total;
+    const pct = base ? Math.round((Number(s.value) / base) * 100) : 0;
     kpis.push({ label: s.name || '未分类', value: Number(s.value || 0).toLocaleString('zh-CN'), unit: '条', delta: `占全部 ${pct}%` });
   });
   Object.entries(stats.sums || {}).slice(0, 2).forEach(([k, v]) => {
@@ -570,7 +585,7 @@ export default function FeaturePage({ hub: isHub = false }) {
             overflowX: narrow ? 'visible' : undefined
           }}
         >
-          {byStatus.length > 0 && (
+          {statusOverview.length > 0 && (
             <button
               type="button"
               className={`chip${!filters.status ? ' is-on' : ''}`}
@@ -579,7 +594,7 @@ export default function FeaturePage({ hub: isHub = false }) {
               全部
             </button>
           )}
-          {byStatus.map((s) => (
+          {statusOverview.map((s) => (
             <button
               type="button"
               key={s.name || 'none'}
@@ -590,46 +605,44 @@ export default function FeaturePage({ hub: isHub = false }) {
             </button>
           ))}
           {filterKeys.map((k) => (
-            <select
+            <Select
               key={k}
-              className="select"
-              style={narrow ? { width: 'auto', flex: '1 1 46%', minWidth: 0 } : { width: 'auto', minWidth: 120 }}
+              size="small"
+              style={narrow ? { flex: '1 1 46%', minWidth: 0 } : { minWidth: 128 }}
               value={filters[k] || ''}
-              onChange={(e) => setF(k, e.target.value)}
-              aria-label={FILTER_LABEL[k] || k}
-            >
-              <option value="">{FILTER_LABEL[k] || k}（全部）</option>
-              {optionFor(k).map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+              onChange={(v) => setF(k, v)}
+              placeholder={`${FILTER_LABEL[k] || k}（全部）`}
+              options={[{ value: '', label: `${FILTER_LABEL[k] || k}（全部）` },
+                ...optionFor(k).map((o) => ({ value: o.value, label: o.label }))]}
+              popupMatchSelectWidth={220}
+            />
           ))}
           {hasDate && (
             <>
-              <input
-                type="date"
-                className="input"
-                style={narrow ? { width: 'auto', flex: '1 1 46%', minWidth: 0 } : { width: 'auto' }}
-                value={filters.start || ''}
-                onChange={(e) => setF('start', e.target.value)}
-                aria-label="开始日期"
+              <DatePicker
+                size="small"
+                placeholder="开始日期"
+                style={narrow ? { flex: '1 1 46%', minWidth: 0 } : undefined}
+                value={filters.start ? dayjs(filters.start) : null}
+                onChange={(d, s) => setF('start', s || '')}
+                allowClear
               />
-              <input
-                type="date"
-                className="input"
-                style={narrow ? { width: 'auto', flex: '1 1 46%', minWidth: 0 } : { width: 'auto' }}
-                value={filters.end || ''}
-                onChange={(e) => setF('end', e.target.value)}
-                aria-label="结束日期"
+              <DatePicker
+                size="small"
+                placeholder="结束日期"
+                style={narrow ? { flex: '1 1 46%', minWidth: 0 } : undefined}
+                value={filters.end ? dayjs(filters.end) : null}
+                onChange={(d, s) => setF('end', s || '')}
+                allowClear
               />
             </>
           )}
         </div>
         <div className="toolbar-search">
-          <Ic icon={Search01Icon} size={14} />
-          <input
-            className="input"
-            style={{ width: 'auto', flex: 1, minWidth: 0 }}
+          <Input
+            size="small"
+            allowClear
+            prefix={<Ic icon={Search01Icon} size={14} />}
             placeholder="按名称 / 编号检索"
             value={kw}
             onChange={(e) => {
@@ -639,14 +652,14 @@ export default function FeaturePage({ hub: isHub = false }) {
           />
         </div>
         <div className="toolbar-actions" style={{ minWidth: 0, maxWidth: '100%' }}>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={resetFilters}>重置</button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={doExport}>
-            <Ic icon={Download01Icon} size={14} /> 导出
-          </button>
+          <Button size="small" onClick={resetFilters}>重置</Button>
+          <Button size="small" icon={<Ic icon={Download01Icon} size={14} />} onClick={doExport}>
+            导出
+          </Button>
           {formFields.length > 0 && (
-            <button type="button" className="btn btn-primary btn-sm" onClick={() => openForm(null)}>
-              <Ic icon={Add01Icon} size={14} /> 新增
-            </button>
+            <Button size="small" type="primary" icon={<Ic icon={Add01Icon} size={14} />} onClick={() => openForm(null)}>
+              新增
+            </Button>
           )}
         </div>
       </div>
@@ -660,150 +673,75 @@ export default function FeaturePage({ hub: isHub = false }) {
           <span className="card-sub">点击行查看详情</span>
         </div>
         <div style={{ padding: 0 }}>
-          <div className="table-wrap" style={{ border: 0, borderRadius: 0 }}>
-            <table className="data-table" style={{ minWidth: tableMin, tableLayout: 'fixed' }}>
-              <colgroup>
-                {spec.columns.map((k, i) => (
-                  <col key={k} style={colWidths[i] ? { width: colWidths[i] } : undefined} />
-                ))}
-                <col style={{ width: ACTION_COL_W }} />
-              </colgroup>
-              <thead>
-                <tr>
-                  {spec.columns.map((k) => {
-                    const m = metaOf(k);
-                    const right = ['money', 'number'].includes(m.type);
-                    return (
-                      <th key={k} align={right ? 'right' : undefined} className={right ? 'num' : undefined}>
-                        {m.label}
-                      </th>
-                    );
-                  })}
-                  <th className="col-actions">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {listQ.loading && (
-                  <tr>
-                    <td colSpan={colCount}>
-                      <div className="skeleton">
-                        <i className="skeleton-line" />
-                        <i className="skeleton-line" />
-                        <i className="skeleton-line" />
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                {!listQ.loading && listQ.error && (
-                  <tr>
-                    <td colSpan={colCount}>
-                      <div className="empty is-error">
-                        <span className="empty-icon">!</span>
-                        <p className="empty-text">{listQ.error.message || '数据加载失败，请重试'}</p>
-                        <div className="empty-action">
-                          <button type="button" className="btn btn-ghost btn-sm" onClick={reload}>重新加载</button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                {!listQ.loading && !listQ.error && rows.length === 0 && (
-                  <tr>
-                    <td colSpan={colCount}>
-                      <div className="empty">
-                        <span className="empty-icon"><Ic icon={InboxIcon} size={20} /></span>
-                        <p className="empty-text">当前筛选条件下没有记录</p>
-                        <div className="empty-action">
-                          <button type="button" className="btn btn-ghost btn-sm" onClick={resetFilters}>清除筛选</button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                {!listQ.loading && !listQ.error && rows.map((row) => (
-                  <tr key={row.id} onClick={() => openDetail(row)} style={{ cursor: 'pointer' }}>
-                    {spec.columns.map((k) => {
-                      const m = metaOf(k);
-                      const right = ['money', 'number'].includes(m.type);
-                      return (
-                        <td
-                          key={k}
-                          align={right ? 'right' : undefined}
-                          className={right ? 'num' : undefined}
-                          style={/^(code|license_no|order_no|review_no|alert_no)$/.test(k) ? { overflowWrap: 'anywhere' } : undefined}
-                        >
-                          {m.type === 'status' && row[k] ? (
-                            <span className="tag tag--blue">{row[k]}</span>
-                          ) : (
-                            fmtCell(row[k], m)
-                          )}
-                        </td>
-                      );
-                    })}
-                    <td className="col-actions">
-                      <div style={ROW_ACTIONS}>
-                        <button
-                          type="button"
-                          className="btn btn-text btn-sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDetail(row);
-                          }}
-                        >
-                          详情
-                        </button>
-                        {formFields.length > 0 && (
-                          <button
-                            type="button"
-                            className="btn btn-text btn-sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openForm(row);
-                            }}
-                          >
-                            编辑
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="btn btn-text btn-sm"
-                          style={{ color: 'var(--red)' }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPanel({ mode: 'del', row });
-                          }}
-                        >
-                          删除
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            dense
+            scrollX={narrow ? tableMin : undefined}
+            columns={[
+              ...spec.columns.map((k, idx) => {
+                const m = metaOf(k);
+                const right = ['money', 'number'].includes(m.type);
+                return {
+                  key: k,
+                  label: m.label,
+                  align: right ? 'right' : undefined,
+                  /* 窄屏：定宽 + 单行省略，避免长文本把行高堆到 300px+ */
+                  width: narrow ? (colWidths[idx] || 140) : undefined,
+                  ellipsis: narrow && m.type !== 'status' ? true : undefined,
+                  render: (row) => (m.type === 'status' && row[k]
+                    ? <Tag color="blue">{row[k]}</Tag>
+                    : (
+                      <span title={row[k] == null ? '' : String(row[k])}>
+                        {fmtCell(row[k], m)}
+                      </span>
+                    ))
+                };
+              }),
+              {
+                key: '__op',
+                label: '操作',
+                width: ACTION_COL_W,
+                render: (row) => (
+                  <div style={ROW_ACTIONS}>
+                    <Button type="link" size="small" onClick={(e) => { e.stopPropagation(); openDetail(row); }}>
+                      详情
+                    </Button>
+                    {formFields.length > 0 && (
+                      <Button type="link" size="small" onClick={(e) => { e.stopPropagation(); openForm(row); }}>
+                        编辑
+                      </Button>
+                    )}
+                    <Button
+                      type="link"
+                      size="small"
+                      danger
+                      onClick={(e) => { e.stopPropagation(); setPanel({ mode: 'del', row }); }}
+                    >
+                      删除
+                    </Button>
+                  </div>
+                )
+              }
+            ]}
+            rows={listQ.error ? [] : rows}
+            loading={listQ.loading}
+            empty={listQ.error ? (listQ.error.message || '数据加载失败，请重试') : '当前筛选条件下没有记录'}
+            onRowClick={openDetail}
+          />
         </div>
         <div className="card-body" style={{ paddingTop: 10, paddingBottom: 12 }}>
-          <div className="pager">
-            <span className="pager-info">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <span className="muted small">
               共 {total.toLocaleString('zh-CN')} 条 · 第 {page}/{pages} 页
             </span>
-            <button type="button" className="pager-btn" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-              上一页
-            </button>
-            {pageNums.map((n) => (
-              <button
-                type="button"
-                key={n}
-                className={`pager-btn${n === page ? ' is-on' : ''}`}
-                onClick={() => setPage(n)}
-              >
-                {n}
-              </button>
-            ))}
-            <button type="button" className="pager-btn" disabled={page >= pages} onClick={() => setPage((p) => Math.min(pages, p + 1))}>
-              下一页
-            </button>
+            <Pagination
+              size="small"
+              current={page}
+              pageSize={PAGE_SIZE}
+              total={total}
+              showSizeChanger={false}
+              showQuickJumper={false}
+              onChange={(p) => setPage(p)}
+            />
           </div>
         </div>
       </div>

@@ -1,62 +1,52 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { Modal as AntModal } from 'antd';
 
+/** 统一弹窗：尺寸语义沿用 size='wide'|'narrow'，内部交给 antd Modal。 */
 export function Modal({ open, title, subtitle, children, footer, onClose, size = '', headExtra }) {
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose?.();
-    };
-    window.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
+  const width = size === 'wide' ? 1040 : size === 'narrow' ? 460 : 720;
   return (
-    <div className="mask" role="dialog" aria-modal="true" aria-label={title} onMouseDown={(e) => {
-      if (e.target === e.currentTarget) onClose?.();
-    }}>
-      <div className={`dialog ${size}`}>
-        <header className="dialog-head">
-          <h3>{title}</h3>
-          {subtitle && <span className="muted tiny">{subtitle}</span>}
+    <AntModal
+      open={!!open}
+      title={
+        <div className="dlg-title">
+          <span>{title}</span>
+          {subtitle && <em>{subtitle}</em>}
           {headExtra}
-          <button type="button" className="close" onClick={onClose} aria-label="关闭">
-            ✕
-          </button>
-        </header>
-        <div className="dialog-body">{children}</div>
-        {footer && <footer className="dialog-foot">{footer}</footer>}
-      </div>
-    </div>
+        </div>
+      }
+      footer={footer || null}
+      onCancel={onClose}
+      width={width}
+      centered
+      maskClosable
+      destroyOnHidden
+      className="kq-modal"
+    >
+      {children}
+    </AntModal>
   );
 }
 
+/** 全屏浮层（作战图等）：也用 antd Modal，只是宽度铺满、无圆角。 */
 export function FullOverlay({ open, title, extra, children, onClose }) {
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose?.();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
   return (
-    <div className="overlay-full" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="overlay-head">
-        <h2>{title}</h2>
-        {extra}
-        <button type="button" className="overlay-close" onClick={onClose} aria-label="关闭全屏浮层">
-          ✕
-        </button>
-      </div>
-      <div className="overlay-body">{children}</div>
-    </div>
+    <AntModal
+      open={!!open}
+      title={
+        <div className="dlg-title">
+          <span>{title}</span>
+          {extra}
+        </div>
+      }
+      footer={null}
+      onCancel={onClose}
+      width="100vw"
+      style={{ top: 0, maxWidth: '100vw', paddingBottom: 0 }}
+      styles={{ body: { height: 'calc(100vh - 120px)', overflow: 'auto' } }}
+      className="kq-modal kq-modal-full"
+      destroyOnHidden
+    >
+      {children}
+    </AntModal>
   );
 }

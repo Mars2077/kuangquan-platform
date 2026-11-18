@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Tabs, Tag } from 'antd';
 import { Ic } from '../components/Icon';
+import { DataTable } from '../components/DataTable.jsx';
 import { useApp, useFetch } from '../store.jsx';
 import { sys } from '../api';
 import {
@@ -145,20 +147,12 @@ export default function Warehouse() {
                   <span className="card-sub">{current ? `${current.items.length} 张表 · ${nf(current.totalRows)} 行 · ${current.assetCount} 份资产` : '暂无编目'}</span>
                 </div>
                 <div style={{ padding: '0 16px' }}>
-                  <div className="tabs" role="tablist" aria-label="专题库切换">
-                    {topics.map((t, i) => (
-                      <button
-                        key={t.topic}
-                        type="button"
-                        role="tab"
-                        aria-selected={i === tab}
-                        className={`tab${i === tab ? ' is-on' : ''}`}
-                        onClick={() => setTab(i)}
-                      >
-                        {t.topic.replace('专题库', '')}
-                      </button>
-                    ))}
-                  </div>
+                  <Tabs
+                    size="small"
+                    activeKey={String(tab)}
+                    onChange={(k) => setTab(Number(k))}
+                    items={topics.map((t, i) => ({ key: String(i), label: t.topic.replace('专题库', '') }))}
+                  />
                 </div>
                 {!current ? (
                   <div className="card-body">
@@ -168,49 +162,32 @@ export default function Warehouse() {
                     </div>
                   </div>
                 ) : (
-                  <div className="table-wrap" style={{ border: 0, borderRadius: 0, marginTop: 8 }}>
-                    <table className="data-table is-dense" style={{ minWidth: 760 }}>
-                      <thead>
-                        <tr>
-                          <th style={{ width: 220 }}>数据表</th>
-                          <th style={{ width: 110 }}>分类</th>
-                          <th style={{ width: 130 }}>来源</th>
-                          <th className="num" style={{ width: 90 }}>记录数</th>
-                          <th>字段</th>
-                          <th style={{ width: 110 }}>更新时间</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {current.items.map((it) => (
-                          <tr key={it.id}>
-                            <td style={narrow ? { whiteSpace: 'nowrap' } : undefined}>{it.name}</td>
-                            <td><span className="tag tag--blue" style={{ whiteSpace: 'nowrap' }}>{it.category}</span></td>
-                            <td style={narrow ? { color: 'var(--text-3)', whiteSpace: 'nowrap' } : { color: 'var(--text-3)' }}>{it.source}</td>
-                            <td className="num">{nf(it.rows)}</td>
-                            <td>
-                              {narrow ? (
-                                <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
-                                  {(it.fields || []).slice(0, 2).map((f) => (
-                                    <span className="tag tag--grey" key={f} style={{ flex: 'none' }}>{f}</span>
-                                  ))}
-                                  {(it.fields || []).length > 2 && (
-                                    <span className="tag tag--grey" style={{ flex: 'none' }}>+{it.fields.length - 2}</span>
-                                  )}
-                                </div>
-                              ) : (
-                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                  {(it.fields || []).slice(0, 5).map((f) => (
-                                    <span className="tag tag--grey" key={f}>{f}</span>
-                                  ))}
-                                  {(it.fields || []).length > 5 && <span className="tag tag--grey">+{it.fields.length - 5}</span>}
-                                </div>
+                  <div style={{ marginTop: 4 }}>
+                    <DataTable
+                      dense
+                      rows={current.items}
+                      empty="暂无编目数据"
+                      scrollX={narrow ? 900 : undefined}
+                      columns={[
+                        { key: 'name', label: '数据表', width: 220, ellipsis: narrow || undefined },
+                        { key: 'category', label: '分类', width: 110, render: (it) => <Tag color="blue">{it.category}</Tag> },
+                        { key: 'source', label: '来源', width: 130, ellipsis: narrow || undefined, render: (it) => <span className="muted" title={it.source}>{it.source}</span> },
+                        { key: 'rows', label: '记录数', width: 90, align: 'right', render: (it) => nf(it.rows) },
+                        {
+                          key: 'fields',
+                          label: '字段',
+                          render: (it) => (
+                            <span style={{ display: 'inline-flex', gap: 4, flexWrap: narrow ? 'nowrap' : 'wrap', whiteSpace: 'nowrap' }}>
+                              {(it.fields || []).slice(0, narrow ? 2 : 5).map((f) => <Tag key={f}>{f}</Tag>)}
+                              {(it.fields || []).length > (narrow ? 2 : 5) && (
+                                <Tag>+{(it.fields || []).length - (narrow ? 2 : 5)}</Tag>
                               )}
-                            </td>
-                            <td style={{ color: 'var(--text-4)', whiteSpace: 'nowrap' }}>{it.updated_at}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            </span>
+                          )
+                        },
+                        { key: 'updated_at', label: '更新时间', width: 130, ellipsis: narrow || undefined, render: (it) => <span className="muted" title={it.updated_at}>{it.updated_at}</span> }
+                      ]}
+                    />
                   </div>
                 )}
               </div>
@@ -227,39 +204,20 @@ export default function Warehouse() {
                       <p className="empty-text">暂无入库资产，可在右侧上传首个文件。</p>
                     </div>
                   ) : (
-                    <div className="table-wrap" style={{ border: 0, borderRadius: 0, maxHeight: 380, overflowY: 'auto' }}>
-                      <table className="data-table is-dense" style={{ minWidth: narrow ? 900 : 700 }}>
-                        <thead>
-                          <tr>
-                            <th>文件</th>
-                            <th style={{ width: 170 }}>所属专题库</th>
-                            <th style={{ width: 70 }}>类型</th>
-                            <th className="num" style={{ width: 90 }}>大小</th>
-                            <th style={{ width: 70 }}>年度</th>
-                            <th style={{ width: 150 }}>入库时间</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {assets.slice(0, 40).map((a) => (
-                            <tr key={a.id}>
-                              <td title={a.name} style={narrow ? { whiteSpace: 'nowrap' } : undefined}>{a.name}</td>
-                              <td
-                                title={a.topic}
-                                style={narrow
-                                  ? { color: 'var(--text-3)', whiteSpace: 'nowrap' }
-                                  : { color: 'var(--text-3)' }}
-                              >
-                                {a.topic}
-                              </td>
-                              <td><span className="tag tag--blue" style={{ whiteSpace: 'nowrap' }}>{a.file_type}</span></td>
-                              <td className="num" style={{ whiteSpace: 'nowrap' }}>{nf(a.size_kb)} KB</td>
-                              <td style={{ whiteSpace: 'nowrap' }}>{a.year}</td>
-                              <td style={{ color: 'var(--text-4)', whiteSpace: 'nowrap' }}>{a.uploaded_at}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    <DataTable
+                      dense
+                      rows={assets.slice(0, 40)}
+                      empty="暂无入库资产"
+                      scrollX={narrow ? 720 : undefined}
+                      columns={[
+                        { key: 'name', label: '文件', ellipsis: narrow || undefined, render: (a) => <span title={a.name}>{a.name}</span> },
+                        { key: 'topic', label: '所属专题库', width: 170, ellipsis: narrow || undefined, render: (a) => <span className="muted" title={a.topic}>{a.topic}</span> },
+                        { key: 'file_type', label: '类型', width: 80, render: (a) => <Tag color="blue">{a.file_type}</Tag> },
+                        { key: 'size_kb', label: '大小', width: 100, align: 'right', render: (a) => `${nf(a.size_kb)} KB` },
+                        { key: 'year', label: '年度', width: 80 },
+                        { key: 'uploaded_at', label: '入库时间', width: 150, ellipsis: narrow || undefined, render: (a) => <span className="muted" title={a.uploaded_at}>{a.uploaded_at}</span> }
+                      ]}
+                    />
                   )}
                 </div>
               </div>

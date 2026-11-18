@@ -1,82 +1,66 @@
 import React from 'react';
+import { Table, Pagination, Empty, Spin } from 'antd';
 
 /**
- * 深色数据表：列定义 { key, label, width, align, render(row), className }
+ * 数据表：列定义沿用 { key, label, width, align, render(row, i) }，
+ * 渲染交给 antd Table（统一表头、行高、hover、空状态与响应式滚动）。
  */
-export function DataTable({ columns, rows = [], loading, empty = '暂无数据', onRowClick, rowKey = 'id', selectedKey, className = '', dense }) {
+export function DataTable({
+  columns = [], rows = [], loading, empty = '暂无数据',
+  onRowClick, rowKey = 'id', selectedKey, className = '', dense, scrollX
+}) {
+  const cols = columns.map((c) => ({
+    key: c.key,
+    dataIndex: c.key,
+    title: c.label,
+    width: c.width,
+    align: c.align === 'right' ? 'right' : 'left',
+    ellipsis: c.ellipsis,
+    render: (_, row, i) => (c.render ? c.render(row, i) : row[c.key] ?? '—')
+  }));
+
   if (loading) {
     return (
       <div className="loading">
-        <span className="spinner" />
-        正在加载数据 …
+        <Spin size="small" />
+        <span>正在加载数据 …</span>
       </div>
     );
   }
+
+  const keyOf = (r, i) => (typeof rowKey === 'function' ? rowKey(r) : r[rowKey] ?? i);
+
   return (
     <div className={`table-wrap ${className}`}>
-      <table className={`data-table${dense ? ' dense' : ''}`}>
-        <thead>
-          <tr>
-            {columns.map((c) => (
-              <th key={c.key} style={{ width: c.width }} className={c.align === 'right' ? 'num' : ''}>
-                {c.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 && (
-            <tr>
-              <td colSpan={columns.length}>
-                <div className="table-empty">{empty}</div>
-              </td>
-            </tr>
-          )}
-          {rows.map((row, i) => {
-            const key = row[rowKey] ?? i;
-            return (
-              <tr
-                key={key}
-                className={selectedKey !== undefined && selectedKey === row[rowKey] ? 'selected' : ''}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
-                style={onRowClick ? { cursor: 'pointer' } : undefined}
-              >
-                {columns.map((c) => (
-                  <td key={c.key} className={c.align === 'right' ? 'num' : ''}>
-                    {c.render ? c.render(row, i) : row[c.key] ?? '—'}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <Table
+        size={dense ? 'small' : 'middle'}
+        bordered={false}
+        columns={cols}
+        dataSource={rows.map((r, i) => ({ ...r, __k: keyOf(r, i) }))}
+        rowKey="__k"
+        pagination={false}
+        scroll={scrollX ? { x: scrollX } : undefined}
+        locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={empty} /> }}
+        rowClassName={(row) => (selectedKey !== undefined && selectedKey === keyOf(row) ? 'row-selected' : '')}
+        onRow={onRowClick ? (row) => ({ onClick: () => onRowClick(row) }) : undefined}
+      />
     </div>
   );
 }
 
-export function Pager({ page, pageSize, total, onChange }) {
+export function Pager({ page = 1, pageSize = 20, total = 0, onChange }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
-  if (total <= pageSize) return <div className="pager">共 {total} 条</div>;
-  const nums = [];
-  const start = Math.max(1, Math.min(page - 2, pages - 4));
-  for (let i = start; i <= Math.min(pages, start + 4); i += 1) nums.push(i);
   return (
     <div className="pager">
-      <span>
-        共 {total} 条 / {pages} 页
-      </span>
-      <button type="button" onClick={() => onChange(page - 1)} disabled={page <= 1} aria-label="上一页">
-        ‹
-      </button>
-      {nums.map((n) => (
-        <button key={n} type="button" className={n === page ? 'on' : ''} onClick={() => onChange(n)}>
-          {n}
-        </button>
-      ))}
-      <button type="button" onClick={() => onChange(page + 1)} disabled={page >= pages} aria-label="下一页">
-        ›
-      </button>
+      <span className="pager-total">共 {total} 条 / {pages} 页</span>
+      <Pagination
+        size="small"
+        current={page}
+        pageSize={pageSize}
+        total={total}
+        showSizeChanger={false}
+        onChange={onChange}
+      />
     </div>
   );
 }

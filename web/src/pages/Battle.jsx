@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Alert, Button, Card, Col, Empty, Input, Row, Select, Statistic, Table, Tooltip } from 'antd';
 import { Ic } from '../components/Icon';
 import { useApp, useFetch } from '../store.jsx';
 import { screen } from '../api';
@@ -55,74 +56,13 @@ function Flag({ status }) {
   );
 }
 
-/* v4 参考截图：梯形斜切统计卡（上下边内收）+ 底部发光台座，只能用内联样式 */
-const STAT_TONE = {
-  cyan: { fg: '#7fe3ff', bg: 'rgba(73, 195, 255, 0.18)', bd: 'rgba(73, 195, 255, 0.85)' },
-  green: { fg: '#8ff0c8', bg: 'rgba(53, 211, 154, 0.18)', bd: 'rgba(53, 211, 154, 0.85)' },
-  blue: { fg: '#9adcff', bg: 'rgba(46, 168, 255, 0.18)', bd: 'rgba(46, 168, 255, 0.85)' }
+/* 任务类型竖排单字 */
+const VERTICAL = {
+  writingMode: 'vertical-rl',
+  textOrientation: 'upright',
+  letterSpacing: 3,
+  lineHeight: 1.5
 };
-
-function StatCard({ icon, tone = 'cyan', label, value, unit }) {
-  const t = STAT_TONE[tone] || STAT_TONE.cyan;
-  return (
-    <div
-      style={{
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-        height: 96,
-        padding: '0 28px',
-        clipPath: 'polygon(18px 0, 100% 0, calc(100% - 18px) 100%, 0 100%)',
-        background: 'linear-gradient(180deg, rgba(22, 74, 128, 0.95), rgba(10, 34, 62, 0.85))',
-        border: '1px solid rgba(64, 158, 255, 0.55)'
-      }}
-    >
-      <span
-        style={{
-          display: 'grid',
-          placeItems: 'center',
-          flex: 'none',
-          width: 32,
-          height: 32,
-          color: t.fg,
-          background: t.bg,
-          border: `1px solid ${t.bd}`,
-          borderRadius: 4
-        }}
-      >
-        <Ic icon={icon} size={18} />
-      </span>
-      <span style={{ fontSize: 14, letterSpacing: '0.06em', color: '#a8cdee', whiteSpace: 'nowrap' }}>{label}</span>
-      <b
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 34,
-          fontWeight: 700,
-          lineHeight: 1,
-          color: t.fg,
-          textShadow: `0 0 14px ${t.fg}66`
-        }}
-      >
-        {value}
-      </b>
-      <span style={{ fontSize: 12, color: '#a8cdee' }}>{unit}</span>
-      <span
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          left: '15%',
-          right: '15%',
-          bottom: 0,
-          height: 2,
-          background: 'linear-gradient(90deg, transparent, #7fe3ff, transparent)',
-          filter: 'blur(0.4px)'
-        }}
-      />
-    </div>
-  );
-}
 
 export default function Battle() {
   const { bootMeta, toast } = useApp();
@@ -155,6 +95,70 @@ export default function Battle() {
   };
   const close = () => nav('/dashboard');
 
+  /* 分组拍平：每行带上「任务类型」「重点工作内容」的合并行数，交给 columns.onCell 返回 rowSpan */
+  const tableRows = useMemo(() => {
+    const out = [];
+    groups.forEach((g) => {
+      const items = g.items || [];
+      /* 重点工作内容：仅合并「连续」同值单元格 */
+      const spans = items.map((it, i) => {
+        if (i > 0 && items[i - 1].content === it.content) return 0;
+        let n = 1;
+        while (items[i + n] && items[i + n].content === it.content) n += 1;
+        return n;
+      });
+      items.forEach((it, i) => {
+        out.push({
+          ...it,
+          __cat: g.category,
+          __catSpan: i === 0 ? items.length : 0,
+          __contentSpan: spans[i]
+        });
+      });
+    });
+    return out;
+  }, [groups]);
+
+  const columns = useMemo(
+    () => [
+      {
+        title: '任务类型',
+        dataIndex: '__cat',
+        key: '__cat',
+        width: 48,
+        align: 'center',
+        onCell: (row) => ({ rowSpan: row.__catSpan }),
+        render: (v) => <span style={VERTICAL}>{v}</span>
+      },
+      { title: '序号', dataIndex: 'seq', key: 'seq', width: 56, align: 'center' },
+      {
+        title: '重点工作内容',
+        dataIndex: 'content',
+        key: 'content',
+        width: '24%',
+        onCell: (row) => ({ rowSpan: row.__contentSpan })
+      },
+      { title: '预期成果', dataIndex: 'outcome', key: 'outcome', width: '30%' },
+      { title: '完成时限', dataIndex: 'deadline', key: 'deadline', width: 84, align: 'center' },
+      { title: '责任部门', dataIndex: 'dept', key: 'dept', width: 96 },
+      { title: '支撑部门', dataIndex: 'support_dept', key: 'support_dept', width: 104 },
+      {
+        title: '阶段性完成情况',
+        key: 'quarters',
+        align: 'center',
+        children: QUARTERS.map((qq) => ({
+          title: qq.label,
+          dataIndex: qq.key,
+          key: qq.key,
+          width: 84,
+          align: 'center',
+          render: (v) => <Flag status={v} />
+        }))
+      }
+    ],
+    []
+  );
+
   const exportCsv = () => {
     const rows = [['任务类型', '序号', '重点工作内容', '预期成果', '完成时限', '责任部门', '支撑部门', '第一季度', '第二季度', '第三季度', '第四季度', '整体状态']];
     (data?.list || []).forEach((r) => {
@@ -176,225 +180,139 @@ export default function Battle() {
 
   return (
     <div className="battle" style={{ padding: 12 }}>
-      <div
-        className="battle-head"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-          flexWrap: 'wrap',
-          padding: '10px 14px',
-          background: 'linear-gradient(180deg, rgba(14, 46, 82, 0.92), rgba(8, 24, 44, 0.72))',
-          border: '1px solid rgba(64, 158, 255, 0.35)',
-          borderRadius: 'var(--r-sm)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: '1 1 auto', flexWrap: 'wrap' }}>
+      <Card size="small" styles={{ body: { padding: '12px 16px' } }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <h1
-            className="page-title"
             style={{
               margin: 0,
-              fontSize: narrow ? 18 : 24,
-              letterSpacing: '0.06em',
+              fontSize: narrow ? 18 : 22,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
               lineHeight: 1.35,
-              color: '#fff',
+              color: 'var(--text-1)',
               whiteSpace: 'normal'
             }}
           >
             {year}年地矿行政管理重点任务作战图
           </h1>
-          <select
-            className="select"
-            style={{ width: 100, height: 34, flex: 'none' }}
+          <Select
             value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
+            onChange={(v) => setYear(v)}
+            options={years.map((y) => ({ value: y, label: `${y} 年` }))}
+            style={{ width: 108 }}
             aria-label="年度"
+          />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginLeft: 'auto',
+              flexWrap: 'wrap',
+              minWidth: 0
+            }}
           >
-            {years.map((y) => <option key={y} value={y}>{y} 年</option>)}
-          </select>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginLeft: 'auto',
-            minWidth: 0,
-            flex: '0 1 auto',
-            flexWrap: narrow ? 'wrap' : 'nowrap'
-          }}
-        >
-          <div className="toolbar-search" style={{ flex: '0 1 220px', maxWidth: 220, minWidth: 150 }}>
-            <Ic icon={Search01Icon} size={14} />
-            <input
-              className="input"
-              style={{ height: 34 }}
+            <Input
+              allowClear
+              prefix={<Ic icon={Search01Icon} size={14} />}
               placeholder="检索重点工作内容"
               value={kwInput}
               onChange={(e) => setKwInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') search();
-              }}
+              onPressEnter={search}
+              style={{ width: narrow ? '100%' : 240 }}
+              aria-label="关键词"
             />
+            <Button type="primary" onClick={search}>搜索</Button>
+            <Button onClick={reset}>重置</Button>
+            <Button icon={<Ic icon={Download01Icon} size={14} />} onClick={exportCsv}>导出</Button>
+            <Tooltip title="关闭并返回驾驶舱">
+              <Button
+                icon={<Ic icon={Cancel01Icon} size={15} />}
+                onClick={close}
+                aria-label="关闭"
+              />
+            </Tooltip>
           </div>
-          <button type="button" className="btn btn-primary" style={{ height: 34 }} onClick={search}>搜索</button>
-          <button type="button" className="btn btn-ghost" style={{ height: 34 }} onClick={reset}>重置</button>
-          <button type="button" className="btn btn-ghost" style={{ height: 34 }} onClick={exportCsv}>
-            <Ic icon={Download01Icon} size={14} /> 导出
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            style={{ width: 34, height: 34, padding: 0 }}
-            onClick={close}
-            aria-label="关闭"
-            title="关闭并返回平台分布"
-          >
-            <Ic icon={Cancel01Icon} size={16} />
-          </button>
         </div>
+      </Card>
+
+      <Row gutter={[12, 12]} style={{ marginTop: 12 }}>
+        <Col xs={24} md={8}>
+          <Card size="small">
+            <Statistic
+              title="重点任务"
+              value={stats.total}
+              suffix="个"
+              prefix={<Ic icon={Task01Icon} size={16} />}
+              valueStyle={{ color: '#49c3ff' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} md={8}>
+          <Card size="small">
+            <Statistic
+              title="已完成"
+              value={stats.done}
+              suffix="个"
+              prefix={<Ic icon={Tick02Icon} size={16} />}
+              valueStyle={{ color: '#35d39a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} md={8}>
+          <Card size="small">
+            <Statistic
+              title="进行中"
+              value={stats.doing}
+              suffix="个"
+              prefix={<Ic icon={PlayCircleIcon} size={16} />}
+              valueStyle={{ color: '#9adcff' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {q.error ? (
+        <Alert
+          style={{ marginTop: 12 }}
+          type="error"
+          showIcon
+          message={`任务数据加载失败：${q.error}`}
+          action={(
+            <Button size="small" icon={<Ic icon={Refresh01Icon} size={13} />} onClick={q.reload}>
+              重试
+            </Button>
+          )}
+        />
+      ) : (
+        <Card size="small" style={{ marginTop: 12 }} styles={{ body: { padding: 0 } }}>
+          <Table
+            rowKey="id"
+            size="small"
+            bordered
+            loading={q.loading && !data}
+            columns={columns}
+            dataSource={tableRows}
+            pagination={false}
+            scroll={narrow ? { x: 1180 } : undefined}
+            locale={{
+              emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={`${year} 年没有匹配的重点任务`} />
+            }}
+          />
+        </Card>
+      )}
+
+      <div className="battle-legend">
+        {['已完成', '推进中', '延后', '未完成'].map((s) => (
+          <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <Flag status={s} />
+            {s}
+          </span>
+        ))}
+        <span className="page-desc" style={{ marginLeft: 'auto' }}>
+          当前账号：{bootMeta?.user?.name || '—'}（{bootMeta?.user?.org || '—'}），可见范围{scope}任务
+        </span>
       </div>
-
-      <div
-        className="battle-cards"
-        style={{ gridTemplateColumns: narrow ? 'minmax(0, 1fr)' : 'repeat(3, minmax(0, 1fr))', gap: 'var(--sp-4)' }}
-      >
-        <StatCard icon={Task01Icon} tone="cyan" label="重点任务" value={stats.total} unit="个" />
-        <StatCard icon={Tick02Icon} tone="green" label="已完成" value={stats.done} unit="个" />
-        <StatCard icon={PlayCircleIcon} tone="blue" label="进行中" value={stats.doing} unit="个" />
-      </div>
-
-      {q.loading && !data && (
-        <div className="battle-table" style={{ padding: 16 }}>
-          <div className="skeleton">
-            <div className="skeleton-line" />
-            <div className="skeleton-line" />
-            <div className="skeleton-line" />
-          </div>
-        </div>
-      )}
-
-      {q.error && (
-        <div className="battle-table" style={{ padding: 16 }}>
-          <div className="empty is-error">
-            <div className="empty-icon"><Ic icon={Refresh01Icon} size={26} /></div>
-            <p className="empty-text">加载失败：{q.error}</p>
-            <div className="empty-action">
-              <button type="button" className="btn btn-ghost btn-sm" onClick={q.reload}>
-                <Ic icon={Refresh01Icon} size={13} /> 重试
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {data && !q.error && groups.length === 0 && (
-        <div className="battle-table" style={{ padding: 16 }}>
-          <div className="empty">
-            <div className="empty-icon"><Ic icon={Search01Icon} size={26} /></div>
-            <p className="empty-text">{year} 年没有匹配的重点任务</p>
-            <div className="empty-action">
-              <button type="button" className="btn btn-ghost btn-sm" onClick={reset}>清空检索条件</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {groups.length > 0 && (
-        <>
-          <div className="battle-table">
-            <table className="data-table is-dense" style={{ minWidth: 1180 }}>
-              <thead>
-                <tr>
-                  <th
-                    rowSpan={2}
-                    style={{
-                      width: 40,
-                      minWidth: 40,
-                      textAlign: 'center',
-                      writingMode: 'vertical-rl',
-                      textOrientation: 'upright',
-                      letterSpacing: 3
-                    }}
-                  >
-                    任务类型
-                  </th>
-                  <th rowSpan={2} style={{ width: 56, textAlign: 'center' }}>序号</th>
-                  <th rowSpan={2} style={{ width: '24%', minWidth: 250 }}>重点工作内容</th>
-                  <th rowSpan={2} style={{ width: '30%', minWidth: 280 }}>预期成果</th>
-                  <th rowSpan={2} style={{ width: 84, textAlign: 'center' }}>完成时限</th>
-                  <th rowSpan={2} style={{ width: 96 }}>责任部门</th>
-                  <th rowSpan={2} style={{ width: 104 }}>支撑部门</th>
-                  <th colSpan={4} style={{ textAlign: 'center' }}>阶段性完成情况</th>
-                </tr>
-                <tr>
-                  {QUARTERS.map((qq) => (
-                    <th key={qq.key} style={{ width: 84, height: 34, textAlign: 'center' }}>{qq.label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {groups.map((g) => {
-                  const items = g.items || [];
-                  /* 重点工作内容：仅合并「连续」同值单元格 */
-                  const spans = items.map((it, i) => {
-                    if (i > 0 && items[i - 1].content === it.content) return 0;
-                    let n = 1;
-                    while (items[i + n] && items[i + n].content === it.content) n += 1;
-                    return n;
-                  });
-                  return items.map((it, i) => (
-                    <tr key={it.id}>
-                      {i === 0 && (
-                        <td
-                          rowSpan={items.length}
-                          style={{
-                            width: 40,
-                            minWidth: 40,
-                            maxWidth: 40,
-                            textAlign: 'center',
-                            verticalAlign: 'middle',
-                            padding: '6px 0',
-                            writingMode: 'vertical-rl',
-                            textOrientation: 'upright',
-                            letterSpacing: 3,
-                            lineHeight: 1.5
-                          }}
-                        >
-                          {g.category}
-                        </td>
-                      )}
-                      <td style={{ textAlign: 'center' }}>{it.seq}</td>
-                      {spans[i] > 0 && <td rowSpan={spans[i]}>{it.content}</td>}
-                      <td>{it.outcome}</td>
-                      <td style={{ textAlign: 'center' }}>{it.deadline}</td>
-                      <td>{it.dept}</td>
-                      <td>{it.support_dept}</td>
-                      {QUARTERS.map((qq) => (
-                        <td key={qq.key} style={{ textAlign: 'center' }}>
-                          <Flag status={it[qq.key]} />
-                        </td>
-                      ))}
-                    </tr>
-                  ));
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="battle-legend">
-            {['已完成', '推进中', '延后', '未完成'].map((s) => (
-              <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <Flag status={s} />
-                {s}
-              </span>
-            ))}
-            <span className="page-desc" style={{ marginLeft: 'auto' }}>
-              当前账号：{bootMeta?.user?.name || '—'}（{bootMeta?.user?.org || '—'}），可见范围{scope}任务
-            </span>
-          </div>
-        </>
-      )}
     </div>
   );
 }

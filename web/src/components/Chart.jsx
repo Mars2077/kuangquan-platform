@@ -86,6 +86,17 @@ export function donutOption(parts = [], opts = {}) {
   /* 小数位由单位统一决定；center 保留后端给的精度（2.63 不会被截成 3） */
   const d = unitDecimals(unit, decimals);
   const centerText = fmt(center !== undefined ? center : total, d);
+  /* 角标与「全零兜底文字」都挂在 graphic 上；圆心正文交给 series.label */
+  const graphic = [];
+  if (suffix) {
+    graphic.push({ type: 'text', right: 4, top: 2, style: { text: suffix, fill: TEXT_DIM, fontSize: 10 } });
+  }
+  if (!(total > 0)) {
+    graphic.push({
+      type: 'text', left: 'center', top: 'middle',
+      style: { text: centerText, fill: '#e8f4ff', fontSize: 18, fontWeight: 700 }
+    });
+  }
   return {
     animationDuration: 700,
     color: COLORS,
@@ -98,44 +109,10 @@ export function donutOption(parts = [], opts = {}) {
       type: 'scroll', orient: 'vertical', right: 0, top: 'center', itemWidth: 8, itemHeight: 8,
       icon: 'roundRect', itemGap: 9, textStyle: { color: TEXT_DIM, fontSize: 11 }
     } : { show: false },
-    /* 圆心文字用 graphic 而非 title：
-     * title 的 left:'center' 与 textAlign:'center' 会叠加成「先居中再按自身宽度偏移」，
-     * 表现为整段文字右移半个字宽（用户反馈的「字有点歪」）。graphic 用 50%/34% 加
-     * textAlign+textVerticalAlign 才能真正以圆心对齐。 */
-    title: { show: false },
-    graphic: [
-      {
-        type: 'group',
-        left: legend ? '34%' : '50%',
-        top: '50%',
-        children: [
-          {
-            type: 'text',
-            style: {
-              text: centerText,
-              fill: '#e8f4ff',
-              font: `700 ${centerText.length > 8 ? 14 : centerText.length > 6 ? 16 : 19}px var(--font-mono, monospace)`,
-              textAlign: 'center',
-              textVerticalAlign: 'middle'
-            }
-          },
-          {
-            type: 'text',
-            top: 15,
-            style: {
-              text: unit || '',
-              fill: TEXT_DIM,
-              font: '400 11px var(--font-sans, sans-serif)',
-              textAlign: 'center',
-              textVerticalAlign: 'middle'
-            }
-          }
-        ]
-      },
-      ...(suffix ? [{
-        type: 'text', right: 4, top: 4, style: { text: suffix, fill: TEXT_DIM, fontSize: 10 }
-      }] : [])
-    ],
+    /* 圆心文字：用「饼图自身的 label position:'center'」而不是 graphic/title。
+     * graphic 的 left:'50%' 是「把元素包围盒的左边缘放到 50%」，再叠加 textAlign:'center'
+     * 会再偏移半个字宽；title 同理。position:'center' 由 ECharts 按扇区圆心计算，
+     * 单行/多行、有无图例（圆心 34%）都能真正居中。因此只让第一个扇区带圆心标签。 */
     series: [{
       type: 'pie',
       radius,
@@ -149,8 +126,29 @@ export function donutOption(parts = [], opts = {}) {
       } : { show: false },
       labelLine: { show: !!showLabel, length: 8, length2: 6, lineStyle: { color: LINE } },
       emphasis: { scale: true, scaleSize: 4, itemStyle: { shadowBlur: 14, shadowColor: 'rgba(73,195,255,.45)' } },
-      data
-    }]
+      data: data.map((item, i) => ({
+        ...item,
+        /* 只让首个扇区显示圆心文字，避免每个扇区各画一次 */
+        label: {
+          show: i === 0 && data.length > 0,
+          position: 'center',
+          formatter: () => `{v|${centerText}}\n{u|${unit || ''}}`,
+          rich: {
+            v: {
+              color: '#e8f4ff',
+              fontSize: centerText.length > 9 ? 14 : centerText.length > 7 ? 16 : 20,
+              fontWeight: 700,
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+              lineHeight: centerText.length > 9 ? 18 : centerText.length > 7 ? 20 : 24,
+              align: 'center'
+            },
+            u: { color: TEXT_DIM, fontSize: 11, lineHeight: 15, align: 'center' }
+          }
+        },
+        labelLine: { show: false }
+      }))
+    }],
+    graphic
   };
 }
 

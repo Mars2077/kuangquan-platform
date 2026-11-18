@@ -1,12 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Avatar, Button, Dropdown } from 'antd';
 import { Ic, BrandMark } from '../components/Icon';
 import Drawer from '../components/Drawer';
 import { Toasts, useApp } from '../store';
 import { sys } from '../api';
 import {
   Alert02Icon, Database01Icon, Logout01Icon, Menu01Icon,
-  Settings01Icon, SmartPhone01Icon, UserIcon
+  SmartPhone01Icon, UserIcon
 } from '@hugeicons/core-free-icons';
 
 const SCENE_ROUTES = {
@@ -102,10 +103,8 @@ export default function Shell() {
   const loc = useLocation();
   const clock = useClock();
   const [problem, setProblem] = useState(false);
-  const [menu, setMenu] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches);
-  const menuRef = useRef(null);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 900px)');
@@ -117,16 +116,7 @@ export default function Shell() {
   const scenes = bootMeta?.scenes || [];
 
   useEffect(() => {
-    const onDoc = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenu(false);
-    };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, []);
-
-  useEffect(() => {
     setNavOpen(false);
-    setMenu(false);
   }, [loc.pathname]);
 
   const bleed = useMemo(() => /^\/(scene|dashboard|battle)/.test(loc.pathname), [loc.pathname]);
@@ -135,6 +125,36 @@ export default function Shell() {
     logout();
     nav('/login', { replace: true });
   };
+
+  const onUserMenu = ({ key }) => {
+    if (key === 'logout') { doLogout(); return; }
+    nav(key === 'profile' ? '/system' : key === 'mobile' ? '/mobile' : '/warehouse');
+  };
+
+  const userMenuItems = [
+    { key: 'profile', icon: <Ic icon={UserIcon} size={14} />, label: '个人中心' },
+    { key: 'mobile', icon: <Ic icon={SmartPhone01Icon} size={14} />, label: '移动端' },
+    { key: 'warehouse', icon: <Ic icon={Database01Icon} size={14} />, label: '数据仓' },
+    { key: 'logout', icon: <Ic icon={Logout01Icon} size={14} />, label: '退出登录', danger: true }
+  ];
+
+  // 顶栏右侧两个胶囊按钮：扁平描边，不用渐变/发光
+  const hdBtnStyle = {
+    height: 28,
+    padding: '0 10px',
+    fontSize: 12,
+    background: 'rgba(10, 32, 64, 0.55)',
+    borderColor: 'rgba(73, 195, 255, 0.22)',
+    color: '#cfe4ff'
+  };
+
+  // 选中态用 1px 描边，不做渐变填充/发光
+  const navLinkStyle = ({ isActive }) => ({
+    textShadow: 'none',
+    boxShadow: 'none',
+    border: `1px solid ${isActive ? 'rgba(73, 195, 255, 0.55)' : 'transparent'}`,
+    background: isActive ? 'transparent' : undefined
+  });
 
   return (
     <div className="app">
@@ -147,24 +167,25 @@ export default function Shell() {
           </span>
         </div>
 
-        <button
-          type="button"
-          className="hd-burger"
-          onClick={() => setNavOpen((v) => !v)}
-          aria-label="展开导航"
-          aria-expanded={navOpen}
-        >
-          <Ic icon={Menu01Icon} size={16} />
-        </button>
+        {narrow && (
+          <Button
+            size="small"
+            icon={<Ic icon={Menu01Icon} size={16} />}
+            onClick={() => setNavOpen((v) => !v)}
+            aria-label="展开导航"
+            aria-expanded={navOpen}
+            style={{ width: 32, height: 30, padding: 0, flex: '0 0 auto' }}
+          />
+        )}
 
         <nav className={`hd-nav${navOpen ? ' is-open' : ''}`} aria-label="一级导航">
-          <NavLink to="/dashboard" className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>数字驾驶舱</NavLink>
-          <NavLink to="/battle" className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>重点任务</NavLink>
+          <NavLink to="/dashboard" style={navLinkStyle} className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>数字驾驶舱</NavLink>
+          <NavLink to="/battle" style={navLinkStyle} className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>重点任务</NavLink>
           <span className="hd-nav-sep" aria-hidden="true" />
-          <NavLink to="/hub" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>业务中枢</NavLink>
-          <NavLink to="/warehouse" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>数据仓</NavLink>
-          <NavLink to="/mobile" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>移动端</NavLink>
-          <NavLink to="/system" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>系统</NavLink>
+          <NavLink to="/hub" style={navLinkStyle} className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>业务中枢</NavLink>
+          <NavLink to="/warehouse" style={navLinkStyle} className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>数据仓</NavLink>
+          <NavLink to="/mobile" style={navLinkStyle} className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>移动端</NavLink>
+          <NavLink to="/system" style={navLinkStyle} className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>系统</NavLink>
         </nav>
 
         <div className="hd-right">
@@ -172,48 +193,43 @@ export default function Shell() {
             <b>{clock.time}</b>
             <i>{clock.date.slice(5)}</i>
           </span>
-          <button type="button" className="hd-btn" onClick={() => nav('/battle')}>指标监测</button>
-          <button type="button" className="hd-btn" onClick={() => setProblem(true)}>
-            <Ic icon={Alert02Icon} size={14} /> 问题监测
-          </button>
+          <Button size="small" onClick={() => nav('/battle')} style={hdBtnStyle}>指标监测</Button>
+          <Button
+            size="small"
+            icon={<Ic icon={Alert02Icon} size={13} />}
+            onClick={() => setProblem(true)}
+            style={{ ...hdBtnStyle, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          >
+            问题监测
+          </Button>
 
-          <div className="userbox" ref={menuRef}>
-            <button
-              type="button"
-              className="userbox-btn"
-              onClick={() => setMenu((v) => !v)}
-              aria-haspopup="menu"
-              aria-expanded={menu}
+          <div className="userbox">
+            <Dropdown
+              trigger={['click']}
+              placement="bottomRight"
+              menu={{ items: userMenuItems, onClick: onUserMenu, style: { minWidth: 168 } }}
             >
-              <span className="avatar">{(user?.name || '用')[0]}</span>
-              {!narrow && (
-                <span className="userbox-text">
-                  <b>{user?.name || '未登录'}</b>
-                  <i>{user?.org || ''}</i>
-                </span>
-              )}
-            </button>
-            {menu && (
-              <div className="user-menu" role="menu">
-                <div className="user-menu-head">
-                  <b>{user?.name}</b>
-                  <span>{bootMeta?.roles?.[user?.role] || user?.role}</span>
-                  <small>{user?.region_name || '四川省'}</small>
-                </div>
-                <button type="button" onClick={() => { setMenu(false); nav('/system'); }}>
-                  <Ic icon={Settings01Icon} size={14} /> 系统管理
-                </button>
-                <button type="button" onClick={() => { setMenu(false); nav('/mobile'); }}>
-                  <Ic icon={SmartPhone01Icon} size={14} /> 政务移动端
-                </button>
-                <button type="button" onClick={() => { setMenu(false); nav('/warehouse'); }}>
-                  <Ic icon={Database01Icon} size={14} /> 数据仓
-                </button>
-                <button type="button" className="is-danger" onClick={doLogout}>
-                  <Ic icon={Logout01Icon} size={14} /> 退出登录
-                </button>
-              </div>
-            )}
+              <button type="button" className="userbox-btn" aria-label="用户菜单" aria-haspopup="menu">
+                <Avatar
+                  size={28}
+                  style={{
+                    flex: '0 0 auto',
+                    fontSize: 12,
+                    color: 'var(--cyan)',
+                    background: 'rgba(73, 195, 255, 0.14)',
+                    border: '1px solid rgba(73, 195, 255, 0.35)'
+                  }}
+                >
+                  {(user?.name || '用')[0]}
+                </Avatar>
+                {!narrow && (
+                  <span className="userbox-text">
+                    <b>{user?.name || '未登录'}</b>
+                    <i>{user?.org || ''}</i>
+                  </span>
+                )}
+              </button>
+            </Dropdown>
           </div>
         </div>
       </header>

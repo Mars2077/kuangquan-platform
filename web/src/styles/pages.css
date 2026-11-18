@@ -76,12 +76,11 @@
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  box-shadow: var(--sh-1);
-  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+  box-shadow: none;
+  transition: border-color var(--dur-1) var(--ease);
 }
 
 .kpi-card:hover {
-  background: var(--panel-2);
   border-color: var(--line-strong);
 }
 
@@ -267,14 +266,16 @@
 .dash-col--r {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: var(--sp-3);
   min-width: 0;
 }
 
+/* 面板高度跟着内容走，多余的高度均分到面板之间（不再把 3 行统计摊成半屏空白） */
 .dash-col--l > .panel,
 .dash-col--r > .panel {
-  flex: 1 1 auto;
-  min-height: 132px;
+  flex: 0 1 auto;
+  min-height: 0;
 }
 
 .dash-map {
@@ -313,49 +314,38 @@
   pointer-events: auto;
 }
 
-.dash-list-bar {
-  display: flex;
+/* 收起态：地图框下部居中的一枚小箭头胶囊（不再横贯整页） */
+.dash-list-toggle {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  width: 100%;
-  height: 34px;
-  padding: 0 12px;
-  font-size: var(--fs-xs);
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px 0 13px;
+  border-radius: 999px;
   color: var(--text-2);
-  background: rgba(6, 20, 40, .82);
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
+  background: rgba(6, 20, 40, .9);
+  border: 1px solid var(--line-strong);
   backdrop-filter: blur(8px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
   cursor: pointer;
-  transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+    background var(--dur-1) var(--ease);
 }
 
-.dash-list-bar:hover {
+.dash-list-toggle:hover {
   color: var(--text-1);
   border-color: var(--line-strong);
+  background: rgba(10, 32, 64, 0.95);
 }
 
-.dash-list-bar-title {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
-  letter-spacing: .04em;
-}
-
-.dash-list-bar-title em {
-  font-style: normal;
-  font-size: 11px;
-  color: var(--text-3);
+.dash-list-toggle-num {
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
-}
-
-.dash-list-bar-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--text-3);
+  letter-spacing: .04em;
 }
 
 .dash-list-float {
@@ -365,7 +355,7 @@
   background: rgba(5, 16, 32, .97);
   border: 1px solid var(--line-strong);
   border-radius: var(--r-md);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, .55);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
   overflow: hidden;
 }
 
@@ -427,36 +417,78 @@
   padding: 10px var(--sp-3) var(--sp-3);
 }
 
-/* 驾驶舱侧栏：面板高度由栅格均分，内容必须跟着长高，不能挤在顶部 */
+/* 驾驶舱侧栏：统计行按可用高度均分（行内上下留白由行高给出），整体撑满面板 */
 .dash-col--l > .panel > .panel-body,
 .dash-col--r > .panel > .panel-body {
   display: flex;
   flex-direction: column;
+  justify-content: stretch;
 }
 
-.dash-col--l > .panel > .panel-body > .stat-list:only-child,
-.dash-col--r > .panel > .panel-body > .stat-list:only-child {
+.dash-col--l > .panel > .panel-body > .stat-list,
+.dash-col--r > .panel > .panel-body > .stat-list {
   flex: 1 1 auto;
-  justify-content: space-between;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
 }
 
-/* 只有 3 行时让行本身吃掉剩余高度，分隔线连续、文字垂直居中 */
-.dash-col--l > .panel > .panel-body > .stat-list:only-child:not(:has(> .stat-row:nth-child(4))) > .stat-row,
-.dash-col--r > .panel > .panel-body > .stat-list:only-child:not(:has(> .stat-row:nth-child(4))) > .stat-row {
+.dash-col--l > .panel > .panel-body > .stat-list > .stat-row,
+.dash-col--r > .panel > .panel-body > .stat-list > .stat-row {
   flex: 1 1 0;
   align-items: center;
-  max-height: 88px;
+  min-height: 0;
+  max-height: 104px;
+  padding: 10px 0;
+  line-height: 1.25;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* 只有一行 KPI 的面板：面板收到内容量级（≤200），余量留给同列图表，行居中 */
-.dash-col--l > .panel > .panel-body > .stat-list:only-child:has(> .stat-row:only-child),
-.dash-col--r > .panel > .panel-body > .stat-list:only-child:has(> .stat-row:only-child) {
-  justify-content: center;
+.dash-col--l > .panel > .panel-body > .stat-list > .stat-row:last-child,
+.dash-col--r > .panel > .panel-body > .stat-list > .stat-row:last-child {
+  border-bottom: 0;
 }
 
+/* 数值行高收到 1.15：大号数字在默认行高下会把每行撑得过高 */
+.dash-col--l .stat-row .v,
+.dash-col--r .stat-row .v {
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+/* 只有一行 KPI 的面板：收回内容高度，余量留给同列图表 */
 .dash-col--l > .panel:has(> .panel-body > .stat-list:only-child > .stat-row:only-child),
 .dash-col--r > .panel:has(> .panel-body > .stat-list:only-child > .stat-row:only-child) {
   max-height: 200px;
+}
+
+/* 侧栏字号：标签 14、数值 26、单位 12（此前 12/16/11 偏小，配合拉伸显得又空又轻） */
+.dash-col--l .stat-row .k,
+.dash-col--r .stat-row .k {
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+.dash-col--l .stat-row .v,
+.dash-col--r .stat-row .v {
+  font-size: 26px;
+}
+
+.dash-col--l .stat-row .u,
+.dash-col--r .stat-row .u {
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.dash-col--l .stat-row .d,
+.dash-col--r .stat-row .d {
+  min-width: 48px;
+  font-size: 11.5px;
+}
+
+.dash-col--l .stat-row .sfx,
+.dash-col--r .stat-row .sfx {
+  font-size: 11px;
 }
 
 /* 统计行下方还有图表的面板：让图表吃掉剩余高度，而不是把行拉成巨块 */
@@ -705,19 +737,11 @@
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
-  transition: transform var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
-    background var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+  transition: border-color var(--dur-1) var(--ease);
 }
 
 .tile:hover {
-  background: var(--panel-2);
   border-color: var(--line-strong);
-  box-shadow: var(--sh-1);
-  transform: translateY(-2px);
-}
-
-.tile:active {
-  transform: translateY(0);
 }
 
 .tile:focus-visible {
@@ -816,7 +840,6 @@
 }
 
 .battle-card:hover {
-  background: var(--panel-2);
   border-color: var(--line-strong);
 }
 
@@ -954,7 +977,7 @@
   background: var(--panel);
   border: 1px solid var(--line-strong);
   border-radius: 24px;
-  box-shadow: var(--sh-2);
+  box-shadow: none;
 }
 
 .m-user {
@@ -1631,12 +1654,7 @@
   box-shadow: none;
 }
 
-/* 旧版独立导航条彻底停用 */
-.app-nav {
-  display: none !important;
-}
-
-/* ---------- 面板：去发光，发丝边 + 轻微分层 ---------- */
+/* ---------- 面板：发丝边、实底、无阴影 ---------- */
 .panel {
   background: #0a1e33;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1644,9 +1662,11 @@
 }
 
 .panel-head {
+  padding-right: 24px;
   background: #0d2740;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  clip-path: none;
+  /* 仅面板标题条与 KPI 卡保留切角，其余一律圆角矩形 */
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
 
 .panel-head::after {
@@ -1698,12 +1718,12 @@
   background: rgba(255, 255, 255, 0.04);
 }
 
-/* ---------- KPI / 数字：去掉切角光条与重阴影 ---------- */
+/* ---------- KPI：实底、发丝边、单一切角，无光条 ---------- */
 .kpi-card {
   background: #0a1e33;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: none;
-  clip-path: none;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
 }
 
 .kpi-value,
@@ -1759,7 +1779,7 @@
     background: #08192c;
     border: 1px solid var(--line);
     border-radius: var(--r-md);
-    box-shadow: var(--sh-2);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
   }
 
   .hd-nav.is-open {
@@ -2110,7 +2130,6 @@
   bottom: -7px;
   height: 2px;
   background: #49c3ff;
-  box-shadow: 0 0 8px rgba(73, 195, 255, 0.75);
 }
 
 .flow-map {
@@ -2165,7 +2184,6 @@
 .flow-node:focus-visible {
   border-color: rgba(73, 195, 255, 0.7);
   background: rgba(20, 58, 100, 0.82);
-  transform: translateY(-1px);
 }
 
 .flow-node.is-workflow { border-color: rgba(73, 195, 255, 0.42); }

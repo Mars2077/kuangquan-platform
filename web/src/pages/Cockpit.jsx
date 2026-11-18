@@ -5,6 +5,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Segmented } from 'antd';
 import GeoMap from '../components/GeoMap.jsx';
 import Chart, {
   COLORS, donutOption, barOption, indicatorOption, formatValue
@@ -13,7 +14,7 @@ import { Ic } from '../components/Icon';
 import { useApp, useFetch } from '../store.jsx';
 import { meta as metaApi, screen as screenApi } from '../api';
 import {
-  Camera01Icon, ChevronDownIcon, Download01Icon, FilterIcon, Layers01Icon,
+  Camera01Icon, ChevronDownIcon, ChevronUpIcon, Download01Icon, FilterIcon, Layers01Icon,
   Location01Icon, More01Icon, Refresh01Icon, RulerIcon, Search01Icon, ToolsIcon
 } from '@hugeicons/core-free-icons';
 
@@ -190,21 +191,14 @@ const POPUP_FIELDS = {
 /* ------------------------------------------------------------------ 小工具组件 */
 function Tabs({ items = [], value, onChange }) {
   return (
-    <div className="tabs" style={{ marginBottom: 2 }}>
-      {items.map((it) => (
-        <button
-          key={it.key}
-          type="button"
-          role="tab"
-          aria-selected={it.key === value}
-          className={`tab${it.key === value ? ' is-on' : ''}`}
-          style={{ height: 26, padding: '0 8px', fontSize: 12 }}
-          onClick={() => onChange(it.key)}
-        >
-          {it.label}
-        </button>
-      ))}
-    </div>
+    <Segmented
+      size="small"
+      block
+      value={value}
+      onChange={onChange}
+      options={items.map((it) => ({ label: it.label, value: it.key }))}
+      style={{ marginBottom: 4 }}
+    />
   );
 }
 
@@ -218,37 +212,45 @@ function Delta({ value }) {
   );
 }
 
-/* 统计行：.stat-list > .stat-row > .k / .v / .u / .d（契约 §5） */
-function StatRows({ rows = [], compact = false }) {
+/* 统计行：.stat-list > .stat-row > .k / .v / .u / .d（契约 §5）
+ * 行高与字号在这里统一：2–3 行时 72–88px；4 行以上等分（≥48px）；数值统一 25px、标签统一 13px。 */
+const STAT_ROW_TALL = { flex: '1 1 0', minHeight: 72, maxHeight: 88, padding: '6px 0' };
+const STAT_ROW_DENSE = { flex: '1 1 0', minHeight: 42, padding: '4px 0' };
+const rowStyleFor = (n) => (n <= 3 ? STAT_ROW_TALL : STAT_ROW_DENSE);
+
+function StatRowList({ rows = [], rowStyle }) {
+  return rows.map((r, i) => {
+    const numeric = r.value !== null && r.value !== undefined && Number.isFinite(Number(r.value));
+    return (
+      <div className="stat-row" key={`${r.label || r.name}-${i}`} style={rowStyle}>
+        <span className="k" title={r.label} style={{ fontSize: 13 }}>
+          {r.label}
+          {r.sub ? <span className="muted tiny" style={{ marginLeft: 4 }}>{r.sub}</span> : null}
+        </span>
+        {r.suffix ? <span className="u" style={{ flex: 'none' }}>{r.suffix}</span> : null}
+        <span
+          className="v"
+          style={{
+            fontSize: 25,
+            lineHeight: 1.15,
+            ...(r.tone === 'warm' ? { color: 'var(--orange)' } : null)
+          }}
+        >
+          {numeric ? formatValue(r.value, r.unit, r.decimals) : (r.value ?? '—')}
+        </span>
+        {r.unit ? <span className="u">{r.unit}</span> : null}
+        <Delta value={r.delta} />
+      </div>
+    );
+  });
+}
+
+/* bare：不包 .stat-list（供 tabbed / stat-grid 用 display:contents 分组后跨组等分行高） */
+function StatRows({ rows = [], rowStyle, bare = false }) {
+  if (bare) return <StatRowList rows={rows} rowStyle={rowStyle} />;
   return (
-    <div className="stat-list">
-      {rows.map((r, i) => {
-        const numeric = r.value !== null && r.value !== undefined && Number.isFinite(Number(r.value));
-        return (
-          <div
-            className="stat-row"
-            key={`${r.label || r.name}-${i}`}
-            style={compact ? { minHeight: 20, padding: '1px 0' } : undefined}
-          >
-            <span className="k" title={r.label}>
-              {r.label}
-              {r.sub ? <span className="muted tiny" style={{ marginLeft: 4 }}>{r.sub}</span> : null}
-            </span>
-            {r.suffix ? <span className="u" style={{ flex: 'none' }}>{r.suffix}</span> : null}
-            <span
-              className="v"
-              style={{
-                ...(compact ? { fontSize: 14 } : null),
-                ...(r.tone === 'warm' ? { color: 'var(--orange)' } : null)
-              }}
-            >
-              {numeric ? formatValue(r.value, r.unit, r.decimals) : (r.value ?? '—')}
-            </span>
-            {r.unit ? <span className="u">{r.unit}</span> : null}
-            <Delta value={r.delta} />
-          </div>
-        );
-      })}
+    <div className="stat-list" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <StatRowList rows={rows} rowStyle={rowStyle} />
     </div>
   );
 }
@@ -296,11 +298,15 @@ function PanelBody({ panel, extra, dense = false }) {
   if (!panel) return null;
 
   if (panel.type === 'stat-list') {
-    return <StatRows rows={panel.rows || []} />;
+    const rows = panel.rows || [];
+    return <StatRows rows={rows} rowStyle={rowStyleFor(rows.length)} />;
   }
 
   if (panel.type === 'tabbed') {
     const cur = panel.tabs?.find((t) => t.key === tab) || panel.tabs?.[0];
+    const groups = cur?.groups || [];
+    const total = groups.reduce((s, g) => s + (g.rows?.length || 0), 0);
+    const rowStyle = rowStyleFor(total);
     return (
       <>
         <Tabs
@@ -308,13 +314,23 @@ function PanelBody({ panel, extra, dense = false }) {
           value={cur?.key}
           onChange={setTab}
         />
-        <div className="stat-list">
-          {(cur?.groups || []).map((g) => (
-            <div key={g.title}>
-              <div className="stat-row" style={{ minHeight: 15, padding: '1px 0 0', borderBottom: 0 }}>
-                <span className="k" style={{ color: 'var(--text-4)', fontSize: 10 }}>{g.title}</span>
+        <div className="stat-list" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          {groups.map((g) => (
+            <div key={g.title} style={{ display: 'contents' }}>
+              <div
+                style={{
+                  flex: '0 0 auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '2px 0 0',
+                  fontSize: 11,
+                  lineHeight: 1.3,
+                  color: 'var(--text-4)'
+                }}
+              >
+                {g.title}
               </div>
-              <StatRows rows={g.rows || []} compact />
+              <StatRows rows={g.rows || []} rowStyle={rowStyle} bare />
             </div>
           ))}
         </div>
@@ -379,27 +395,38 @@ function PanelBody({ panel, extra, dense = false }) {
   }
 
   if (panel.type === 'stat-grid') {
+    const blocks = panel.blocks || [];
+    const total = blocks.reduce((s, b) => s + (b.items?.length || 0), 0);
+    const rowStyle = rowStyleFor(total);
     return (
-      <div className="stat-list">
-        {(panel.blocks || []).map((b) => (
-          <div key={b.title}>
-            <div className="stat-row" style={{ minHeight: 18, padding: '2px 0', borderBottom: 0 }}>
+      <div className="stat-list" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {blocks.map((b) => (
+          <div key={b.title} style={{ display: 'contents' }}>
+            <div
+              style={{
+                flex: '0 0 auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '2px 0 0',
+                fontSize: 11,
+                lineHeight: 1.3,
+                fontWeight: 600,
+                color: 'var(--text-2)'
+              }}
+            >
               <span
-                className="k"
-                style={{ color: 'var(--text-2)', fontWeight: 600, fontSize: 12 }}
-              >
-                <span
-                  className="dot"
-                  style={{ background: b.icon === 'alert' ? 'var(--orange)' : 'var(--cyan)', marginRight: 6 }}
-                />
-                {b.title}
-              </span>
+                className="dot"
+                style={{ background: b.icon === 'alert' ? 'var(--orange)' : 'var(--cyan)' }}
+              />
+              {b.title}
             </div>
             <StatRows
               rows={(b.items || []).map((it) => ({
                 label: it.label, sub: it.sub, value: it.value, unit: it.unit, tone: it.tone
               }))}
-              compact
+              rowStyle={rowStyle}
+              bare
             />
           </div>
         ))}
@@ -475,6 +502,32 @@ function pickListArray(raw, theme, scene) {
     if (Array.isArray(raw[k])) return raw[k];
   }
   return Object.values(raw).find((v) => Array.isArray(v)) || [];
+}
+
+/* 底部列表的展开/收起开关：只显示条数 + 箭头，hover 用描边反馈；浮层内以静态流式呈现，保证收起入口常驻 */
+function ListToggle({ count, open = false, onClick, label = '列表' }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      type="button"
+      className="dash-list-toggle"
+      onClick={onClick}
+      aria-expanded={open}
+      title={open ? `收起${label}` : `展开${label}（${count} 条）`}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        ...(open ? { position: 'static', left: 'auto', bottom: 'auto', transform: 'none' } : null),
+        borderColor: hover ? 'rgba(73, 195, 255, 0.8)' : 'rgba(73, 195, 255, 0.45)',
+        color: hover ? 'var(--text-1)' : undefined,
+        background: hover ? 'rgba(10, 32, 64, 0.95)' : undefined
+      }}
+    >
+      <span className="dash-list-toggle-num">{count}</span>
+      <Ic icon={open ? ChevronDownIcon : ChevronUpIcon} size={14} />
+      <span className="sr-only">{open ? `收起${label}` : `展开${label}`}</span>
+    </button>
+  );
 }
 
 /* v4 专题标题牌（对应参考截图的地图顶部居中矩形牌） */
@@ -801,6 +854,127 @@ export default function Cockpit({ sceneKey }) {
     </section>
   ));
 
+  /* 底部列表浮层：桌面挂在 .dash 底部；窄屏改为地图区域内 absolute（见地图 children），
+   * 高度由外层容器约束（≤70vh 且不超出地图可视区），首屏可见。 */
+  const listFloat = (extraStyle) => (
+    <div
+      className="dash-list-float"
+      role="dialog"
+      aria-label={`${meta0.title}列表`}
+      style={{
+        background: 'rgba(5,16,32,0.98)',
+        border: '1px solid rgba(73,195,255,0.22)',
+        borderRadius: 8,
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        ...extraStyle
+      }}
+    >
+      <header
+        className="panel-head"
+        style={{ minHeight: 38, borderBottom: '1px solid rgba(73,195,255,0.22)' }}
+      >
+        <h2 className="panel-title">
+          {meta0.title}列表
+          <span className="muted tiny" style={{ fontWeight: 400 }}>· {list.length} 条</span>
+        </h2>
+        <div className="row center gap-2">
+          <label className="input-icon" style={{ width: isPhone ? 92 : 180 }}>
+            <Ic icon={Search01Icon} size={13} />
+            <input
+              className="input"
+              style={{ height: 28, fontSize: 12 }}
+              value={kw}
+              onChange={(e) => setKw(e.target.value)}
+              placeholder="筛选当前列表"
+              aria-label="筛选当前列表"
+            />
+          </label>
+          <button type="button" className="btn btn-text btn-sm" onClick={exportCsv}>
+            <Ic icon={Download01Icon} size={12} /> 导出
+          </button>
+          <button type="button" className="btn btn-text btn-sm" onClick={() => setListOpen(false)}>
+            收起
+          </button>
+        </div>
+      </header>
+      <div
+        className="panel-body"
+        style={{ padding: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}
+      >
+        <div
+          className="table-wrap"
+          style={{ flex: '1 1 auto', minHeight: 0, border: 0, borderRadius: 0, overflow: 'auto' }}
+        >
+          <table className="data-table is-dense" style={{ minWidth: tableMinWidth, width: '100%', tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: 56 }} />
+              {columns.map((c) => (
+                <col key={c.key} style={c.flex ? undefined : { width: c.width || 110 }} />
+              ))}
+            </colgroup>
+            <thead>
+              <tr>
+                <th className="num" style={{ width: 48 }}>序号</th>
+                {columns.map((c) => (
+                  <th
+                    key={c.key}
+                    className={c.align === 'right' ? 'num' : ''}
+                    style={c.width ? { width: c.width } : undefined}
+                  >
+                    {c.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {list.slice(0, 200).map((row, i) => (
+                <tr
+                  key={row.id ?? i}
+                  onClick={() => setSel(row)}
+                  className={sel && sel.id === row.id ? 'selected' : ''}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <td className="num">{i + 1}</td>
+                  {columns.map((c) => (
+                    <td key={c.key} className={c.align === 'right' ? 'num' : ''}>
+                      {c.align === 'right' && Number.isFinite(Number(row[c.key]))
+                        ? int(row[c.key])
+                        : row[c.key] ?? '—'}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {list.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length + 1}>
+                    <div className="table-empty">当前视角下没有要素</div>
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div
+        style={{
+          flex: '0 0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '4px 0 8px'
+        }}
+      >
+        <ListToggle
+          count={list.length}
+          open
+          onClick={() => setListOpen(false)}
+          label={`${meta0.title}列表`}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <div className="dash-wrap">
       <nav className="dash-tabs" role="tablist" aria-label="驾驶舱专题">
@@ -869,7 +1043,7 @@ export default function Cockpit({ sceneKey }) {
         measure={measure}
         style={narrow ? { order: -1 } : undefined}
       >
-        {/* 专题标题牌：矩形 + 左右斜切角 + 底部青色发光边 */}
+        {/* 专题标题牌：扁平深色底 + 发丝边框 + 一段强调线（去发光/渐变） */}
         <div
           style={{
             position: 'absolute',
@@ -880,22 +1054,23 @@ export default function Cockpit({ sceneKey }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: isPhone ? 'calc(100% - 120px)' : 'min(460px, calc(100% - 200px))',
+            width: isPhone ? 'calc(100% - 120px)' : 'min(440px, calc(100% - 200px))',
             height: plateH,
-            padding: isPhone ? '0 12px' : '0 24px',
-            background: 'linear-gradient(180deg, #1e62a8, #12406f)',
-            clipPath: PLATE_CLIP,
+            padding: isPhone ? '0 12px' : '0 20px',
+            background: 'rgba(7,22,40,.92)',
+            border: '1px solid rgba(127,227,255,.22)',
+            borderRadius: 6,
+            boxShadow: '0 6px 18px rgba(0,0,0,.35)',
             pointerEvents: 'none',
             overflow: 'hidden'
           }}
         >
           <span style={{
             fontFamily: 'var(--font-sans)',
-            fontSize: isPhone ? 13 : 24,
-            fontWeight: 700,
-            color: '#fff',
-            letterSpacing: isPhone ? '1px' : '2px',
-            textShadow: '0 1px 6px rgba(0,0,0,.45)',
+            fontSize: isPhone ? 13 : 20,
+            fontWeight: 600,
+            color: '#eaf4ff',
+            letterSpacing: isPhone ? '0.5px' : '1px',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis'
@@ -904,12 +1079,12 @@ export default function Cockpit({ sceneKey }) {
           </span>
           <span style={{
             position: 'absolute',
-            left: 0,
-            right: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
             bottom: 0,
+            width: 72,
             height: 2,
-            background: 'linear-gradient(90deg, transparent, #7fe3ff 22%, #7fe3ff 78%, transparent)',
-            boxShadow: '0 0 8px rgba(127,227,255,.9)'
+            background: 'var(--cyan)'
           }} />
         </div>
 
@@ -1153,7 +1328,7 @@ export default function Cockpit({ sceneKey }) {
           <div style={{
             position: 'absolute',
             left: '50%',
-            bottom: 14,
+            bottom: narrow ? 56 : 14,
             transform: 'translateX(-50%)',
             zIndex: 6,
             display: 'flex',
@@ -1181,7 +1356,7 @@ export default function Cockpit({ sceneKey }) {
             style={{
               position: 'absolute',
               right: 12,
-              bottom: 12,
+              bottom: narrow ? 56 : 12,
               zIndex: 9,
               width: 'min(300px, calc(100% - 24px))',
               maxHeight: 'calc(100% - 72px)'
@@ -1236,6 +1411,46 @@ export default function Cockpit({ sceneKey }) {
           </div>
         )}
 
+        {/* 窄屏：列表按钮固定在「地图可视区」底部居中（bottom 12 相对 .dash-map），
+            浮层也限制在地图区域内（高度 ≤70vh 且不超出地图），首屏即可操作 */}
+        {narrow ? (
+          !listOpen ? (
+            <div style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 12,
+              zIndex: 28,
+              display: 'flex',
+              justifyContent: 'center',
+              pointerEvents: 'none'
+            }}>
+              <div style={{ pointerEvents: 'auto' }}>
+                <ListToggle
+                  count={list.length}
+                  open={false}
+                  onClick={() => setListOpen(true)}
+                  label={`${meta0.title}列表`}
+                />
+              </div>
+            </div>
+          ) : (
+            <div style={{
+              position: 'absolute',
+              left: 8,
+              right: 8,
+              top: 8,
+              bottom: 52,
+              zIndex: 28,
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '70vh'
+            }}>
+              {listFloat({ height: '100%' })}
+            </div>
+          )
+        ) : null}
+
       </GeoMap>
 
       {/* ---------------- 右栏 ---------------- */}
@@ -1274,111 +1489,14 @@ export default function Cockpit({ sceneKey }) {
         {!data && panelSkeleton(2)}
       </aside>
 
-      {/* ---------------- 底部列表：默认收起为一条窄条，点击后悬浮展开 ---------------- */}
-      <section className={`dash-list${listOpen ? ' is-open' : ''}`} aria-label={`${meta0.title}列表`}>
-        {!listOpen ? (
-          <button
-            type="button"
-            className="dash-list-bar"
-            onClick={() => setListOpen(true)}
-            aria-expanded={false}
-          >
-            <span className="dash-list-bar-title">
-              {meta0.title}列表
-              <em>{list.length} 条</em>
-            </span>
-            <span className="dash-list-bar-hint">
-              展开列表 <Ic icon={ChevronDownIcon} size={12} />
-            </span>
-          </button>
-        ) : (
-          <div className="dash-list-float" role="dialog" aria-label={`${meta0.title}列表`}>
-            <header className="panel-head" style={{ minHeight: 38 }}>
-              <h2 className="panel-title">
-                {meta0.title}列表
-                <span className="muted tiny" style={{ fontWeight: 400 }}>· {list.length} 条</span>
-              </h2>
-              <div className="row center gap-2">
-                <label className="input-icon" style={{ width: 180 }}>
-                  <Ic icon={Search01Icon} size={13} />
-                  <input
-                    className="input"
-                    style={{ height: 28, fontSize: 12 }}
-                    value={kw}
-                    onChange={(e) => setKw(e.target.value)}
-                    placeholder="筛选当前列表"
-                    aria-label="筛选当前列表"
-                  />
-                </label>
-                <button type="button" className="btn btn-text btn-sm" onClick={exportCsv}>
-                  <Ic icon={Download01Icon} size={12} /> 导出
-                </button>
-                <button type="button" className="btn btn-text btn-sm" onClick={() => setListOpen(false)}>
-                  收起
-                </button>
-              </div>
-            </header>
-            <div
-              className="panel-body"
-              style={{ padding: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}
-            >
-              <div
-                className="table-wrap"
-                style={{ flex: '1 1 auto', minHeight: 0, border: 0, borderRadius: 0, overflow: 'auto' }}
-              >
-                <table className="data-table is-dense" style={{ minWidth: tableMinWidth, width: '100%', tableLayout: 'fixed' }}>
-                  <colgroup>
-                    <col style={{ width: 56 }} />
-                    {columns.map((c) => (
-                      <col key={c.key} style={c.flex ? undefined : { width: c.width || 110 }} />
-                    ))}
-                  </colgroup>
-                  <thead>
-                    <tr>
-                      <th style={{ width: 48 }}>序号</th>
-                      {columns.map((c) => (
-                        <th
-                          key={c.key}
-                          className={c.align === 'right' ? 'num' : ''}
-                          style={c.width ? { width: c.width } : undefined}
-                        >
-                          {c.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {list.slice(0, 200).map((row, i) => (
-                      <tr
-                        key={row.id ?? i}
-                        onClick={() => setSel(row)}
-                        className={sel && sel.id === row.id ? 'selected' : ''}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <td className="num">{i + 1}</td>
-                        {columns.map((c) => (
-                          <td key={c.key} className={c.align === 'right' ? 'num' : ''}>
-                            {c.align === 'right' && Number.isFinite(Number(row[c.key]))
-                              ? int(row[c.key])
-                              : row[c.key] ?? '—'}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                    {list.length === 0 ? (
-                      <tr>
-                        <td colSpan={columns.length + 1}>
-                          <div className="table-empty">当前视角下没有要素</div>
-                        </td>
-                      </tr>
-                    ) : null}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
+      {/* ---------------- 底部列表：桌面挂在 .dash 底部；窄屏改为地图区域内浮层 ---------------- */}
+      {!narrow ? (
+        <section className={`dash-list${listOpen ? ' is-open' : ''}`} aria-label={`${meta0.title}列表`}>
+          {!listOpen
+            ? <ListToggle count={list.length} open={false} onClick={() => setListOpen(true)} label={`${meta0.title}列表`} />
+            : listFloat()}
+        </section>
+      ) : null}
       </div>
     </div>
   );
