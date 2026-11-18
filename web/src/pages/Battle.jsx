@@ -1,9 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Ic } from '../components/Icon';
 import { useApp, useFetch } from '../store.jsx';
 import { screen } from '../api';
-import { Download01Icon, Refresh01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import {
+  Cancel01Icon,
+  Download01Icon,
+  PlayCircleIcon,
+  Refresh01Icon,
+  Search01Icon,
+  Task01Icon,
+  Tick02Icon
+} from '@hugeicons/core-free-icons';
 
 const DEFAULT_YEAR = 2024;
 
@@ -47,8 +55,78 @@ function Flag({ status }) {
   );
 }
 
+/* v4 参考截图：梯形斜切统计卡（上下边内收）+ 底部发光台座，只能用内联样式 */
+const STAT_TONE = {
+  cyan: { fg: '#7fe3ff', bg: 'rgba(73, 195, 255, 0.18)', bd: 'rgba(73, 195, 255, 0.85)' },
+  green: { fg: '#8ff0c8', bg: 'rgba(53, 211, 154, 0.18)', bd: 'rgba(53, 211, 154, 0.85)' },
+  blue: { fg: '#9adcff', bg: 'rgba(46, 168, 255, 0.18)', bd: 'rgba(46, 168, 255, 0.85)' }
+};
+
+function StatCard({ icon, tone = 'cyan', label, value, unit }) {
+  const t = STAT_TONE[tone] || STAT_TONE.cyan;
+  return (
+    <div
+      style={{
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+        height: 96,
+        padding: '0 28px',
+        clipPath: 'polygon(18px 0, 100% 0, calc(100% - 18px) 100%, 0 100%)',
+        background: 'linear-gradient(180deg, rgba(22, 74, 128, 0.95), rgba(10, 34, 62, 0.85))',
+        border: '1px solid rgba(64, 158, 255, 0.55)'
+      }}
+    >
+      <span
+        style={{
+          display: 'grid',
+          placeItems: 'center',
+          flex: 'none',
+          width: 32,
+          height: 32,
+          color: t.fg,
+          background: t.bg,
+          border: `1px solid ${t.bd}`,
+          borderRadius: 4
+        }}
+      >
+        <Ic icon={icon} size={18} />
+      </span>
+      <span style={{ fontSize: 14, letterSpacing: '0.06em', color: '#a8cdee', whiteSpace: 'nowrap' }}>{label}</span>
+      <b
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 34,
+          fontWeight: 700,
+          lineHeight: 1,
+          color: t.fg,
+          textShadow: `0 0 14px ${t.fg}66`
+        }}
+      >
+        {value}
+      </b>
+      <span style={{ fontSize: 12, color: '#a8cdee' }}>{unit}</span>
+      <span
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          left: '15%',
+          right: '15%',
+          bottom: 0,
+          height: 2,
+          background: 'linear-gradient(90deg, transparent, #7fe3ff, transparent)',
+          filter: 'blur(0.4px)'
+        }}
+      />
+    </div>
+  );
+}
+
 export default function Battle() {
   const { bootMeta, toast } = useApp();
+  const nav = useNavigate();
   const [narrow, setNarrow] = useState(() => window.matchMedia('(max-width: 620px)').matches);
   const [year, setYear] = useState(DEFAULT_YEAR);
 
@@ -75,6 +153,7 @@ export default function Battle() {
     setKwInput('');
     setKw('');
   };
+  const close = () => nav('/portal');
 
   const exportCsv = () => {
     const rows = [['任务类型', '序号', '重点工作内容', '预期成果', '完成时限', '责任部门', '支撑部门', '第一季度', '第二季度', '第三季度', '第四季度', '整体状态']];
@@ -97,45 +176,36 @@ export default function Battle() {
 
   return (
     <div className="battle" style={{ padding: 12 }}>
-      <div className="battle-head">
-        <div style={{ minWidth: 0 }}>
-          <nav className="breadcrumb" aria-label="位置">
-            <Link to="/portal">平台分布</Link>
-            <span className="sep">/</span>
-            <span>重点任务作战图</span>
-          </nav>
-          <h1 className="page-title" style={{ fontSize: 16, marginTop: 6 }}>{year}年地矿行政管理重点任务作战图</h1>
-          <p>年度重点任务台账 · 按任务类型归集，四季度推进状态与整体成果一屏盯办</p>
-        </div>
-        <span className="badge badge--ok">按行政区划授权可见</span>
-      </div>
-
       <div
-        className="battle-cards"
-        style={{ gridTemplateColumns: narrow ? 'minmax(0, 1fr)' : 'repeat(3, minmax(0, 1fr))' }}
+        className="battle-head"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          flexWrap: 'wrap',
+          padding: '10px 14px',
+          background: 'linear-gradient(180deg, rgba(14, 46, 82, 0.92), rgba(8, 24, 44, 0.72))',
+          border: '1px solid rgba(64, 158, 255, 0.35)',
+          borderRadius: 'var(--r-sm)'
+        }}
       >
-        <div className="battle-card">
-          <span>重点任务</span>
-          <b>{stats.total}<i className="kpi-unit">个</i></b>
-          <span className="kpi-delta">{groups.length} 个任务类型</span>
-        </div>
-        <div className="battle-card">
-          <span>已完成</span>
-          <b>{stats.done}<i className="kpi-unit">个</i></b>
-          <span className="kpi-delta">整体状态为已完成</span>
-        </div>
-        <div className="battle-card">
-          <span>进行中</span>
-          <b>{stats.doing}<i className="kpi-unit">个</i></b>
-          <span className="kpi-delta">跨季度持续推进</span>
-        </div>
-      </div>
-
-      <div className="toolbar">
-        <div className="toolbar-filters">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: '1 1 auto', flexWrap: 'wrap' }}>
+          <h1
+            className="page-title"
+            style={{
+              margin: 0,
+              fontSize: narrow ? 18 : 24,
+              letterSpacing: '0.06em',
+              lineHeight: 1.35,
+              color: '#fff',
+              whiteSpace: 'normal'
+            }}
+          >
+            {year}年地矿行政管理重点任务作战图
+          </h1>
           <select
             className="select"
-            style={{ width: 108 }}
+            style={{ width: 100, height: 34, flex: 'none' }}
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
             aria-label="年度"
@@ -143,25 +213,55 @@ export default function Battle() {
             {years.map((y) => <option key={y} value={y}>{y} 年</option>)}
           </select>
         </div>
-        <div className="toolbar-search">
-          <Ic icon={Search01Icon} size={14} />
-          <input
-            className="input"
-            placeholder="检索重点工作内容 / 预期成果"
-            value={kwInput}
-            onChange={(e) => setKwInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') search();
-            }}
-          />
-        </div>
-        <div className="toolbar-actions">
-          <button type="button" className="btn btn-primary btn-sm" onClick={search}>搜索</button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={reset}>重置</button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={exportCsv}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginLeft: 'auto',
+            minWidth: 0,
+            flex: '0 1 auto',
+            flexWrap: narrow ? 'wrap' : 'nowrap'
+          }}
+        >
+          <div className="toolbar-search" style={{ flex: '0 1 220px', maxWidth: 220, minWidth: 150 }}>
+            <Ic icon={Search01Icon} size={14} />
+            <input
+              className="input"
+              style={{ height: 34 }}
+              placeholder="检索重点工作内容"
+              value={kwInput}
+              onChange={(e) => setKwInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') search();
+              }}
+            />
+          </div>
+          <button type="button" className="btn btn-primary" style={{ height: 34 }} onClick={search}>搜索</button>
+          <button type="button" className="btn btn-ghost" style={{ height: 34 }} onClick={reset}>重置</button>
+          <button type="button" className="btn btn-ghost" style={{ height: 34 }} onClick={exportCsv}>
             <Ic icon={Download01Icon} size={14} /> 导出
           </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            style={{ width: 34, height: 34, padding: 0 }}
+            onClick={close}
+            aria-label="关闭"
+            title="关闭并返回平台分布"
+          >
+            <Ic icon={Cancel01Icon} size={16} />
+          </button>
         </div>
+      </div>
+
+      <div
+        className="battle-cards"
+        style={{ gridTemplateColumns: narrow ? 'minmax(0, 1fr)' : 'repeat(3, minmax(0, 1fr))', gap: 'var(--sp-4)' }}
+      >
+        <StatCard icon={Task01Icon} tone="cyan" label="重点任务" value={stats.total} unit="个" />
+        <StatCard icon={Tick02Icon} tone="green" label="已完成" value={stats.done} unit="个" />
+        <StatCard icon={PlayCircleIcon} tone="blue" label="进行中" value={stats.doing} unit="个" />
       </div>
 
       {q.loading && !data && (
@@ -206,10 +306,22 @@ export default function Battle() {
             <table className="data-table is-dense" style={{ minWidth: 1180 }}>
               <thead>
                 <tr>
-                  <th rowSpan={2} style={{ width: 92, textAlign: 'center' }}>任务类型</th>
+                  <th
+                    rowSpan={2}
+                    style={{
+                      width: 40,
+                      minWidth: 40,
+                      textAlign: 'center',
+                      writingMode: 'vertical-rl',
+                      textOrientation: 'upright',
+                      letterSpacing: 3
+                    }}
+                  >
+                    任务类型
+                  </th>
                   <th rowSpan={2} style={{ width: 56, textAlign: 'center' }}>序号</th>
-                  <th rowSpan={2} style={{ width: 250 }}>重点工作内容</th>
-                  <th rowSpan={2} style={{ minWidth: 280 }}>预期成果</th>
+                  <th rowSpan={2} style={{ width: '24%', minWidth: 250 }}>重点工作内容</th>
+                  <th rowSpan={2} style={{ width: '30%', minWidth: 280 }}>预期成果</th>
                   <th rowSpan={2} style={{ width: 84, textAlign: 'center' }}>完成时限</th>
                   <th rowSpan={2} style={{ width: 96 }}>责任部门</th>
                   <th rowSpan={2} style={{ width: 104 }}>支撑部门</th>
@@ -217,7 +329,7 @@ export default function Battle() {
                 </tr>
                 <tr>
                   {QUARTERS.map((qq) => (
-                    <th key={qq.key} style={{ width: 84, textAlign: 'center' }}>{qq.label}</th>
+                    <th key={qq.key} style={{ width: 84, height: 34, textAlign: 'center' }}>{qq.label}</th>
                   ))}
                 </tr>
               </thead>
@@ -234,7 +346,21 @@ export default function Battle() {
                   return items.map((it, i) => (
                     <tr key={it.id}>
                       {i === 0 && (
-                        <td rowSpan={items.length} style={{ width: 92, textAlign: 'center', verticalAlign: 'middle', lineHeight: 1.5 }}>
+                        <td
+                          rowSpan={items.length}
+                          style={{
+                            width: 40,
+                            minWidth: 40,
+                            maxWidth: 40,
+                            textAlign: 'center',
+                            verticalAlign: 'middle',
+                            padding: '6px 0',
+                            writingMode: 'vertical-rl',
+                            textOrientation: 'upright',
+                            letterSpacing: 3,
+                            lineHeight: 1.5
+                          }}
+                        >
                           {g.category}
                         </td>
                       )}

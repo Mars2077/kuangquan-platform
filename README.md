@@ -6,8 +6,9 @@
 > **v2.1 可用性修复**：11 条路由 × 7 档视口的 UI 评审（42 条问题）已全量修复并复测，报告见 [docs/08-UI评审-响应式适配.md](docs/08-UI评审-响应式适配.md)（§8 为修复清单与实测数据）。
 > **v2.2 布局二次修复**：底部列表横跨整屏、侧栏面板尺寸与分布按内容适配、ECharts 悬浮提示挂载到 body 不再被容器裁切，说明与实测见 [docs/09-第二轮修复-布局与浮层.md](docs/09-第二轮修复-布局与浮层.md)。
 > **v3 界面重构**：冻结组件契约后按模板重写全部界面（设计系统 4 层 CSS / 3627 行 / 8 个媒体查询 / 0 个 `!important`），统一骨架、抽屉、表格与状态；12 条路由 × 4 档视口复测 48 条无溢出，说明见 [docs/13-重构说明-v3.md](docs/13-重构说明-v3.md)、契约见 [docs/11-组件契约-v3.md](docs/11-组件契约-v3.md)、评审见 [docs/12-v3-评审.md](docs/12-v3-评审.md)。
+> **v4 视觉对齐**：整体风格回到「严格参照 `系统样式` 截图」——96px 梯形横幅顶栏 + 38px 主标题、40px 导航、面板 4px 圆角 + 40px 斜切标题条、深蓝渐变表头、驾驶舱地图 chrome（专题牌/左上控件/右下分段/右上双按钮）、门户切角卡、作战图梯形统计卡与四色旗帜；逐项对照与偏差见 [docs/14-视觉对齐说明-v4.md](docs/14-视觉对齐说明-v4.md)。
 >
-> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-j75b20rd9c.preview.iga-pages.com?iga_token=176fdf2b80829d1db0cfd4f7d43cae58&iga_time=1795117423>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
+> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-saorgbxh43.preview.iga-pages.com?iga_token=3881bf2e012d7e2053754f0ae7cc86cc&iga_time=1795141822>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
 
 ![数字驾驶舱](docs/shots/v3-dashboard.png)
 
@@ -94,7 +95,7 @@ npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
 ```
 
 - 上线：`cd web && iga pages deploy --name kuangquan-platform`（需先 `iga login`，配置见 `web/iga.json`）
-- 线上：<https://kuangquan-platfo-541ysnljv4-j75b20rd9c.preview.iga-pages.com?iga_token=176fdf2b80829d1db0cfd4f7d43cae58&iga_time=1795117423>
+- 线上：<https://kuangquan-platfo-541ysnljv4-saorgbxh43.preview.iga-pages.com?iga_token=3881bf2e012d7e2053754f0ae7cc86cc&iga_time=1795141822>
 - 差异：静态版的新增/修改/删除写入浏览器 `localStorage`（键 `kq_demo_journal_v1`），刷新后仍在、换设备不共享；服务端版写真实 SQLite。
 - 两个形态共用同一份前端代码与同一套接口契约，页面、交互、算法完全一致。
 

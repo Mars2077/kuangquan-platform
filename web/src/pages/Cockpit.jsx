@@ -405,25 +405,47 @@ function pickListArray(raw, theme, scene) {
   return Object.values(raw).find((v) => Array.isArray(v)) || [];
 }
 
-const MAP_TITLE_STYLE = {
-  position: 'absolute',
-  left: 12,
-  top: 10,
-  zIndex: 5,
-  maxWidth: 'calc(100% - 92px)',
-  fontFamily: 'var(--font-sans)',
-  fontSize: 13,
-  fontWeight: 600,
-  color: 'var(--text-1)',
-  letterSpacing: '.02em',
-  pointerEvents: 'none',
-  textShadow: '0 1px 8px rgba(2,8,18,.85)',
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis'
-};
+/* v4 专题标题牌（对应参考截图的地图顶部居中矩形牌） */
+const PLATE_CLIP = 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))';
 
 const FLOAT_DARK = 'rgba(5,14,28,.78)';
+/* v4 地图 chrome：深蓝玻璃 + 青边，hover 变青（对应参考截图的左上按钮） */
+const CHROME_BG = 'linear-gradient(180deg, rgba(14,52,90,.94), rgba(8,30,54,.94))';
+const CHROME_BG_HOVER = 'linear-gradient(180deg, #1b5b96, #103a63)';
+
+function MapChromeButton({ icon, label, onClick, title }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title || label}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        width: 132,
+        height: 34,
+        padding: '0 10px',
+        fontFamily: 'var(--font-sans)',
+        fontSize: 12,
+        letterSpacing: '.08em',
+        whiteSpace: 'nowrap',
+        color: hover ? '#7fe3ff' : '#dff0ff',
+        background: hover ? CHROME_BG_HOVER : CHROME_BG,
+        border: `1px solid ${hover ? 'var(--cyan)' : 'rgba(73,195,255,.5)'}`,
+        borderRadius: 2,
+        cursor: 'pointer',
+        transition: 'background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease)'
+      }}
+    >
+      <Ic icon={icon} size={15} color={hover ? '#7fe3ff' : '#bfe3ff'} />
+      {label}
+    </button>
+  );
+}
 
 /* ------------------------------------------------------------------ 页面 */
 export default function Cockpit({ sceneKey }) {
@@ -717,6 +739,13 @@ export default function Cockpit({ sceneKey }) {
 
   const tableMinWidth = columns.reduce((s, c) => s + (c.width || (c.flex ? 220 : 100)), 48);
 
+  /* 地图 chrome 布局：专题牌顶部居中，左上控件竖排（参考截图口径） */
+  const plateH = isPhone ? 32 : 40;
+  const plateTop = isPhone ? 6 : 8;
+  const chromeTop = isPhone ? plateTop + plateH + 6 : 10;
+  const ctrlTop = chromeTop + (breadcrumb.length ? 26 : 0);
+  const leftThemeLabel = THEMES.find((t) => t.key === meta0.theme)?.label || '在线矿山';
+
   const panelSkeleton = (n) => [0, 1, 2].slice(0, n).map((i) => (
     <section className="panel" key={`sk-${i}`}>
       <header className="panel-head"><h2 className="panel-title">加载中</h2></header>
@@ -776,10 +805,52 @@ export default function Cockpit({ sceneKey }) {
         measure={measure}
         style={narrow ? { order: -1 } : undefined}
       >
-        <div style={MAP_TITLE_STYLE}>{mapTitle}</div>
+        {/* 专题标题牌：矩形 + 左右斜切角 + 底部青色发光边 */}
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: plateTop,
+            transform: 'translateX(-50%)',
+            zIndex: 5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: isPhone ? 'calc(100% - 120px)' : 'min(460px, calc(100% - 200px))',
+            height: plateH,
+            padding: isPhone ? '0 12px' : '0 24px',
+            background: 'linear-gradient(180deg, #1e62a8, #12406f)',
+            clipPath: PLATE_CLIP,
+            pointerEvents: 'none',
+            overflow: 'hidden'
+          }}
+        >
+          <span style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: isPhone ? 13 : 24,
+            fontWeight: 700,
+            color: '#fff',
+            letterSpacing: isPhone ? '1px' : '2px',
+            textShadow: '0 1px 6px rgba(0,0,0,.45)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
+            {mapTitle}
+          </span>
+          <span style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 2,
+            background: 'linear-gradient(90deg, transparent, #7fe3ff 22%, #7fe3ff 78%, transparent)',
+            boxShadow: '0 0 8px rgba(127,227,255,.9)'
+          }} />
+        </div>
 
         {breadcrumb.length > 0 ? (
-          <nav className="breadcrumb" style={{ position: 'absolute', left: 12, top: 34, zIndex: 5 }}>
+          <nav className="breadcrumb" style={{ position: 'absolute', left: 12, top: chromeTop, zIndex: 6 }}>
             {breadcrumb.map((b, i) => {
               const last = i === breadcrumb.length - 1;
               return (
@@ -801,76 +872,74 @@ export default function Cockpit({ sceneKey }) {
           </nav>
         ) : null}
 
+        {/* 左上控件：区划下拉 + 在线矿山 / 重大任务 两个竖排按钮 */}
         <div style={{
           position: 'absolute',
           left: 12,
-          top: breadcrumb.length ? 60 : 34,
-          zIndex: 6,
+          top: ctrlTop,
+          zIndex: 7,
           display: 'flex',
-          flexWrap: 'nowrap',
-          alignItems: 'center',
-          gap: 6,
-          maxWidth: 'calc(100% - 96px)'
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: 8
         }}>
-          <select
-            className="select"
-            value={code}
-            onChange={(e) => { setCode(e.target.value); setSel(null); resetMeasure(); }}
-            aria-label="选择行政区划"
-            style={{ height: 28, width: isPhone ? 116 : 168, fontSize: isPhone ? 11 : 12, flex: 'none' }}
-          >
-            {regionOptions.map((o) => (
-              <option key={o.code} value={o.code}>{o.name}</option>
-            ))}
-          </select>
-          <div
-            data-theme-bar="1"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              flex: '1 1 auto',
-              minWidth: 0,
-              flexWrap: isPhone ? 'nowrap' : 'wrap',
-              overflowX: isPhone ? 'auto' : 'visible',
-              overflowY: 'hidden',
-              height: isPhone ? 34 : undefined
-            }}
-          >
-            {THEMES.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                className={`chip${theme === t.key ? ' is-on' : ''}`}
-                style={{ height: 28, background: FLOAT_DARK, flex: '0 0 auto', fontSize: isPhone ? 11 : undefined, padding: isPhone ? '0 8px' : undefined }}
-                onClick={() => { setTheme(t.key); setSel(null); }}
-              >
-                <span className="dot" style={{ background: t.tone }} />
-                {t.label}
-              </button>
-            ))}
-            <button
-              type="button"
-              className="chip"
-              style={{ height: 28, background: FLOAT_DARK, flex: '0 0 auto', fontSize: isPhone ? 11 : undefined, padding: isPhone ? '0 8px' : undefined }}
-              onClick={() => nav('/battle')}
+          <div style={{ position: 'relative', width: 150, height: 34 }}>
+            <select
+              className="select"
+              value={code}
+              onChange={(e) => { setCode(e.target.value); setSel(null); resetMeasure(); }}
+              aria-label="选择行政区划"
+              style={{
+                width: 150,
+                height: 34,
+                padding: '0 26px 0 10px',
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                fontSize: 12,
+                color: '#dff0ff',
+                background: CHROME_BG,
+                border: '1px solid rgba(73,195,255,.55)',
+                borderRadius: 2
+              }}
             >
-              <Ic icon={Task01Icon} size={12} />
-              重大任务
-            </button>
+              {regionOptions.map((o) => (
+                <option key={o.code} value={o.code}>{o.name}</option>
+              ))}
+            </select>
+            <Ic
+              icon={ChevronDownIcon}
+              size={14}
+              color="#7fe3ff"
+              style={{ position: 'absolute', right: 8, top: 10, pointerEvents: 'none' }}
+            />
           </div>
+          <MapChromeButton
+            icon={Location01Icon}
+            label={leftThemeLabel}
+            title={`回到${leftThemeLabel}专题`}
+            onClick={() => { setTheme(meta0.theme); setSel(null); resetMeasure(); }}
+          />
+          <MapChromeButton
+            icon={Task01Icon}
+            label="重大任务"
+            onClick={() => nav('/battle')}
+          />
         </div>
 
-        <div style={{ position: 'absolute', right: 12, top: 10, zIndex: 7, display: 'flex', gap: 6 }}>
+        {/* 右上：工具 / 图层 方形按钮（窄屏下移到标题牌下方，避免与牌面重叠） */}
+        <div style={{ position: 'absolute', right: 12, top: isPhone ? 44 : 10, zIndex: 8, display: 'flex', gap: 6 }}>
           <button
             type="button"
             className="icon-btn"
             aria-label="工具"
             aria-pressed={toolOpen}
             style={{
-              background: FLOAT_DARK,
-              borderColor: toolOpen ? 'var(--cyan)' : 'var(--line)',
-              color: toolOpen ? 'var(--cyan)' : 'var(--text-2)'
+              width: 36,
+              height: 36,
+              borderRadius: 2,
+              background: 'rgba(12,44,78,.85)',
+              borderColor: toolOpen ? 'var(--cyan)' : 'rgba(73,195,255,.45)',
+              color: toolOpen ? 'var(--cyan)' : '#cfe4ff'
             }}
             onClick={() => { setToolOpen((v) => !v); setLayerOpen(false); }}
           >
@@ -882,9 +951,12 @@ export default function Cockpit({ sceneKey }) {
             aria-label="图层控制"
             aria-pressed={layerOpen}
             style={{
-              background: FLOAT_DARK,
-              borderColor: layerOpen ? 'var(--cyan)' : 'var(--line)',
-              color: layerOpen ? 'var(--cyan)' : 'var(--text-2)'
+              width: 36,
+              height: 36,
+              borderRadius: 2,
+              background: 'rgba(12,44,78,.85)',
+              borderColor: layerOpen ? 'var(--cyan)' : 'rgba(73,195,255,.45)',
+              color: layerOpen ? 'var(--cyan)' : '#cfe4ff'
             }}
             onClick={() => { setLayerOpen((v) => !v); setToolOpen(false); }}
           >
@@ -893,7 +965,7 @@ export default function Cockpit({ sceneKey }) {
         </div>
 
         {toolOpen && (
-          <div className="card" style={{ position: 'absolute', right: 12, top: 50, width: 272, zIndex: 8 }}>
+          <div className="card" style={{ position: 'absolute', right: 12, top: 54, width: 272, zIndex: 9 }}>
             <header className="card-head" style={{ minHeight: 40, padding: '0 12px' }}>
               <h3 className="card-title" style={{ fontSize: 13 }}>工具</h3>
               <button type="button" className="btn btn-text btn-sm" onClick={() => setToolOpen(false)}>关闭</button>
@@ -960,7 +1032,7 @@ export default function Cockpit({ sceneKey }) {
         )}
 
         {layerOpen && (
-          <div className="card" style={{ position: 'absolute', right: 12, top: 50, width: 272, zIndex: 8 }}>
+          <div className="card" style={{ position: 'absolute', right: 12, top: 54, width: 272, zIndex: 9 }}>
             <header className="card-head" style={{ minHeight: 40, padding: '0 12px' }}>
               <h3 className="card-title" style={{ fontSize: 13 }}>图层控制</h3>
               <button
@@ -1115,14 +1187,15 @@ export default function Cockpit({ sceneKey }) {
           data-map-legend="1"
           style={{
             position: 'absolute',
-            left: 12,
-            bottom: 12,
+            left: isPhone ? 8 : 12,
+            // 窄屏图例让位给抬高的分段条（分段条 32~58，图例 64 起）
+            bottom: isPhone ? 64 : 10,
             zIndex: 5,
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
             gap: isPhone ? 6 : 10,
-            maxWidth: isPhone ? 'calc(100% - 24px)' : 'calc(100% - 340px)',
+            maxWidth: isPhone ? 'calc(100% - 16px)' : 'calc(100% - 440px)',
             padding: isPhone ? '4px 8px' : '5px 10px',
             fontSize: isPhone ? 10 : 11,
             lineHeight: 1.3,
@@ -1140,6 +1213,58 @@ export default function Cockpit({ sceneKey }) {
           ))}
           {pointsQ.error ? <span style={{ color: 'var(--red)' }}>要素加载失败</span> : null}
           {screenQ.error ? <span style={{ color: 'var(--red)' }}>面板数据加载失败</span> : null}
+        </div>
+
+        {/* 右下：专题分段标签（对应参考截图右下角的小标签，5 个专题） */}
+        <div
+          data-map-seg="1"
+          role="tablist"
+          aria-label="专题切换"
+          style={{
+            position: 'absolute',
+            right: 8,
+            // 窄屏把分段条抬到高德 logo/版权行（底部约 26px）之上，避免压字；桌面位置不变
+            bottom: isPhone ? 32 : 10,
+            left: isPhone ? 8 : 'auto',
+            zIndex: 7,
+            display: 'flex',
+            flexWrap: 'nowrap',
+            justifyContent: isPhone ? 'flex-end' : 'flex-start',
+            gap: 4,
+            overflow: 'visible'
+          }}
+        >
+          {THEMES.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={theme === t.key}
+              onClick={() => { setTheme(t.key); setSel(null); }}
+              style={{
+                flex: isPhone ? '1 1 0' : '0 0 auto',
+                width: isPhone ? 'auto' : 78,
+                minWidth: 0,
+                maxWidth: isPhone ? 78 : 'none',
+                height: 26,
+                padding: isPhone ? '0 2px' : undefined,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontFamily: 'var(--font-sans)',
+                fontSize: isPhone ? 10 : 11,
+                letterSpacing: '.04em',
+                whiteSpace: 'nowrap',
+                color: theme === t.key ? '#fff' : 'var(--text-3)',
+                background: theme === t.key ? 'linear-gradient(180deg, #2f8fe0, #1b6fc4)' : 'rgba(9,32,58,.62)',
+                border: `1px solid ${theme === t.key ? 'rgba(127,227,255,.75)' : 'rgba(73,195,255,.26)'}`,
+                borderRadius: 2,
+                cursor: 'pointer',
+                transition: 'background var(--dur-1) var(--ease), color var(--dur-1) var(--ease)'
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
       </GeoMap>
 
@@ -1214,7 +1339,13 @@ export default function Cockpit({ sceneKey }) {
             className="table-wrap"
             style={{ flex: '1 1 auto', minHeight: 0, border: 0, borderRadius: 0, overflow: 'auto' }}
           >
-            <table className="data-table is-dense" style={{ minWidth: tableMinWidth }}>
+            <table className="data-table is-dense" style={{ minWidth: tableMinWidth, width: '100%', tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: 56 }} />
+                {columns.map((c) => (
+                  <col key={c.key} style={c.flex ? undefined : { width: c.width || 110 }} />
+                ))}
+              </colgroup>
               <thead>
                 <tr>
                   <th style={{ width: 48 }}>序号</th>

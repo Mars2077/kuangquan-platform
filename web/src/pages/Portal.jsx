@@ -1,16 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Ic } from '../components/Icon';
 import { useApp } from '../store.jsx';
-import { Database01Icon, Settings01Icon, SmartPhone01Icon, Task01Icon } from '@hugeicons/core-free-icons';
+import { ArrowRight01Icon, Task01Icon } from '@hugeicons/core-free-icons';
 
 /* ---------------- 缩略示意图（自绘，不用外部截屏） ---------------- */
-function Art({ kind }) {
+function Art({ kind, cover = false }) {
   const vb = kind === 'dashboardBig' ? '0 0 240 240' : '0 0 240 120';
   return (
     <svg
       viewBox={vb}
-      preserveAspectRatio="xMidYMid meet"
+      preserveAspectRatio={cover ? 'xMidYMid slice' : 'xMidYMid meet'}
       aria-hidden="true"
       style={{ display: 'block', width: '100%', height: '100%' }}
     >
@@ -178,15 +178,110 @@ const BUILT = [
   { key: 'geology', title: '数智地勘管理', kind: 'geology', to: '/scene/geology', desc: '攻深找盲 · 农业地质 · 地质文化' }
 ];
 
-/* 门户底部横条：非场景入口（数据仓 / 移动端 / 系统），铺满首屏留白 */
-const QUICK = [
-  { key: 'warehouse', name: '数据仓', to: '/warehouse', icon: Database01Icon, desc: '报表下载、指标口径与数据资源目录' },
-  { key: 'mobile', name: '政务移动端', to: '/mobile', icon: SmartPhone01Icon, desc: '巡查打卡、掌上申报、信用公示与政策法规' },
-  { key: 'system', name: '系统管理', to: '/system', icon: Settings01Icon, desc: '组织权限、账号角色与操作审计' }
-];
+/* —— v4 参考截图样式（只能用内联样式，不改公共 CSS）——
+   系统卡 = 缩略图铺满上半 + 底部深色标题条；四角斜切 8px；hover 亮边 + 上浮（沿 .tile 现有 transition） */
+const CARD_CLIP = 'polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)';
 
-/* .tile-name 契约样式为单行省略，长系统名改为两行显示以保留全称 */
-const TILE_NAME_STYLE = { whiteSpace: 'normal', overflow: 'visible', textOverflow: 'clip' };
+const CARD_BASE = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'stretch',
+  gap: 0,
+  minHeight: 0,
+  padding: 0,
+  overflow: 'hidden',
+  borderRadius: 0,
+  textAlign: 'left',
+  background: 'linear-gradient(180deg, rgba(12, 42, 76, 0.86), rgba(6, 20, 38, 0.92))',
+  clipPath: CARD_CLIP
+};
+
+function SysCard({ title, kind, onClick, style, className = '' }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      type="button"
+      className={`tile ${className}`.trim()}
+      title={title}
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onFocus={() => setHover(true)}
+      onBlur={() => setHover(false)}
+      style={{
+        ...CARD_BASE,
+        border: `1px solid ${hover ? '#49c3ff' : 'rgba(64, 158, 255, 0.45)'}`,
+        boxShadow: hover ? '0 0 0 1px rgba(73, 195, 255, 0.35), 0 10px 24px rgba(0, 0, 0, 0.38)' : 'none',
+        ...style
+      }}
+    >
+      <span style={{ position: 'relative', flex: '1 1 auto', minHeight: 96, overflow: 'hidden' }}>
+        <span style={{ position: 'absolute', inset: 0, display: 'block' }}>
+          <Art kind={kind} cover />
+        </span>
+      </span>
+      <span
+        style={{
+          display: 'flex',
+          flex: 'none',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          minHeight: 44,
+          padding: '8px 12px',
+          borderTop: '1px solid rgba(64, 158, 255, 0.28)',
+          background: 'linear-gradient(180deg, rgba(6, 20, 38, 0.2), rgba(6, 20, 38, 0.95))'
+        }}
+      >
+        <span style={{ minWidth: 0, fontSize: 15, fontWeight: 600, lineHeight: 1.3, color: '#fff' }}>{title}</span>
+        <span
+          style={{
+            display: 'inline-flex',
+            flex: 'none',
+            color: hover ? '#7fe3ff' : 'rgba(127, 227, 255, 0.72)'
+          }}
+        >
+          <Ic icon={ArrowRight01Icon} size={14} />
+        </span>
+      </span>
+    </button>
+  );
+}
+
+/* 分区标题：左侧 3px 青色竖条 + 16px 白字 + 向右延伸的淡青细线 */
+function SectionHead({ title, right }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        paddingBottom: 8,
+        borderBottom: '1px solid rgba(64, 158, 255, 0.2)'
+      }}
+    >
+      <span
+        style={{
+          flex: 'none',
+          width: 3,
+          height: 16,
+          background: 'var(--cyan)',
+          boxShadow: '0 0 8px rgba(73, 195, 255, 0.9)'
+        }}
+      />
+      <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600, letterSpacing: '0.06em', color: '#fff' }}>{title}</h2>
+      <span
+        style={{
+          flex: '1 1 auto',
+          minWidth: 24,
+          height: 1,
+          background: 'linear-gradient(90deg, rgba(73, 195, 255, 0.55), rgba(73, 195, 255, 0))'
+        }}
+      />
+      {right}
+    </div>
+  );
+}
 
 export default function Portal() {
   const nav = useNavigate();
@@ -197,6 +292,16 @@ export default function Portal() {
   const hero = BUILT[0];
   const scenes = BUILT.slice(1);
 
+  /* <900 时全部卡片按整行排列，驾驶舱不再跨两行 */
+  const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 900px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)');
+    const onChange = (e) => setCompact(e.matches);
+    mq.addEventListener('change', onChange);
+    setCompact(mq.matches);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   return (
     <div
       className="content"
@@ -205,7 +310,7 @@ export default function Portal() {
         flexDirection: 'column',
         gap: 'var(--sp-4)',
         flex: '1 1 auto',
-        minHeight: 'calc(100vh - 148px)'
+        minHeight: 'calc(100vh - 172px)'
       }}
     >
       <header className="page-head" style={{ marginBottom: 0 }}>
@@ -249,103 +354,56 @@ export default function Portal() {
         className="content-grid"
         style={{ flex: '1 1 auto', alignItems: 'stretch', gridTemplateRows: 'minmax(min-content, 1fr)' }}
       >
-        <section className="portal-section span-4">
-          <div className="portal-section-head">
-            <h2>迭代</h2>
-            <span className="tag tag--grey">{LEGACY.length} 个存量系统</span>
-          </div>
-          <div className="stack" style={{ flex: '1 1 auto' }}>
+        <section className="portal-section span-4" style={{ minWidth: 0 }}>
+          <SectionHead title="迭代" right={<span className="tag tag--grey">{LEGACY.length} 个存量系统</span>} />
+          <div className="stack" style={{ flex: '1 1 auto', minHeight: 0 }}>
             {LEGACY.map((c) => (
-              <button
+              <SysCard
                 key={c.title}
-                type="button"
-                className="tile"
                 title={c.title}
+                kind={c.kind}
                 onClick={() => nav('/warehouse')}
-                style={{ flex: '1 1 auto', textAlign: 'left' }}
-              >
-                <span className="tile-thumb" style={{ width: 52, height: 52 }}><Art kind={c.kind} /></span>
-                <div>
-                  <div className="tile-name" style={{ ...TILE_NAME_STYLE, fontSize: 15 }} title={c.title}>{c.title}</div>
-                  <div className="tile-desc" style={{ fontSize: 12 }}>{c.meta} · {c.tag}</div>
-                </div>
-              </button>
+                style={{ flex: '1 1 auto' }}
+              />
             ))}
           </div>
-          <p className="tiny muted">
-            存量系统以单点登录方式接入，点击经统一身份认证免登跳转；演示环境以数据仓页面代替外部系统地址。
-          </p>
         </section>
 
-        <section className="portal-section span-8">
-          <div className="portal-section-head">
-            <h2>新建</h2>
-            <span className="tag tag--blue">{BUILT.length} 个场景</span>
-          </div>
-
-          <button
-            type="button"
-            className="tile"
-            title={hero.title}
-            onClick={() => nav(hero.to)}
-            style={{ minHeight: 108, padding: 16, gap: 16, textAlign: 'left' }}
-          >
-            <span className="tile-thumb" style={{ width: 84, height: 84 }}><Art kind={hero.kind} /></span>
-            <div>
-              <div className="row" style={{ alignItems: 'center', gap: 8 }}>
-                <div className="tile-name" style={{ ...TILE_NAME_STYLE, fontSize: 18 }}>{hero.title}</div>
-                <span className="tag tag--blue">主入口</span>
-              </div>
-              <div className="tile-desc" style={{ fontSize: 12, marginTop: 4 }}>{hero.desc}</div>
-            </div>
-          </button>
+        <section className="portal-section span-8" style={{ minWidth: 0 }}>
+          <SectionHead title="新建" right={<span className="tag tag--blue">{BUILT.length} 个场景</span>} />
 
           <div
             className="content-grid"
-            style={{ flex: '1 1 auto', alignItems: 'stretch', gridAutoRows: 'minmax(min-content, 1fr)' }}
+            style={{
+              flex: '1 1 auto',
+              alignItems: 'stretch',
+              gap: 'var(--sp-3)',
+              gridAutoRows: compact ? '148px' : 'minmax(128px, 1fr)'
+            }}
           >
-            {scenes.map((c) => (
-              <button
+            <SysCard
+              className="span-6"
+              title={hero.title}
+              kind={hero.kind}
+              onClick={() => nav(hero.to)}
+              style={compact ? undefined : { gridRow: 'span 2' }}
+            />
+            {scenes.map((c, i) => (
+              <SysCard
                 key={c.key}
-                type="button"
-                className="tile span-4"
+                className={i < 4 ? 'span-3' : 'span-6'}
                 title={c.title}
+                kind={c.kind}
                 onClick={() => nav(c.to)}
-                style={{ textAlign: 'left' }}
-              >
-                <span className="tile-thumb" style={{ width: 56, height: 56 }}><Art kind={c.kind} /></span>
-                <div>
-                  <div className="tile-name" style={{ ...TILE_NAME_STYLE, fontSize: 15 }} title={c.title}>{c.title}</div>
-                  <div className="tile-desc" style={{ fontSize: 12 }}>{c.desc}</div>
-                </div>
-              </button>
+              />
             ))}
           </div>
         </section>
-      </div>
-
-      <div className="content-grid">
-        {QUICK.map((q) => (
-          <div className="card span-4" key={q.key}>
-            <div className="card-head" style={{ minHeight: 48 }}>
-              <h3 className="card-title">
-                <Ic icon={q.icon} size={14} />
-                {q.name}
-              </h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => nav(q.to)}>
-                进入
-              </button>
-            </div>
-            <div className="card-body" style={{ padding: '12px var(--sp-4) 16px' }}>
-              <p className="tiny muted">{q.desc}</p>
-            </div>
-          </div>
-        ))}
       </div>
 
       <p className="page-desc">
         省市县三级数据权限按行政区划自动隔离，跨级可下钻不可越权；六大业务域 {featureCount} 个功能点与《功能设计》逐条对应；
-        政务移动端支持巡查打卡、掌上申报、信用公示与政策法规查阅。
+        存量系统经统一身份认证单点登录跳转（演示环境以数据仓页面替代外部系统地址）。
       </p>
     </div>
   );

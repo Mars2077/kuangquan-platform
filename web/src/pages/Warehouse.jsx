@@ -183,17 +183,28 @@ export default function Warehouse() {
                       <tbody>
                         {current.items.map((it) => (
                           <tr key={it.id}>
-                            <td>{it.name}</td>
-                            <td><span className="tag tag--blue">{it.category}</span></td>
-                            <td style={{ color: 'var(--text-3)' }}>{it.source}</td>
+                            <td style={narrow ? { whiteSpace: 'nowrap' } : undefined}>{it.name}</td>
+                            <td><span className="tag tag--blue" style={{ whiteSpace: 'nowrap' }}>{it.category}</span></td>
+                            <td style={narrow ? { color: 'var(--text-3)', whiteSpace: 'nowrap' } : { color: 'var(--text-3)' }}>{it.source}</td>
                             <td className="num">{nf(it.rows)}</td>
                             <td>
-                              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                {(it.fields || []).slice(0, 5).map((f) => (
-                                  <span className="tag tag--grey" key={f}>{f}</span>
-                                ))}
-                                {(it.fields || []).length > 5 && <span className="tag tag--grey">+{it.fields.length - 5}</span>}
-                              </div>
+                              {narrow ? (
+                                <div style={{ display: 'flex', gap: 4, flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
+                                  {(it.fields || []).slice(0, 2).map((f) => (
+                                    <span className="tag tag--grey" key={f} style={{ flex: 'none' }}>{f}</span>
+                                  ))}
+                                  {(it.fields || []).length > 2 && (
+                                    <span className="tag tag--grey" style={{ flex: 'none' }}>+{it.fields.length - 2}</span>
+                                  )}
+                                </div>
+                              ) : (
+                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                  {(it.fields || []).slice(0, 5).map((f) => (
+                                    <span className="tag tag--grey" key={f}>{f}</span>
+                                  ))}
+                                  {(it.fields || []).length > 5 && <span className="tag tag--grey">+{it.fields.length - 5}</span>}
+                                </div>
+                              )}
                             </td>
                             <td style={{ color: 'var(--text-4)', whiteSpace: 'nowrap' }}>{it.updated_at}</td>
                           </tr>

@@ -17,6 +17,10 @@ const CYAN_2 = '#7fe3ff';
 const TEXT_1 = '#eaf4ff';
 const TEXT_3 = '#8fb0cc';
 const TEXT_4 = '#5d7d99';
+// 卫星影像之上的暗色蒙版：压暗辖区、保证青色描边与白字可读，同时让地形透出来。
+const MASK_FILL = '#061a34';
+const MASK_FILL_HOVER = '#0a2b4d';
+const MASK_FILL_ON = '#0d3f70';
 const STAGE_TONE = { 待查: '#7fa6cc', 在查: '#ffcc44', 查明: '#35d39a', 规划: '#ff8a3d' };
 
 /* ---------------------------------------------------------------- 高德加载 */
@@ -168,6 +172,10 @@ export default function GeoMap({
   const overlaysRef = useRef([]);
 
   const [mode, setMode] = useState('loading');
+  /* 地图完成一帧/瓦片就绪后自增一次，用于强制重建覆盖物：
+     静态部署时数据快照可能比地图实例更早到达，覆盖物 effect 会以空数组跑过一次，
+     之后 props 引用未变化就不会重跑，表现为「有底图和省界但没有气泡与点位」。 */
+  const [mapTick, setMapTick] = useState(0);
   const [geo, setGeo] = useState(null);
   const [geoReady, setGeoReady] = useState(false);
   const [tip, setTip] = useState(null);
@@ -258,11 +266,59 @@ export default function GeoMap({
         zoom: 7,
         viewMode: '2D',
         mapStyle: 'amap://styles/dark',
+        // 高德把「国界线」并入 road 特征组渲染：dark 样式下西南段国界线是红色虚线，
+        // 位置正对四川西侧（察隅/米什米一带），在厅演示时会被误读成告警。
+        // 本专题图不需要底图道路，去掉 road 组即可彻底移除红线；保留 bg（陆地/水域）与 point（地名）。
+        features: ['bg', 'point'],
         resizeEnable: true,
         showLabel: true
       });
       mapRef.current = map;
       window.__kqMap = map; // 调试/自检用：暴露当前高德实例
+      // 卫星影像底图：参考截图的观感是「深色影像 + 晕渲地形」，纯色底图太空。
+      // 瓦片层置于最底层（行政区 Polygon/点位/气泡都画在图层之上），失败只告警、不降级整块地图。
+      try {
+        const sat = new AMap.TileLayer.Satellite({ zIndex: 1, opacity: 0.45, zooms: [4, 17] });
+        sat.setMap(map);
+      } catch (e) {
+        console.warn('[GeoMap] 卫星影像层加载失败，沿用深色底图：', e?.message);
+      }
+      // Dark veil over the whole extent (below province polygons) so the neighbouring
+      // provinces read as deep navy instead of bright satellite green.
+      try {
+        let minLon = 999, maxLon = -999, minLat = 999, maxLat = -999;
+        features.forEach((f) => {
+          f.rings.forEach((ring) => {
+            ring.forEach(([lon, lat]) => {
+              if (lon < minLon) minLon = lon;
+              if (lon > maxLon) maxLon = lon;
+              if (lat < minLat) minLat = lat;
+              if (lat > maxLat) maxLat = lat;
+            });
+          });
+        });
+        if (minLon < maxLon) {
+          const padX = (maxLon - minLon) * 0.9;
+          const padY = (maxLat - minLat) * 0.9;
+          const veil = new AMap.Polygon({
+            path: [
+              [minLon - padX, minLat - padY],
+              [maxLon + padX, minLat - padY],
+              [maxLon + padX, maxLat + padY],
+              [minLon - padX, maxLat + padY]
+            ],
+            fillColor: '#04101f',
+            fillOpacity: 0.52,
+            strokeWeight: 0,
+            zIndex: 2,
+            clickable: false,
+            bubble: false
+          });
+          veil.setMap(map);
+        }
+      } catch (e) {
+        console.warn('[GeoMap] 底图暗化层绘制失败：', e?.message);
+      }
       map.on('click', (e) => {
         if (e?.lnglat) cbRef.current.onMapClick?.([e.lnglat.getLng(), e.lnglat.getLat()]);
       });
@@ -271,19 +327,24 @@ export default function GeoMap({
         f.rings.forEach((ring) => {
           const poly = new AMap.Polygon({
             path: ring.map(([lon, lat]) => [lon, lat]),
-            fillColor: '#2ea8ff',
-            fillOpacity: 0.1,
+            fillColor: MASK_FILL,
+            fillOpacity: 0.34,
             strokeColor: CYAN,
-            strokeOpacity: 0.5,
-            strokeWeight: 1
+            strokeOpacity: 0.62,
+            strokeWeight: 1.2,
+            zIndex: 5
           });
           poly.on('click', () => cbRef.current.onDrill?.(f.adcode));
           poly.on('mouseover', () => {
-            poly.setOptions({ fillOpacity: 0.2 });
+            poly.setOptions({ fillColor: MASK_FILL_HOVER, fillOpacity: 0.68 });
             if (f.name) setTip({ fixed: true, text: f.name });
           });
           poly.on('mouseout', () => {
-            poly.setOptions({ fillOpacity: String(f.adcode) === selectRegion ? 0.28 : 0.1 });
+            const on = String(f.adcode) === selectRegion;
+            poly.setOptions({
+              fillColor: on ? MASK_FILL_ON : MASK_FILL,
+              fillOpacity: on ? 0.62 : 0.55
+            });
             setTip(null);
           });
           polygons.push({ poly, adcode: f.adcode });
@@ -344,9 +405,15 @@ export default function GeoMap({
       if (mapRef.current) mapRef.current.resize();
     });
     if (boxRef.current) ro.observe(boxRef.current);
+    /* 覆盖物重建触发器：complete 事件 + 1.4s 兜底各触发一次 */
+    const bumpTick = () => setMapTick((n) => n + 1);
+    const bumpTimer = setTimeout(bumpTick, 1400);
+    try { map.on('complete', bumpTick); } catch { /* ignore */ }
     return () => {
       ro.disconnect();
       if (fitTimer) clearTimeout(fitTimer);
+      clearTimeout(bumpTimer);
+      try { map.off('complete', bumpTick); } catch { /* ignore */ }
       polygonsRef.current = [];
       overlaysRef.current = [];
       if (map) {
@@ -363,7 +430,8 @@ export default function GeoMap({
     polygonsRef.current.forEach(({ poly, adcode }) => {
       const on = String(adcode) === selectRegion;
       poly.setOptions({
-        fillOpacity: on ? 0.28 : 0.1,
+        fillColor: on ? MASK_FILL_ON : MASK_FILL,
+        fillOpacity: on ? 0.62 : 0.55,
         strokeColor: on ? CYAN_2 : CYAN,
         strokeWeight: on ? 2 : 1
       });
@@ -409,7 +477,7 @@ export default function GeoMap({
         ? `<span style="font:500 9px/1.2 system-ui,-apple-system,'Segoe UI',sans-serif;color:${TEXT_3};`
           + `text-shadow:0 1px 4px rgba(2,8,18,.9)">${escapeHtml(b.name)}</span>`
         : '';
-      const html = `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;`
+      const html = `<div class="amap-bubble" style="display:flex;flex-direction:column;align-items:center;gap:2px;`
         + `transform:translate(-50%,-50%);cursor:pointer;white-space:nowrap">`
         + nameHtml
         + `<span title="${escapeHtml(b.name)}" style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;`
@@ -476,7 +544,7 @@ export default function GeoMap({
       });
       overlaysRef.current = [];
     };
-  }, [mode, points, bubbles, selected, measure, code]);
+  }, [mode, points, bubbles, selected, measure, code, mapTick]);
 
   const measurePoints = measure?.points || [];
   const measureMode = measure?.mode || 'none';

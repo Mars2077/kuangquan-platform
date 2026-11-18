@@ -104,7 +104,15 @@ export default function Shell() {
   const [problem, setProblem] = useState(false);
   const [menu, setMenu] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 620px)').matches);
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 620px)');
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
 
   const scenes = bootMeta?.scenes || [];
 
@@ -131,29 +139,26 @@ export default function Shell() {
   return (
     <div className="app">
       <header className="app-header">
-        <div className="brand">
-          <span className="brand-mark"><BrandMark size={30} /></span>
-          <span className="brand-text">
-            <b className="brand-title">省域空间治理数字化平台 · 绿矿智用</b>
-            <span className="brand-sub">四川省矿产资源数字化管理</span>
-          </span>
+        <div className="hd-side">
+          <div className="hd-date">{(() => { const [y, m, d] = clock.date.split('-'); return `${y}年${Number(m)}月${Number(d)}日`; })()}</div>
+          <div className="hd-time">{clock.time}</div>
         </div>
 
-        <div className="app-header-meta">
-          <span className="header-date">{clock.date} 星期{clock.week}</span>
-          <span className="header-time">{clock.time}</span>
+        <button type="button" className="hd-pill" onClick={() => nav('/battle')}>
+          <span>指标监测</span>
+        </button>
+
+        <div className="hd-banner">
+          <span className="hd-mark"><BrandMark size={40} /></span>
+          <b className="hd-title">{narrow ? '绿矿智用' : '省域空间治理数字化平台 - 绿矿智用'}</b>
+          <i className="hd-underline" aria-hidden="true" />
         </div>
+
+        <button type="button" className="hd-pill" onClick={() => setProblem(true)}>
+          <span>问题监测</span>
+        </button>
 
         <div className="app-header-actions">
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => nav('/battle')}>
-            <Ic icon={ChartLineData01Icon} size={14} />
-            <span>指标监测</span>
-          </button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setProblem(true)}>
-            <Ic icon={Alert02Icon} size={14} />
-            <span>问题监测</span>
-          </button>
-
           <div className="userbox" ref={menuRef}>
             <button
               type="button"
@@ -162,11 +167,11 @@ export default function Shell() {
               aria-haspopup="menu"
               aria-expanded={menu}
             >
-              <span className="avatar">{(user?.name || '用')[0]}</span>
               <span className="userbox-text">
                 <b>{user?.name || '未登录'}</b>
                 <span>{user?.org || ''}</span>
               </span>
+              <span className="avatar">{(user?.name || '用')[0]}</span>
             </button>
             {menu && (
               <div className="user-menu" role="menu">
