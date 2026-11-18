@@ -14,7 +14,7 @@ import { useApp, useFetch } from '../store.jsx';
 import { meta as metaApi, screen as screenApi } from '../api';
 import {
   Camera01Icon, ChevronDownIcon, Download01Icon, FilterIcon, Layers01Icon,
-  Location01Icon, More01Icon, Refresh01Icon, RulerIcon, Search01Icon, Task01Icon, ToolsIcon
+  Location01Icon, More01Icon, Refresh01Icon, RulerIcon, Search01Icon, ToolsIcon
 } from '@hugeicons/core-free-icons';
 
 /* ------------------------------------------------------------------ 常量 */
@@ -42,6 +42,53 @@ const SCENE_META = {
   green: { title: '绿色矿山', module: 'green', theme: 'green' },
   supervise: { title: '预警线索', module: 'supervise', theme: 'online' },
   geology: { title: '地勘项目', module: 'geology', theme: 'hazard' }
+};
+
+/* 面板「详情」落点：按 场景 + 面板 key 精确指向对应业务功能页，
+ * 不再所有场景千篇一律跳到矿产地智能管理（原 bug）。 */
+const DETAIL_ROUTE = {
+  dashboard: {
+    reserve: '/biz/deposit/reserve-review',
+    plan: '/biz/plan/plan-overview',
+    rights: '/biz/rights/rights-stats',
+    geo: '/biz/geology/geology-explore',
+    green: '/biz/green/green-dynamic',
+    supervise: '/biz/supervise/supervise-monitor'
+  },
+  deposit: {
+    stage: '/biz/deposit/deposit-overview',
+    mineral: '/biz/deposit/deposit-overview',
+    degree: '/biz/deposit/deposit-survey',
+    reserve: '/biz/deposit/reserve-review'
+  },
+  plan: {
+    zones: '/biz/plan/plan-overview',
+    zoneArea: '/biz/plan/plan-stats',
+    warn: '/biz/plan/plan-indicator'
+  },
+  rights: {
+    type: '/biz/rights/rights-stats',
+    status: '/biz/rights/rights-map',
+    method: '/biz/rights/rights-trade',
+    amount: '/biz/rights/rights-stats'
+  },
+  green: {
+    level: '/biz/green/green-dynamic',
+    digital: '/biz/green/green-dynamic',
+    stage: '/biz/green/green-apply',
+    score: '/biz/green/green-apply'
+  },
+  supervise: {
+    alert: '/biz/supervise/supervise-order',
+    device: '/biz/supervise/supervise-monitor',
+    order: '/biz/supervise/supervise-order',
+    overdue: '/biz/supervise/supervise-order'
+  },
+  geology: {
+    project: '/biz/geology/geology-explore',
+    res: '/biz/geology/geology-explore',
+    hazard: '/biz/geology/geology-env'
+  }
 };
 
 const LIST_COLUMNS = {
@@ -409,43 +456,8 @@ function pickListArray(raw, theme, scene) {
 const PLATE_CLIP = 'polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))';
 
 const FLOAT_DARK = 'rgba(5,14,28,.78)';
-/* v4 地图 chrome：深蓝玻璃 + 青边，hover 变青（对应参考截图的左上按钮） */
+/* v4 地图 chrome：深蓝玻璃 + 青边 */
 const CHROME_BG = 'linear-gradient(180deg, rgba(14,52,90,.94), rgba(8,30,54,.94))';
-const CHROME_BG_HOVER = 'linear-gradient(180deg, #1b5b96, #103a63)';
-
-function MapChromeButton({ icon, label, onClick, title }) {
-  const [hover, setHover] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title || label}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        width: 132,
-        height: 34,
-        padding: '0 10px',
-        fontFamily: 'var(--font-sans)',
-        fontSize: 12,
-        letterSpacing: '.08em',
-        whiteSpace: 'nowrap',
-        color: hover ? '#7fe3ff' : '#dff0ff',
-        background: hover ? CHROME_BG_HOVER : CHROME_BG,
-        border: `1px solid ${hover ? 'var(--cyan)' : 'rgba(73,195,255,.5)'}`,
-        borderRadius: 2,
-        cursor: 'pointer',
-        transition: 'background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease)'
-      }}
-    >
-      <Ic icon={icon} size={15} color={hover ? '#7fe3ff' : '#bfe3ff'} />
-      {label}
-    </button>
-  );
-}
 
 /* ------------------------------------------------------------------ 页面 */
 export default function Cockpit({ sceneKey }) {
@@ -459,7 +471,7 @@ export default function Cockpit({ sceneKey }) {
   const [theme, setTheme] = useState(meta0.theme);
   const [layerOpen, setLayerOpen] = useState(false);
   const [toolOpen, setToolOpen] = useState(false);
-  const [listOpen, setListOpen] = useState(true);
+  const [listOpen, setListOpen] = useState(false);
   const [sel, setSel] = useState(null);
   const [kw, setKw] = useState('');
   const [stages, setStages] = useState({});
@@ -765,10 +777,10 @@ export default function Cockpit({ sceneKey }) {
       style={narrow ? {
         minHeight: 'calc(100vh - var(--header-h) - var(--nav-h))',
         gridTemplateColumns: 'minmax(0, 1fr)',
-        gridTemplateRows: 'auto'
+        gridTemplateRows: 'minmax(0, 1fr)'
       } : {
         minHeight: 'calc(100vh - var(--header-h) - var(--nav-h))',
-        gridTemplateRows: 'minmax(0, 1fr) auto'
+        gridTemplateRows: 'minmax(0, 1fr)'
       }}
     >
       {/* ---------------- 左栏 ---------------- */}
@@ -778,7 +790,7 @@ export default function Cockpit({ sceneKey }) {
             key={p.key}
             title={p.title}
             action={(
-              <button type="button" className="panel-more" onClick={() => nav(`/biz/${meta0.module}`)}>
+              <button type="button" className="panel-more" onClick={() => nav((DETAIL_ROUTE[scene] || {})[p.key] || `/biz/${meta0.module}`)}>
                 详情 <Ic icon={ChevronDownIcon} size={10} />
               </button>
             )}
@@ -913,17 +925,6 @@ export default function Cockpit({ sceneKey }) {
               style={{ position: 'absolute', right: 8, top: 10, pointerEvents: 'none' }}
             />
           </div>
-          <MapChromeButton
-            icon={Location01Icon}
-            label={leftThemeLabel}
-            title={`回到${leftThemeLabel}专题`}
-            onClick={() => { setTheme(meta0.theme); setSel(null); resetMeasure(); }}
-          />
-          <MapChromeButton
-            icon={Task01Icon}
-            label="重大任务"
-            onClick={() => nav('/battle')}
-          />
         </div>
 
         {/* 右上：工具 / 图层 方形按钮（窄屏下移到标题牌下方，避免与牌面重叠） */}
@@ -1183,89 +1184,6 @@ export default function Cockpit({ sceneKey }) {
           </div>
         )}
 
-        <div
-          data-map-legend="1"
-          style={{
-            position: 'absolute',
-            left: isPhone ? 8 : 12,
-            // 窄屏图例让位给抬高的分段条（分段条 32~58，图例 64 起）
-            bottom: isPhone ? 64 : 10,
-            zIndex: 5,
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: isPhone ? 6 : 10,
-            maxWidth: isPhone ? 'calc(100% - 16px)' : 'calc(100% - 440px)',
-            padding: isPhone ? '4px 8px' : '5px 10px',
-            fontSize: isPhone ? 10 : 11,
-            lineHeight: 1.3,
-            color: 'var(--text-3)',
-            background: FLOAT_DARK,
-            border: '1px solid var(--line)',
-            borderRadius: 8
-          }}
-        >
-          {THEMES.map((t) => (
-            <span key={t.key} className="row center" style={{ gap: 5 }}>
-              <i style={{ width: 8, height: 8, borderRadius: 2, background: t.tone }} />
-              {t.label}
-            </span>
-          ))}
-          {pointsQ.error ? <span style={{ color: 'var(--red)' }}>要素加载失败</span> : null}
-          {screenQ.error ? <span style={{ color: 'var(--red)' }}>面板数据加载失败</span> : null}
-        </div>
-
-        {/* 右下：专题分段标签（对应参考截图右下角的小标签，5 个专题） */}
-        <div
-          data-map-seg="1"
-          role="tablist"
-          aria-label="专题切换"
-          style={{
-            position: 'absolute',
-            right: 8,
-            // 窄屏把分段条抬到高德 logo/版权行（底部约 26px）之上，避免压字；桌面位置不变
-            bottom: isPhone ? 32 : 10,
-            left: isPhone ? 8 : 'auto',
-            zIndex: 7,
-            display: 'flex',
-            flexWrap: 'nowrap',
-            justifyContent: isPhone ? 'flex-end' : 'flex-start',
-            gap: 4,
-            overflow: 'visible'
-          }}
-        >
-          {THEMES.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              role="tab"
-              aria-selected={theme === t.key}
-              onClick={() => { setTheme(t.key); setSel(null); }}
-              style={{
-                flex: isPhone ? '1 1 0' : '0 0 auto',
-                width: isPhone ? 'auto' : 78,
-                minWidth: 0,
-                maxWidth: isPhone ? 78 : 'none',
-                height: 26,
-                padding: isPhone ? '0 2px' : undefined,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                fontFamily: 'var(--font-sans)',
-                fontSize: isPhone ? 10 : 11,
-                letterSpacing: '.04em',
-                whiteSpace: 'nowrap',
-                color: theme === t.key ? '#fff' : 'var(--text-3)',
-                background: theme === t.key ? 'linear-gradient(180deg, #2f8fe0, #1b6fc4)' : 'rgba(9,32,58,.62)',
-                border: `1px solid ${theme === t.key ? 'rgba(127,227,255,.75)' : 'rgba(73,195,255,.26)'}`,
-                borderRadius: 2,
-                cursor: 'pointer',
-                transition: 'background var(--dur-1) var(--ease), color var(--dur-1) var(--ease)'
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
       </GeoMap>
 
       {/* ---------------- 右栏 ---------------- */}
@@ -1275,7 +1193,7 @@ export default function Cockpit({ sceneKey }) {
             key={p.key}
             title={p.title}
             action={(
-              <button type="button" className="panel-more" onClick={() => nav(`/biz/${meta0.module}`)}>
+              <button type="button" className="panel-more" onClick={() => nav((DETAIL_ROUTE[scene] || {})[p.key] || `/biz/${meta0.module}`)}>
                 详情 <Ic icon={ChevronDownIcon} size={10} />
               </button>
             )}
@@ -1304,91 +1222,110 @@ export default function Cockpit({ sceneKey }) {
         {!data && panelSkeleton(2)}
       </aside>
 
-      {/* ---------------- 底部列表（跨满三列） ---------------- */}
-      <section className={`panel dash-list${listOpen ? '' : ' is-collapsed'}`}>
-        <header className="panel-head" style={{ minHeight: 38 }}>
-          <h2 className="panel-title">
-            {meta0.title}列表
-            <span className="muted tiny" style={{ fontWeight: 400 }}>· {list.length} 条</span>
-          </h2>
-          <div className="row center gap-2">
-            <label className="input-icon" style={{ width: 180 }}>
-              <Ic icon={Search01Icon} size={13} />
-              <input
-                className="input"
-                style={{ height: 28, fontSize: 12 }}
-                value={kw}
-                onChange={(e) => setKw(e.target.value)}
-                placeholder="筛选当前列表"
-                aria-label="筛选当前列表"
-              />
-            </label>
-            <button type="button" className="btn btn-text btn-sm" onClick={exportCsv}>
-              <Ic icon={Download01Icon} size={12} /> 导出
-            </button>
-            <button type="button" className="btn btn-text btn-sm" onClick={() => setListOpen((v) => !v)}>
-              {listOpen ? '收起' : '展开'}
-            </button>
-          </div>
-        </header>
-        <div
-          className="panel-body"
-          style={{ padding: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}
-        >
-          <div
-            className="table-wrap"
-            style={{ flex: '1 1 auto', minHeight: 0, border: 0, borderRadius: 0, overflow: 'auto' }}
+      {/* ---------------- 底部列表：默认收起为一条窄条，点击后悬浮展开 ---------------- */}
+      <section className={`dash-list${listOpen ? ' is-open' : ''}`} aria-label={`${meta0.title}列表`}>
+        {!listOpen ? (
+          <button
+            type="button"
+            className="dash-list-bar"
+            onClick={() => setListOpen(true)}
+            aria-expanded={false}
           >
-            <table className="data-table is-dense" style={{ minWidth: tableMinWidth, width: '100%', tableLayout: 'fixed' }}>
-              <colgroup>
-                <col style={{ width: 56 }} />
-                {columns.map((c) => (
-                  <col key={c.key} style={c.flex ? undefined : { width: c.width || 110 }} />
-                ))}
-              </colgroup>
-              <thead>
-                <tr>
-                  <th style={{ width: 48 }}>序号</th>
-                  {columns.map((c) => (
-                    <th
-                      key={c.key}
-                      className={c.align === 'right' ? 'num' : ''}
-                      style={c.width ? { width: c.width } : undefined}
-                    >
-                      {c.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {list.slice(0, 200).map((row, i) => (
-                  <tr
-                    key={row.id ?? i}
-                    onClick={() => setSel(row)}
-                    className={sel && sel.id === row.id ? 'selected' : ''}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <td className="num">{i + 1}</td>
+            <span className="dash-list-bar-title">
+              {meta0.title}列表
+              <em>{list.length} 条</em>
+            </span>
+            <span className="dash-list-bar-hint">
+              展开列表 <Ic icon={ChevronDownIcon} size={12} />
+            </span>
+          </button>
+        ) : (
+          <div className="dash-list-float" role="dialog" aria-label={`${meta0.title}列表`}>
+            <header className="panel-head" style={{ minHeight: 38 }}>
+              <h2 className="panel-title">
+                {meta0.title}列表
+                <span className="muted tiny" style={{ fontWeight: 400 }}>· {list.length} 条</span>
+              </h2>
+              <div className="row center gap-2">
+                <label className="input-icon" style={{ width: 180 }}>
+                  <Ic icon={Search01Icon} size={13} />
+                  <input
+                    className="input"
+                    style={{ height: 28, fontSize: 12 }}
+                    value={kw}
+                    onChange={(e) => setKw(e.target.value)}
+                    placeholder="筛选当前列表"
+                    aria-label="筛选当前列表"
+                  />
+                </label>
+                <button type="button" className="btn btn-text btn-sm" onClick={exportCsv}>
+                  <Ic icon={Download01Icon} size={12} /> 导出
+                </button>
+                <button type="button" className="btn btn-text btn-sm" onClick={() => setListOpen(false)}>
+                  收起
+                </button>
+              </div>
+            </header>
+            <div
+              className="panel-body"
+              style={{ padding: 0, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}
+            >
+              <div
+                className="table-wrap"
+                style={{ flex: '1 1 auto', minHeight: 0, border: 0, borderRadius: 0, overflow: 'auto' }}
+              >
+                <table className="data-table is-dense" style={{ minWidth: tableMinWidth, width: '100%', tableLayout: 'fixed' }}>
+                  <colgroup>
+                    <col style={{ width: 56 }} />
                     {columns.map((c) => (
-                      <td key={c.key} className={c.align === 'right' ? 'num' : ''}>
-                        {c.align === 'right' && Number.isFinite(Number(row[c.key]))
-                          ? int(row[c.key])
-                          : row[c.key] ?? '—'}
-                      </td>
+                      <col key={c.key} style={c.flex ? undefined : { width: c.width || 110 }} />
                     ))}
-                  </tr>
-                ))}
-                {list.length === 0 ? (
-                  <tr>
-                    <td colSpan={columns.length + 1}>
-                      <div className="table-empty">当前视角下没有要素</div>
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th style={{ width: 48 }}>序号</th>
+                      {columns.map((c) => (
+                        <th
+                          key={c.key}
+                          className={c.align === 'right' ? 'num' : ''}
+                          style={c.width ? { width: c.width } : undefined}
+                        >
+                          {c.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {list.slice(0, 200).map((row, i) => (
+                      <tr
+                        key={row.id ?? i}
+                        onClick={() => setSel(row)}
+                        className={sel && sel.id === row.id ? 'selected' : ''}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <td className="num">{i + 1}</td>
+                        {columns.map((c) => (
+                          <td key={c.key} className={c.align === 'right' ? 'num' : ''}>
+                            {c.align === 'right' && Number.isFinite(Number(row[c.key]))
+                              ? int(row[c.key])
+                              : row[c.key] ?? '—'}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                    {list.length === 0 ? (
+                      <tr>
+                        <td colSpan={columns.length + 1}>
+                          <div className="table-empty">当前视角下没有要素</div>
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </section>
     </div>
   );

@@ -294,23 +294,89 @@
   height: 100%;
 }
 
+/* —— 底部列表：默认收起为一条窄条，点击后悬浮在地图区之上 ——
+ * 不再占用网格行，因此中间地图可一直铺到页面底部。 */
+.dash {
+  position: relative;
+}
+
 .dash-list {
-  grid-column: 1 / -1;
-  height: 200px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 26;
+  pointer-events: none;
+}
+
+.dash-list > * {
+  pointer-events: auto;
+}
+
+.dash-list-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  background: rgba(6, 20, 40, .82);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+
+.dash-list-bar:hover {
+  color: var(--text-1);
+  border-color: var(--line-strong);
+}
+
+.dash-list-bar-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  letter-spacing: .04em;
+}
+
+.dash-list-bar-title em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-list-bar-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.dash-list-float {
+  display: flex;
+  flex-direction: column;
+  height: min(46vh, 420px);
+  background: rgba(5, 16, 32, .97);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .55);
+  overflow: hidden;
+}
+
+.dash-list-float .panel-head {
+  flex: 0 0 auto;
+}
+
+.dash-list-float .panel-body {
+  flex: 1 1 auto;
   min-height: 0;
-  transition: height var(--dur-2) var(--ease);
-}
-
-.dash-list.is-collapsed {
-  height: 40px;
-}
-
-.dash-list.is-collapsed .panel-body {
-  display: none;
-}
-
-.dash-list .panel-body {
-  overflow: auto;
+  overflow: hidden;
 }
 
 /* —— 面板（驾驶舱内统一的容器形态） —— */
@@ -1175,7 +1241,13 @@
   }
 
   .dash-list {
+    position: static;
     height: auto;
+    margin-top: var(--sp-3);
+  }
+
+  .dash-list-float {
+    height: min(52vh, 360px);
   }
 
   .dash-list .panel-body {
@@ -1311,5 +1383,407 @@
 
   .m-grid {
     gap: var(--sp-2);
+  }
+}
+
+/* ===================================================================
+   § v5 unslop 皮肤覆盖（最后一层，压过 v4 参考截图皮肤）
+   原则（来自 heydamir/unslop）：
+   1. 一个屏幕一个亮点（地图 / 图表），chrome 保持安静：无发光、无彩色阴影、
+      无渐变文字、无梯形横幅；
+   2. 深度靠表面层级 + 1px 发丝边，不靠阴影；
+   3. 单一强调色（青），语义色只在语义处出现；
+   4. 字号档位收敛，层级靠字号与颜色，不靠 700-900 的字重；
+   5. 数字统一 tabular-nums，避免跳动。
+   =================================================================== */
+
+/* ---------- 顶栏：单行 60px，扁平，发丝分割 ---------- */
+/* 导航并入顶栏后 .app 只剩两行，仍是三行的话 .app-main 会掉进 0 高度的导航行里被裁掉 */
+.app {
+  grid-template-rows: var(--header-h) minmax(0, 1fr);
+}
+
+.app-header {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--header-h);
+  padding: 0 16px;
+  background: #061526;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: none;
+}
+
+.app-header::before,
+.app-header::after {
+  display: none;
+}
+
+.hd-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.hd-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hd-brand-text b {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hd-brand-text i {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-4);
+  white-space: nowrap;
+}
+
+.hd-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.hd-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.hd-nav-link {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  font-size: var(--fs-13);
+  color: var(--text-3);
+  text-decoration: none;
+  white-space: nowrap;
+  border-radius: var(--r-sm);
+  transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+
+.hd-nav-link:hover {
+  color: var(--text-1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.hd-nav-link.is-on {
+  color: var(--cyan);
+  background: rgba(73, 195, 255, 0.1);
+}
+
+.hd-nav-link--sub {
+  font-size: var(--fs-12);
+  color: var(--text-4);
+}
+
+.hd-nav-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 6px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.hd-right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  justify-self: end;
+}
+
+.hd-clock {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-right: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hd-clock b {
+  font-family: var(--font-mono);
+  font-size: var(--fs-14);
+  font-weight: 500;
+  color: var(--text-1);
+}
+
+.hd-clock i {
+  font-style: normal;
+  font-size: var(--fs-11);
+  color: var(--text-4);
+}
+
+.hd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+
+.hd-btn:hover {
+  color: var(--text-1);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* 用户区：v4 的 19px 大字号会在 1920 下把单位名顶出右边界，这里收小并允许省略 */
+.userbox {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.userbox-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 230px;
+  height: 34px;
+  padding: 0 6px;
+  color: var(--text-1);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+
+.userbox-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.userbox-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.userbox-text b {
+  max-width: 155px;
+  font-size: var(--fs-12);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userbox-text i {
+  max-width: 155px;
+  font-style: normal;
+  font-size: 10px;
+  color: var(--text-4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  font-size: var(--fs-12);
+  color: var(--cyan);
+  background: rgba(73, 195, 255, 0.14);
+  border: 1px solid rgba(73, 195, 255, 0.35);
+  border-radius: 50%;
+  box-shadow: none;
+}
+
+/* 旧版独立导航条彻底停用 */
+.app-nav {
+  display: none !important;
+}
+
+/* ---------- 面板：去发光，发丝边 + 轻微分层 ---------- */
+.panel {
+  background: #0a1e33;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.panel-head {
+  background: #0d2740;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  clip-path: none;
+}
+
+.panel-head::after {
+  display: none;
+}
+
+.panel-title {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.panel-more {
+  color: var(--text-3);
+}
+
+.panel-more:hover {
+  color: var(--cyan);
+}
+
+/* ---------- 按钮：扁平，主按钮用单一强调色 ---------- */
+.btn {
+  box-shadow: none;
+  background-image: none;
+  border-radius: var(--r-sm);
+}
+
+.btn-primary {
+  color: #04182b;
+  background: var(--cyan);
+  border: 1px solid var(--cyan);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: #6fd0ff;
+  border-color: #6fd0ff;
+  transform: none;
+}
+
+.btn-ghost {
+  color: var(--text-2);
+  background: transparent;
+  border: 1px solid var(--line);
+}
+
+.btn-ghost:hover {
+  color: var(--text-1);
+  border-color: var(--line-strong);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ---------- KPI / 数字：去掉切角光条与重阴影 ---------- */
+.kpi-card {
+  background: #0a1e33;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  clip-path: none;
+}
+
+.kpi-value,
+.stat-row .v,
+.data-table td.num,
+.data-table th.num,
+.hd-clock {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 标题层级：字号收敛，重字重只留给页面标题 ---------- */
+.page-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.card-title,
+.panel-title,
+.section-title {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* 统计卡（作战图）去光晕：梯形切角保留，发光阴影去掉 */
+.battle-cards > * {
+  box-shadow: none;
+}
+
+/* ---------- 900px 以下：导航收进抽屉 ---------- */
+@media (max-width: 900px) {
+  .app-header {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    gap: var(--sp-2);
+    padding: 0 10px;
+  }
+
+  .hd-burger {
+    display: inline-flex;
+  }
+
+  .hd-nav {
+    position: absolute;
+    top: var(--header-h);
+    left: 8px;
+    right: 8px;
+    z-index: var(--z-popover);
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 8px;
+    background: #08192c;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    box-shadow: var(--sh-2);
+  }
+
+  .hd-nav.is-open {
+    display: flex;
+  }
+
+  .hd-nav-link {
+    height: 34px;
+  }
+
+  .hd-nav-sep {
+    width: auto;
+    height: 1px;
+    margin: 4px 0;
+  }
+
+  .hd-clock,
+  .hd-btn {
+    display: none;
+  }
+
+  .hd-right {
+    gap: 6px;
+  }
+}
+
+/* 小屏地图气泡只留数量，避免 21 个地市名相互压字 */
+@media (max-width: 620px) {
+  .amap-bubble span {
+    display: none;
+  }
+
+  .page-title {
+    font-size: 18px;
   }
 }

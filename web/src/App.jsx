@@ -4,7 +4,6 @@ import Shell from './layout/Shell.jsx';
 import Login from './pages/Login.jsx';
 import { useApp } from './store.jsx';
 
-const Portal = lazy(() => import('./pages/Portal.jsx'));
 const Cockpit = lazy(() => import('./pages/Cockpit.jsx'));
 const ModuleHome = lazy(() => import('./pages/ModuleHome.jsx'));
 const FeaturePage = lazy(() => import('./pages/FeaturePage.jsx'));
@@ -35,8 +34,7 @@ export default function App() {
     <Suspense fallback={<Splash text="正在载入业务模块 …" />}>
       <Routes>
         <Route element={<Shell />}>
-          <Route path="/" element={<Navigate to="/portal" replace />} />
-          <Route path="/portal" element={<Portal />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Cockpit sceneKey="dashboard" />} />
           <Route path="/scene/:scene" element={<Cockpit />} />
           <Route path="/battle" element={<Battle />} />
@@ -47,7 +45,7 @@ export default function App() {
           <Route path="/mobile" element={<Mobile />} />
           <Route path="/system" element={<SystemPage />} />
           <Route path="/ui-kit" element={<UiKit />} />
-          <Route path="*" element={<Navigate to="/portal" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
     </Suspense>

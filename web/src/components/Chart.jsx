@@ -98,21 +98,44 @@ export function donutOption(parts = [], opts = {}) {
       type: 'scroll', orient: 'vertical', right: 0, top: 'center', itemWidth: 8, itemHeight: 8,
       icon: 'roundRect', itemGap: 9, textStyle: { color: TEXT_DIM, fontSize: 11 }
     } : { show: false },
-    title: {
-      text: centerText,
-      subtext: unit || '',
-      left: legend ? '34%' : 'center',
-      top: 'center',
-      textAlign: 'center',
-      textStyle: {
-        color: '#e8f4ff',
-        fontSize: centerText.length > 8 ? 14 : centerText.length > 6 ? 16 : 19,
-        fontWeight: 700,
-        lineHeight: 22
+    /* 圆心文字用 graphic 而非 title：
+     * title 的 left:'center' 与 textAlign:'center' 会叠加成「先居中再按自身宽度偏移」，
+     * 表现为整段文字右移半个字宽（用户反馈的「字有点歪」）。graphic 用 50%/34% 加
+     * textAlign+textVerticalAlign 才能真正以圆心对齐。 */
+    title: { show: false },
+    graphic: [
+      {
+        type: 'group',
+        left: legend ? '34%' : '50%',
+        top: '50%',
+        children: [
+          {
+            type: 'text',
+            style: {
+              text: centerText,
+              fill: '#e8f4ff',
+              font: `700 ${centerText.length > 8 ? 14 : centerText.length > 6 ? 16 : 19}px var(--font-mono, monospace)`,
+              textAlign: 'center',
+              textVerticalAlign: 'middle'
+            }
+          },
+          {
+            type: 'text',
+            top: 15,
+            style: {
+              text: unit || '',
+              fill: TEXT_DIM,
+              font: '400 11px var(--font-sans, sans-serif)',
+              textAlign: 'center',
+              textVerticalAlign: 'middle'
+            }
+          }
+        ]
       },
-      subtextStyle: { color: TEXT_DIM, fontSize: 11 },
-      itemGap: 2
-    },
+      ...(suffix ? [{
+        type: 'text', right: 4, top: 4, style: { text: suffix, fill: TEXT_DIM, fontSize: 10 }
+      }] : [])
+    ],
     series: [{
       type: 'pie',
       radius,
@@ -127,10 +150,7 @@ export function donutOption(parts = [], opts = {}) {
       labelLine: { show: !!showLabel, length: 8, length2: 6, lineStyle: { color: LINE } },
       emphasis: { scale: true, scaleSize: 4, itemStyle: { shadowBlur: 14, shadowColor: 'rgba(73,195,255,.45)' } },
       data
-    }],
-    graphic: suffix ? [{
-      type: 'text', right: 4, top: 4, style: { text: suffix, fill: TEXT_DIM, fontSize: 10 }
-    }] : []
+    }]
   };
 }
 

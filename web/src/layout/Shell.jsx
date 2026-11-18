@@ -5,7 +5,7 @@ import Drawer from '../components/Drawer';
 import { Toasts, useApp } from '../store';
 import { sys } from '../api';
 import {
-  Alert02Icon, ChartLineData01Icon, Database01Icon, Logout01Icon, Menu01Icon,
+  Alert02Icon, Database01Icon, Logout01Icon, Menu01Icon,
   Settings01Icon, SmartPhone01Icon, UserIcon
 } from '@hugeicons/core-free-icons';
 
@@ -104,11 +104,11 @@ export default function Shell() {
   const [problem, setProblem] = useState(false);
   const [menu, setMenu] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
-  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 620px)').matches);
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches);
   const menuRef = useRef(null);
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 620px)');
+    const mq = window.matchMedia('(max-width: 900px)');
     const on = () => setNarrow(mq.matches);
     mq.addEventListener('change', on);
     return () => mq.removeEventListener('change', on);
@@ -139,26 +139,50 @@ export default function Shell() {
   return (
     <div className="app">
       <header className="app-header">
-        <div className="hd-side">
-          <div className="hd-date">{(() => { const [y, m, d] = clock.date.split('-'); return `${y}年${Number(m)}月${Number(d)}日`; })()}</div>
-          <div className="hd-time">{clock.time}</div>
+        <div className="hd-brand">
+          <BrandMark size={26} />
+          <span className="hd-brand-text">
+            <b>{narrow ? '绿矿智用' : '省域空间治理数字化平台 · 绿矿智用'}</b>
+            <i>四川省矿产资源数字化管理</i>
+          </span>
         </div>
 
-        <button type="button" className="hd-pill" onClick={() => nav('/battle')}>
-          <span>指标监测</span>
+        <button
+          type="button"
+          className="hd-burger"
+          onClick={() => setNavOpen((v) => !v)}
+          aria-label="展开导航"
+          aria-expanded={navOpen}
+        >
+          <Ic icon={Menu01Icon} size={16} />
         </button>
 
-        <div className="hd-banner">
-          <span className="hd-mark"><BrandMark size={40} /></span>
-          <b className="hd-title">{narrow ? '绿矿智用' : '省域空间治理数字化平台 - 绿矿智用'}</b>
-          <i className="hd-underline" aria-hidden="true" />
-        </div>
+        <nav className={`hd-nav${navOpen ? ' is-open' : ''}`} aria-label="一级场景导航">
+          {scenes.map((s) => (
+            <NavLink
+              key={s.key}
+              to={SCENE_ROUTES[s.key] || `/${s.key}`}
+              className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}
+            >
+              {s.name}
+            </NavLink>
+          ))}
+          <span className="hd-nav-sep" aria-hidden="true" />
+          <NavLink to="/warehouse" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>数据仓</NavLink>
+          <NavLink to="/mobile" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>移动端</NavLink>
+          <NavLink to="/system" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>系统</NavLink>
+        </nav>
 
-        <button type="button" className="hd-pill" onClick={() => setProblem(true)}>
-          <span>问题监测</span>
-        </button>
+        <div className="hd-right">
+          <span className="hd-clock" title={`${clock.date} 星期${clock.week}`}>
+            <b>{clock.time}</b>
+            <i>{clock.date.slice(5)}</i>
+          </span>
+          <button type="button" className="hd-btn" onClick={() => nav('/battle')}>指标监测</button>
+          <button type="button" className="hd-btn" onClick={() => setProblem(true)}>
+            <Ic icon={Alert02Icon} size={14} /> 问题监测
+          </button>
 
-        <div className="app-header-actions">
           <div className="userbox" ref={menuRef}>
             <button
               type="button"
@@ -167,11 +191,13 @@ export default function Shell() {
               aria-haspopup="menu"
               aria-expanded={menu}
             >
-              <span className="userbox-text">
-                <b>{user?.name || '未登录'}</b>
-                <span>{user?.org || ''}</span>
-              </span>
               <span className="avatar">{(user?.name || '用')[0]}</span>
+              {!narrow && (
+                <span className="userbox-text">
+                  <b>{user?.name || '未登录'}</b>
+                  <i>{user?.org || ''}</i>
+                </span>
+              )}
             </button>
             {menu && (
               <div className="user-menu" role="menu">
@@ -197,29 +223,6 @@ export default function Shell() {
           </div>
         </div>
       </header>
-
-      <nav className={`app-nav${navOpen ? ' is-open' : ''}`} aria-label="一级场景导航">
-        <button type="button" className="app-nav-toggle" onClick={() => setNavOpen((v) => !v)} aria-label="展开导航">
-          <Ic icon={Menu01Icon} size={16} />
-        </button>
-        <div className="app-nav-links">
-          <NavLink to="/portal" className={({ isActive }) => `app-nav-link${isActive ? ' is-on' : ''}`}>平台分布</NavLink>
-          {scenes.map((s) => (
-            <NavLink
-              key={s.key}
-              to={SCENE_ROUTES[s.key] || `/${s.key}`}
-              className={({ isActive }) => `app-nav-link${isActive ? ' is-on' : ''}`}
-            >
-              {s.name}
-            </NavLink>
-          ))}
-        </div>
-        <div className="app-nav-side">
-          <NavLink to="/warehouse" className="app-nav-mini"><Ic icon={Database01Icon} size={13} /> 数据仓</NavLink>
-          <NavLink to="/mobile" className="app-nav-mini"><Ic icon={SmartPhone01Icon} size={13} /> 移动端</NavLink>
-          <NavLink to="/system" className="app-nav-mini"><Ic icon={UserIcon} size={13} /> 系统</NavLink>
-        </div>
-      </nav>
 
       <main className="app-main">
         {/^\/(scene|dashboard)/.test(loc.pathname) && (

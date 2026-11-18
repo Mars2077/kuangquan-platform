@@ -7,10 +7,11 @@
 > **v2.2 布局二次修复**：底部列表横跨整屏、侧栏面板尺寸与分布按内容适配、ECharts 悬浮提示挂载到 body 不再被容器裁切，说明与实测见 [docs/09-第二轮修复-布局与浮层.md](docs/09-第二轮修复-布局与浮层.md)。
 > **v3 界面重构**：冻结组件契约后按模板重写全部界面（设计系统 4 层 CSS / 3627 行 / 8 个媒体查询 / 0 个 `!important`），统一骨架、抽屉、表格与状态；12 条路由 × 4 档视口复测 48 条无溢出，说明见 [docs/13-重构说明-v3.md](docs/13-重构说明-v3.md)、契约见 [docs/11-组件契约-v3.md](docs/11-组件契约-v3.md)、评审见 [docs/12-v3-评审.md](docs/12-v3-评审.md)。
 > **v4 视觉对齐**：整体风格回到「严格参照 `系统样式` 截图」——96px 梯形横幅顶栏 + 38px 主标题、40px 导航、面板 4px 圆角 + 40px 斜切标题条、深蓝渐变表头、驾驶舱地图 chrome（专题牌/左上控件/右下分段/右上双按钮）、门户切角卡、作战图梯形统计卡与四色旗帜；逐项对照与偏差见 [docs/14-视觉对齐说明-v4.md](docs/14-视觉对齐说明-v4.md)。
+> **v5 unslop 改造**：底部列表改为「收起窄条 + 点击悬浮浮层」、饼图圆心文字真正居中、面板「详情」按业务含义逐面板跳转、删除地图冗余专题按钮、掩膜变浅并按缩放分级展示（≤7 级只看聚合数量、≥8 级铺点）、移除平台分布页并把顶栏压成单行 60px 扁平导航；说明与实测见 [docs/15-界面改造-v5.md](docs/15-界面改造-v5.md)。
 >
-> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-saorgbxh43.preview.iga-pages.com?iga_token=3881bf2e012d7e2053754f0ae7cc86cc&iga_time=1795141822>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
+> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-q2kw0xjso3.preview.iga-pages.com?iga_token=e3e58a09cee6f6ed3ac2dfbe31408597&iga_time=1795146830>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
 
-![数字驾驶舱](docs/shots/v3-dashboard.png)
+![数字驾驶舱](docs/shots/v5-dashboard.png)
 
 ---
 
@@ -20,8 +21,8 @@
 
 | 层 | 内容 |
 | --- | --- |
-| 门户层 | 平台分布（存量系统「迭代」入口 + 新建核心场景「新建」矩阵）、统一登录与三级分权 |
-| 一张图层 | 数字驾驶舱：省/市/县三级下钻、专题图层、图斑属性卡、底部专题列表 |
+| 入口层 | 单行顶栏（品牌 + 7 个场景导航 + 指标监测 / 问题监测 / 用户）、统一登录与三级分权；登录后直接进入数字驾驶舱 |
+| 一张图层 | 数字驾驶舱：省/市/县三级下钻、专题图层、图斑属性卡、底部可展开的悬浮列表 |
 | 业务层 | 矿产地智能管理、保护与规划管理、矿业权管理、绿色矿山管理、矿产资源智慧监管、数智地勘管理 |
 | 支撑层 | 绿矿智用数据仓、政务移动端、系统管理（用户/指标监测/操作审计/运行健康） |
 | 辅助决策 | 储量核算与三率校验、空间叠置压覆测算、选址合规预检、绿色矿山评分、指标配额、开发利用方案校验、信用评分、超期工单督办 |
@@ -95,7 +96,7 @@ npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
 ```
 
 - 上线：`cd web && iga pages deploy --name kuangquan-platform`（需先 `iga login`，配置见 `web/iga.json`）
-- 线上：<https://kuangquan-platfo-541ysnljv4-saorgbxh43.preview.iga-pages.com?iga_token=3881bf2e012d7e2053754f0ae7cc86cc&iga_time=1795141822>
+- 线上：<https://kuangquan-platfo-541ysnljv4-q2kw0xjso3.preview.iga-pages.com?iga_token=e3e58a09cee6f6ed3ac2dfbe31408597&iga_time=1795146830>
 - 差异：静态版的新增/修改/删除写入浏览器 `localStorage`（键 `kq_demo_journal_v1`），刷新后仍在、换设备不共享；服务端版写真实 SQLite。
 - 两个形态共用同一份前端代码与同一套接口契约，页面、交互、算法完全一致。
 
@@ -173,27 +174,26 @@ kuangquan-platform/
 | 绿色矿山管理 | 3 | `/biz/green` |
 | 矿产资源智慧监管 | 7 | `/biz/supervise` |
 | 数智地勘管理 | 5 | `/biz/geology` |
-| 全局弹窗 · 重点任务作战图 | 1 | 顶栏「指标监测」或地图「重大任务」 |
-| 平台分布（门户） | 1 | `/portal` |
+| 全局弹窗 · 重点任务作战图 | 1 | 顶栏「指标监测」或驾驶舱专题入口 |
 | 一矿一档 / 数据仓 / 移动端 / 系统管理 | 4 | `/archive/:id`、`/warehouse`、`/mobile`、`/system` |
 
 ---
 
 ## 六、界面截图
 
-> 以下为 **v2 演示版**（四川口径 + ECharts + 高德底图）实机截图，1920×1080。
+> 以下为 **v5 演示版**（四川口径 + ECharts + 高德底图 + unslop 皮肤）实机截图，1920×1080。
 
-| 平台分布（门户） | 数字驾驶舱（高德底图） |
+| 数字驾驶舱（高德底图） | 驾驶舱 · 悬浮列表 |
 | --- | --- |
-| ![](docs/shots/v4-portal.png) | ![](docs/shots/v4-dashboard.png) |
+| ![](docs/shots/v5-dashboard.png) | ![](docs/shots/v5-dashboard-list.png) |
 
 | 重点任务作战图 | 一矿一档 |
 | --- | --- |
-| ![](docs/shots/v4-battle.png) | ![](docs/shots/v4-archive.png) |
+| ![](docs/shots/v5-battle.png) | ![](docs/shots/v5-archive.png) |
 
-| 业务域落地页 | 通用功能页（净矿出让） |
+| 通用功能页（净矿出让） | 数据仓 |
 | --- | --- |
-| ![](docs/shots/v4-biz-rights.png) | ![](docs/shots/v4-feature.png) |
+| ![](docs/shots/v5-feature.png) | ![](docs/shots/v5-warehouse.png) |
 
 | 保护与规划（规划指标预警） | 绿色矿山专题 |
 | --- | --- |

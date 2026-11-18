@@ -176,6 +176,9 @@ export default function GeoMap({
      静态部署时数据快照可能比地图实例更早到达，覆盖物 effect 会以空数组跑过一次，
      之后 props 引用未变化就不会重跑，表现为「有底图和省界但没有气泡与点位」。 */
   const [mapTick, setMapTick] = useState(0);
+  /* zoom 分级：省级视角只显示聚合数量，放大后才铺具体矿点 */
+  const zoomRef = useRef(7);
+  const [zoomTick, setZoomTick] = useState(0);
   const [geo, setGeo] = useState(null);
   const [geoReady, setGeoReady] = useState(false);
   const [tip, setTip] = useState(null);
@@ -308,7 +311,8 @@ export default function GeoMap({
               [minLon - padX, maxLat + padY]
             ],
             fillColor: '#04101f',
-            fillOpacity: 0.52,
+            /* 掩膜只做轻微压暗（0.52 → 0.22），避免邻省黑成一片、省界看不清 */
+            fillOpacity: 0.22,
             strokeWeight: 0,
             zIndex: 2,
             clickable: false,
@@ -322,6 +326,13 @@ export default function GeoMap({
       map.on('click', (e) => {
         if (e?.lnglat) cbRef.current.onMapClick?.([e.lnglat.getLng(), e.lnglat.getLat()]);
       });
+      /* 缩放分级：缩小时只显示「数量气泡」聚合，放大到 8 级才显示具体矿点，
+       * 避免省级视角 400+ 个点位糊成一片（用户要求 5）。 */
+      const onZoom = () => {
+        zoomRef.current = map.getZoom();
+        setZoomTick((n) => n + 1);
+      };
+      map.on('zoomend', onZoom);
       const polygons = [];
       features.forEach((f) => {
         f.rings.forEach((ring) => {
@@ -446,7 +457,9 @@ export default function GeoMap({
     const AMap = window.AMap;
     const created = [];
 
-    (points || []).forEach((p) => {
+    const showPoints = zoomRef.current >= 8;
+
+    (showPoints ? points || [] : []).forEach((p) => {
       const lon = Number(p.lon);
       const lat = Number(p.lat);
       if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
@@ -544,7 +557,7 @@ export default function GeoMap({
       });
       overlaysRef.current = [];
     };
-  }, [mode, points, bubbles, selected, measure, code, mapTick]);
+  }, [mode, points, bubbles, selected, measure, code, mapTick, zoomTick]);
 
   const measurePoints = measure?.points || [];
   const measureMode = measure?.mode || 'none';

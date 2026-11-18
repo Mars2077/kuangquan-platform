@@ -1,0 +1,1387 @@
+/* ===================================================================
+   绿矿智用 · v3 页面模板层（pages）
+   契约：docs/11-组件契约-v3.md §3 页面模板 / §5 驾驶舱 /
+        §6 门户 · 作战图 · 移动端版式骨架
+   断点：1600 / 1360 / 1100 / 900 / 620（仅此五档）
+   规则：不叠加强制权重，不用补丁注释，不加第三处发光
+   =================================================================== */
+
+/* ===================================================================
+   §3 页面模板
+   =================================================================== */
+
+/* —— 页头：标题 + 说明 + 右侧主操作 —— */
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  min-width: 0;
+}
+
+.page-head > div {
+  min-width: 0;
+}
+
+.page-title {
+  margin: 0;
+  font-size: var(--fs-28);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--text-1);
+  letter-spacing: 0.02em;
+}
+
+.page-desc {
+  max-width: 760px;
+  margin-top: 6px;
+  font-size: var(--fs-13);
+  line-height: 1.6;
+  color: var(--text-3);
+}
+
+.page-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* —— 内容区：统一纵向节奏 —— */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+/* —— KPI 指标带 —— */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.kpi-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  min-width: 0;
+  min-height: 92px;
+  padding: 14px var(--sp-4);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-1);
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+
+.kpi-card:hover {
+  background: var(--panel-2);
+  border-color: var(--line-strong);
+}
+
+.kpi-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kpi-value {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-28);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+}
+
+.kpi-unit {
+  font-family: var(--font-sans);
+  font-size: var(--fs-12);
+  font-style: normal;
+  font-weight: 400;
+  color: var(--text-3);
+  letter-spacing: 0;
+}
+
+.kpi-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-delta.up {
+  color: var(--green);
+}
+
+.kpi-delta.down {
+  color: var(--red);
+}
+
+.kpi-delta.flat {
+  color: var(--text-4);
+}
+
+.kpi-card .kpi-delta {
+  margin-top: auto;
+}
+
+/* —— 工具条：筛选 + 搜索 + 操作 —— */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  min-width: 0;
+  padding: 10px var(--sp-3);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.toolbar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.toolbar-search {
+  display: flex;
+  flex: 1 1 240px;
+  align-items: center;
+  gap: var(--sp-2);
+  max-width: 420px;
+  min-width: 0;
+}
+
+.toolbar-search .input {
+  width: 100%;
+  height: 30px;
+}
+
+.toolbar-search > svg {
+  flex: none;
+  color: var(--text-3);
+}
+
+.toolbar-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+
+.toolbar-actions .select {
+  width: auto;
+  min-width: 120px;
+  height: 30px;
+}
+
+/* —— 12 栅格内容区 —— */
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--sp-4);
+  align-items: start;
+  min-width: 0;
+}
+
+.content-grid > * {
+  grid-column: span 12;
+  min-width: 0;
+}
+
+.content-grid--2 > * {
+  grid-column: span 6;
+}
+
+.content-grid--3 > * {
+  grid-column: span 4;
+}
+
+.content-grid > .span-3 {
+  grid-column: span 3;
+}
+
+.content-grid > .span-4 {
+  grid-column: span 4;
+}
+
+.content-grid > .span-5 {
+  grid-column: span 5;
+}
+
+.content-grid > .span-6 {
+  grid-column: span 6;
+}
+
+.content-grid > .span-7 {
+  grid-column: span 7;
+}
+
+.content-grid > .span-8 {
+  grid-column: span 8;
+}
+
+.content-grid > .span-9 {
+  grid-column: span 9;
+}
+
+.content-grid > .span-12 {
+  grid-column: span 12;
+}
+
+/* ===================================================================
+   §5 驾驶舱
+   =================================================================== */
+.dash {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr) 300px;
+  grid-auto-rows: min-content;
+  align-items: stretch;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.dash-col--l,
+.dash-col--r {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.dash-col--l > .panel,
+.dash-col--r > .panel {
+  flex: 1 1 auto;
+  min-height: 132px;
+}
+
+.dash-map {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 480px;
+}
+
+.dash-map > * {
+  flex: 1;
+  min-height: 0;
+}
+
+.dash-map .chart {
+  min-height: 0;
+  height: 100%;
+}
+
+/* —— 底部列表：默认收起为一条窄条，点击后悬浮在地图区之上 ——
+ * 不再占用网格行，因此中间地图可一直铺到页面底部。 */
+.dash {
+  position: relative;
+}
+
+.dash-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 26;
+  pointer-events: none;
+}
+
+.dash-list > * {
+  pointer-events: auto;
+}
+
+.dash-list-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  font-size: var(--fs-xs);
+  color: var(--text-2);
+  background: rgba(6, 20, 40, .82);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+
+.dash-list-bar:hover {
+  color: var(--text-1);
+  border-color: var(--line-strong);
+}
+
+.dash-list-bar-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  letter-spacing: .04em;
+}
+
+.dash-list-bar-title em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-list-bar-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.dash-list-float {
+  display: flex;
+  flex-direction: column;
+  height: min(46vh, 420px);
+  background: rgba(5, 16, 32, .97);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .55);
+  overflow: hidden;
+}
+
+.dash-list-float .panel-head {
+  flex: 0 0 auto;
+}
+
+.dash-list-float .panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* —— 面板（驾驶舱内统一的容器形态） —— */
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.panel-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  min-height: 42px;
+  padding: 0 var(--sp-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.panel-head h2,
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--text-1);
+  letter-spacing: 0.01em;
+}
+
+.panel-title::before {
+  content: '';
+  width: 2px;
+  height: 12px;
+  background: var(--cyan);
+  border-radius: 1px;
+}
+
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  padding: 10px var(--sp-3) var(--sp-3);
+}
+
+/* 驾驶舱侧栏：面板高度由栅格均分，内容必须跟着长高，不能挤在顶部 */
+.dash-col--l > .panel > .panel-body,
+.dash-col--r > .panel > .panel-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.dash-col--l > .panel > .panel-body > .stat-list:only-child,
+.dash-col--r > .panel > .panel-body > .stat-list:only-child {
+  flex: 1 1 auto;
+  justify-content: space-between;
+}
+
+/* 只有 3 行时让行本身吃掉剩余高度，分隔线连续、文字垂直居中 */
+.dash-col--l > .panel > .panel-body > .stat-list:only-child:not(:has(> .stat-row:nth-child(4))) > .stat-row,
+.dash-col--r > .panel > .panel-body > .stat-list:only-child:not(:has(> .stat-row:nth-child(4))) > .stat-row {
+  flex: 1 1 0;
+  align-items: center;
+  max-height: 88px;
+}
+
+/* 只有一行 KPI 的面板：面板收到内容量级（≤200），余量留给同列图表，行居中 */
+.dash-col--l > .panel > .panel-body > .stat-list:only-child:has(> .stat-row:only-child),
+.dash-col--r > .panel > .panel-body > .stat-list:only-child:has(> .stat-row:only-child) {
+  justify-content: center;
+}
+
+.dash-col--l > .panel:has(> .panel-body > .stat-list:only-child > .stat-row:only-child),
+.dash-col--r > .panel:has(> .panel-body > .stat-list:only-child > .stat-row:only-child) {
+  max-height: 200px;
+}
+
+/* 统计行下方还有图表的面板：让图表吃掉剩余高度，而不是把行拉成巨块 */
+.dash-col--l > .panel > .panel-body > div:has(> .chart),
+.dash-col--r > .panel > .panel-body > div:has(> .chart) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dash-col--l > .panel > .panel-body > div:has(> .chart) > .chart,
+.dash-col--r > .panel > .panel-body > div:has(> .chart) > .chart,
+.dash-col--l > .panel > .panel-body > .chart,
+.dash-col--r > .panel > .panel-body > .chart {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.dash-col--l > .panel > .panel-body > .tabs,
+.dash-col--l > .panel > .panel-body > .segmented,
+.dash-col--r > .panel > .panel-body > .tabs,
+.dash-col--r > .panel > .panel-body > .segmented {
+  flex: none;
+}
+
+.panel-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  background: transparent;
+  border: 0;
+  transition: color var(--dur-1) var(--ease);
+}
+
+.panel-more:hover {
+  color: var(--cyan);
+}
+
+.panel-more:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* —— 统计行 —— */
+.stat-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-height: 32px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--line-faint);
+}
+
+.stat-row:last-child {
+  border-bottom: 0;
+}
+
+.stat-row .k {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-row .v {
+  font-family: var(--font-mono);
+  font-size: var(--fs-16);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+}
+
+.stat-row .u {
+  font-size: var(--fs-11);
+  color: var(--text-4);
+}
+
+.stat-row .d {
+  min-width: 44px;
+  font-size: var(--fs-11);
+  color: var(--green);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-row .d.down,
+.stat-row .d.is-down {
+  color: var(--red);
+}
+
+.stat-row .d.flat,
+.stat-row .d.is-flat {
+  color: var(--text-4);
+}
+
+/* —— 环形图 / 图例 / 条形 —— */
+.ring-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 124px;
+  padding: var(--sp-1) 0;
+}
+
+.ring-card canvas,
+.ring-card svg {
+  max-width: 100%;
+}
+
+.ring-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: var(--sp-2);
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
+
+.ring-legend > * {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ring-legend i,
+.ring-legend .dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--text-4);
+}
+
+.ring-legend b {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-1) 0;
+  min-width: 0;
+}
+
+.bars span,
+.bars b {
+  font-variant-numeric: tabular-nums;
+}
+
+.chart {
+  position: relative;
+  width: 100%;
+  min-height: 180px;
+}
+
+.chart canvas,
+.chart svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ===================================================================
+   §6 门户
+   =================================================================== */
+.portal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  padding-bottom: var(--sp-5);
+}
+
+.portal-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.portal-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.portal-section-head h2 {
+  margin: 0;
+  font-size: var(--fs-16);
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.portal-section-head p {
+  margin: 0;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+}
+
+.portal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  min-height: 84px;
+  padding: var(--sp-3);
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  transition: transform var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+    background var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+
+.tile:hover {
+  background: var(--panel-2);
+  border-color: var(--line-strong);
+  box-shadow: var(--sh-1);
+  transform: translateY(-2px);
+}
+
+.tile:active {
+  transform: translateY(0);
+}
+
+.tile:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.tile > div {
+  min-width: 0;
+}
+
+.tile-thumb {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  color: var(--cyan);
+  background: var(--cyan-a10);
+  border: 1px solid var(--cyan-a28);
+  border-radius: var(--r-sm);
+}
+
+.tile-name {
+  overflow: hidden;
+  font-size: var(--fs-14);
+  font-weight: 500;
+  color: var(--text-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile-desc {
+  display: -webkit-box;
+  margin-top: 3px;
+  overflow: hidden;
+  font-size: var(--fs-11);
+  line-height: 1.55;
+  color: var(--text-3);
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ===================================================================
+   §6 作战图
+   =================================================================== */
+.battle {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.battle-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.battle-head h2 {
+  margin: 0;
+  font-size: var(--fs-16);
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.battle-head p {
+  margin: 4px 0 0;
+  font-size: var(--fs-12);
+  color: var(--text-3);
+}
+
+.battle-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.battle-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+
+.battle-card:hover {
+  background: var(--panel-2);
+  border-color: var(--line-strong);
+}
+
+.battle-card b,
+.battle-card strong {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  color: var(--text-1);
+}
+
+.battle-card span {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
+
+.battle-table {
+  width: 100%;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.battle-table .data-table {
+  border: 0;
+  border-radius: 0;
+}
+
+/* —— 状态旗标 —— */
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.flag::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  background: var(--text-4);
+  border-radius: 50%;
+}
+
+.flag--done {
+  color: #8ff0c8;
+}
+
+.flag--done::before {
+  background: var(--green);
+}
+
+.flag--doing {
+  color: #9adcff;
+}
+
+.flag--doing::before {
+  background: var(--cyan);
+}
+
+.flag--late {
+  color: #ffb0ab;
+}
+
+.flag--late::before {
+  background: var(--red);
+}
+
+.flag--none {
+  color: var(--text-3);
+}
+
+.flag--none::before {
+  background: var(--text-4);
+}
+
+/* 兼容 Icon.jsx 的 QuarterFlag（.flag + .done/.doing/.delay/.none + 内联 svg） */
+.flag svg {
+  flex: none;
+}
+
+.flag.done::before,
+.flag.doing::before,
+.flag.delay::before,
+.flag.none::before {
+  display: none;
+}
+
+.flag.done {
+  color: #8ff0c8;
+}
+
+.flag.doing {
+  color: #9adcff;
+}
+
+.flag.delay {
+  color: #ffd98a;
+}
+
+.flag.none {
+  color: var(--text-3);
+}
+
+.battle-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
+
+/* ===================================================================
+   §6 移动端版式骨架（桌面端看作手机预览）
+   =================================================================== */
+.m-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.m-phone {
+  width: 390px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: var(--sp-3);
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 24px;
+  box-shadow: var(--sh-2);
+}
+
+.m-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px var(--sp-3);
+  background: var(--panel-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+}
+
+.m-user .avatar {
+  width: 34px;
+  height: 34px;
+  font-size: var(--fs-13);
+}
+
+.m-user > div {
+  min-width: 0;
+}
+
+.m-user b {
+  display: block;
+  overflow: hidden;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--text-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-user small {
+  display: block;
+  margin-top: 1px;
+  overflow: hidden;
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.m-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+
+.m-tile:hover {
+  background: var(--panel-3);
+  border-color: var(--line-strong);
+}
+
+.m-tile:active {
+  background: var(--panel-3);
+}
+
+.m-tile:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.m-tile b {
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--text-1);
+}
+
+.m-tile span {
+  overflow: hidden;
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-list {
+  overflow: hidden;
+  background: var(--panel-2);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-md);
+}
+
+.m-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  border-bottom: 1px solid var(--line-faint);
+  transition: background var(--dur-1) var(--ease);
+}
+
+.m-item:last-child {
+  border-bottom: 0;
+}
+
+.m-item:hover,
+.m-item:active {
+  background: var(--cyan-a06);
+}
+
+.m-item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-item .tag,
+.m-item .flag {
+  flex: none;
+}
+
+/* ===================================================================
+   断点 1600：超宽屏增加信息密度
+   =================================================================== */
+@media (min-width: 1600px) {
+  .dash {
+    grid-template-columns: 320px minmax(0, 1fr) 320px;
+  }
+
+  .dash-map {
+    min-height: 560px;
+  }
+
+  .portal-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .battle-cards {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .kpi-card {
+    min-height: 100px;
+  }
+}
+
+/* ===================================================================
+   断点 1360：笔记本收紧侧栏
+   =================================================================== */
+@media (max-width: 1360px) {
+  .dash {
+    grid-template-columns: 280px minmax(0, 1fr) 280px;
+  }
+
+  .dash-map {
+    min-height: 440px;
+  }
+
+  .content-grid {
+    gap: var(--sp-3);
+  }
+
+  .battle-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .portal-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .kpi-card {
+    padding: 12px var(--sp-3);
+  }
+}
+
+/* ===================================================================
+   断点 1100：KPI 与三栏内容降为两列，驾驶舱改单列
+   =================================================================== */
+@media (max-width: 1100px) {
+  .kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .content-grid--3 > * {
+    grid-column: span 6;
+  }
+
+  .content-grid > .span-3,
+  .content-grid > .span-4,
+  .content-grid > .span-5 {
+    grid-column: span 6;
+  }
+
+  .dash {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-map {
+    order: -1;
+    min-height: 420px;
+  }
+
+  .dash-col--l,
+  .dash-col--r {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dash-col--l > .panel,
+  .dash-col--r > .panel {
+    min-height: 148px;
+  }
+
+  .dash-col--l > .panel > .panel-body > .stat-list > .stat-row,
+  .dash-col--r > .panel > .panel-body > .stat-list > .stat-row {
+    flex: none;
+    align-items: baseline;
+  }
+
+  .portal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .battle-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .m-phone {
+    border-radius: var(--r-lg);
+  }
+}
+
+/* ===================================================================
+   断点 900：单列内容、页头换行、驾驶舱面板两列
+   =================================================================== */
+@media (max-width: 900px) {
+  .page-head {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .page-title {
+    font-size: 22px;
+  }
+
+  .page-actions {
+    flex-wrap: wrap;
+  }
+
+  .content-grid {
+    gap: var(--sp-3);
+  }
+
+  .content-grid--2 > *,
+  .content-grid--3 > *,
+  .content-grid > .span-3,
+  .content-grid > .span-4,
+  .content-grid > .span-5,
+  .content-grid > .span-6,
+  .content-grid > .span-7,
+  .content-grid > .span-8,
+  .content-grid > .span-9 {
+    grid-column: span 12;
+  }
+
+  .toolbar {
+    padding: var(--sp-2) var(--sp-3);
+  }
+
+  .toolbar-search {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .toolbar-actions {
+    margin-left: 0;
+  }
+
+  .dash-col--l,
+  .dash-col--r {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-list {
+    position: static;
+    height: auto;
+    margin-top: var(--sp-3);
+  }
+
+  .dash-list-float {
+    height: min(52vh, 360px);
+  }
+
+  .dash-list .panel-body {
+    max-height: 160px;
+  }
+
+  .portal {
+    gap: var(--sp-5);
+  }
+
+  .battle-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .m-phone {
+    width: 100%;
+    max-width: 460px;
+    border-radius: var(--r-md);
+  }
+}
+
+/* ===================================================================
+   断点 620：手机单列
+   =================================================================== */
+@media (max-width: 620px) {
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--sp-2);
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .page-desc {
+    margin-top: 4px;
+    font-size: var(--fs-12);
+  }
+
+  .page-actions .btn {
+    flex: 1;
+  }
+
+  .kpi-row {
+    gap: var(--sp-2);
+  }
+
+  .kpi-card {
+    min-height: 82px;
+    padding: 10px 12px;
+  }
+
+  .kpi-value {
+    font-size: 22px;
+  }
+
+  .content {
+    gap: var(--sp-3);
+  }
+
+  .content-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .content-grid > *,
+  .content-grid--2 > *,
+  .content-grid--3 > *,
+  .content-grid > .span-3,
+  .content-grid > .span-4,
+  .content-grid > .span-5,
+  .content-grid > .span-6,
+  .content-grid > .span-7,
+  .content-grid > .span-8,
+  .content-grid > .span-9,
+  .content-grid > .span-12 {
+    grid-column: 1 / -1;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar-filters {
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+    overflow-x: auto;
+  }
+
+  .toolbar-actions {
+    flex-wrap: wrap;
+  }
+
+  .toolbar-actions .btn,
+  .toolbar-actions .select {
+    flex: 1;
+  }
+
+  .dash-map {
+    min-height: 320px;
+  }
+
+  .portal-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .battle-head {
+    align-items: flex-start;
+    padding: var(--sp-3);
+  }
+
+  .battle-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .battle-card {
+    padding: 10px var(--sp-3);
+  }
+
+  .battle-card b,
+  .battle-card strong {
+    font-size: var(--fs-20);
+  }
+
+  .m-phone {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .m-grid {
+    gap: var(--sp-2);
+  }
+}

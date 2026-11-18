@@ -153,7 +153,7 @@ export default function Battle() {
     setKwInput('');
     setKw('');
   };
-  const close = () => nav('/portal');
+  const close = () => nav('/dashboard');
 
   const exportCsv = () => {
     const rows = [['任务类型', '序号', '重点工作内容', '预期成果', '完成时限', '责任部门', '支撑部门', '第一季度', '第二季度', '第三季度', '第四季度', '整体状态']];

@@ -152,8 +152,8 @@ export default function ModuleHome() {
               <div className="empty-icon"><Ic icon={InboxIcon} size={26} /></div>
               <p className="empty-text">未找到业务域「{module}」</p>
               <div className="empty-action">
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => nav('/portal')}>
-                  返回平台分布
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => nav('/dashboard')}>
+                  返回数字驾驶舱
                 </button>
               </div>
             </div>
@@ -175,14 +175,14 @@ export default function ModuleHome() {
         display: 'flex',
         flexDirection: 'column',
         gap: 'var(--sp-4)',
-        /* 148 = header 64 + nav 44 + .app-page padding 20×2，与 Portal 一致，铺满一屏 */
-        minHeight: 'calc(100vh - 148px)'
+        /* 100 = header 60 + .app-page padding 20×2，铺满一屏（原来按 64+44 顶栏算的 148 已过时） */
+        minHeight: 'calc(100vh - 100px)'
       }}
     >
       <header className="page-head" style={{ marginBottom: 0 }}>
         <div>
           <nav className="breadcrumb" aria-label="位置">
-            <Link to="/portal">平台分布</Link>
+            <Link to="/dashboard">数字驾驶舱</Link>
             <span className="sep">/</span>
             <span>{mod.name}</span>
           </nav>
