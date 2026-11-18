@@ -44,50 +44,64 @@ const SCENE_META = {
   geology: { title: '地勘项目', module: 'geology', theme: 'hazard' }
 };
 
-/* 面板「详情」落点：按 场景 + 面板 key 精确指向对应业务功能页，
- * 不再所有场景千篇一律跳到矿产地智能管理（原 bug）。 */
+/* 面板「详情」落点：统一指向「业务中枢」里的对应视图（/hub/模块/功能点）。
+ * 面板与功能点的对应关系按业务含义确定，见 docs/16-统一详情纳管与统计重做.md。 */
 const DETAIL_ROUTE = {
   dashboard: {
-    reserve: '/biz/deposit/reserve-review',
-    plan: '/biz/plan/plan-overview',
-    rights: '/biz/rights/rights-stats',
-    geo: '/biz/geology/geology-explore',
-    green: '/biz/green/green-dynamic',
-    supervise: '/biz/supervise/supervise-monitor'
+    reserve: '/hub/deposit/reserve-review',
+    plan: '/hub/plan/plan-overview',
+    rights: '/hub/rights/rights-stats',
+    geo: '/hub/geology/geology-explore',
+    green: '/hub/green/green-dynamic',
+    supervise: '/hub/supervise/supervise-monitor'
   },
   deposit: {
-    stage: '/biz/deposit/deposit-overview',
-    mineral: '/biz/deposit/deposit-overview',
-    degree: '/biz/deposit/deposit-survey',
-    reserve: '/biz/deposit/reserve-review'
+    stage: '/hub/deposit/deposit-overview',
+    mineral: '/hub/deposit/deposit-overview',
+    scale: '/hub/deposit/deposit-overview',
+    degree: '/hub/deposit/deposit-survey',
+    reserve: '/hub/deposit/reserve-review',
+    top: '/hub/deposit/deposit-overview'
   },
   plan: {
-    zones: '/biz/plan/plan-overview',
-    zoneArea: '/biz/plan/plan-stats',
-    warn: '/biz/plan/plan-indicator'
+    zones: '/hub/plan/plan-overview',
+    zoneArea: '/hub/plan/plan-stats',
+    level: '/hub/plan/plan-overview',
+    rate: '/hub/plan/plan-indicator',
+    zoneTop: '/hub/plan/plan-overview',
+    warn: '/hub/plan/plan-indicator'
   },
   rights: {
-    type: '/biz/rights/rights-stats',
-    status: '/biz/rights/rights-map',
-    method: '/biz/rights/rights-trade',
-    amount: '/biz/rights/rights-stats'
+    type: '/hub/rights/rights-stats',
+    status: '/hub/rights/rights-map',
+    scale: '/hub/rights/rights-stats',
+    method: '/hub/rights/rights-trade',
+    mineral: '/hub/rights/rights-stats',
+    amount: '/hub/rights/rights-stats'
   },
   green: {
-    level: '/biz/green/green-dynamic',
-    digital: '/biz/green/green-dynamic',
-    stage: '/biz/green/green-apply',
-    score: '/biz/green/green-apply'
+    level: '/hub/green/green-dynamic',
+    digital: '/hub/green/green-dynamic',
+    dims: '/hub/green/green-apply',
+    stage: '/hub/green/green-apply',
+    out: '/hub/green/green-out',
+    score: '/hub/green/green-apply'
   },
   supervise: {
-    alert: '/biz/supervise/supervise-order',
-    device: '/biz/supervise/supervise-monitor',
-    order: '/biz/supervise/supervise-order',
-    overdue: '/biz/supervise/supervise-order'
+    alert: '/hub/supervise/supervise-order',
+    device: '/hub/supervise/supervise-monitor',
+    deviceType: '/hub/supervise/supervise-monitor',
+    order: '/hub/supervise/supervise-order',
+    overdue: '/hub/supervise/supervise-order',
+    alertLevel: '/hub/supervise/supervise-order'
   },
   geology: {
-    project: '/biz/geology/geology-explore',
-    res: '/biz/geology/geology-explore',
-    hazard: '/biz/geology/geology-env'
+    cat: '/hub/geology/geology-explore',
+    status: '/hub/geology/geology-explore',
+    reserve: '/hub/geology/geology-explore',
+    hazard: '/hub/geology/geology-env',
+    level: '/hub/geology/geology-env',
+    agri: '/hub/geology/geology-agri'
   }
 };
 

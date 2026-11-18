@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Drawer from '../components/Drawer.jsx';
 import { Ic } from '../components/Icon';
 import { useApp, useFetch } from '../store.jsx';
-import { biz } from '../api';
+import { biz, hub as hubApi } from '../api';
 import SpecialPanel from './SpecialPanel.jsx';
 import {
   Add01Icon, Cancel01Icon, ChartHistogramIcon, Download01Icon, InboxIcon, QrCodeIcon,
@@ -30,6 +30,10 @@ const FILTER_PARAM = {
 };
 
 const PAGE_SIZE = 20;
+
+/* 环节责任角色的中文口径（features.js 里 role 存的是 county/city/province/enterprise） */
+const ROLE_LABEL = { county: '县级', city: '市级', province: '省级', enterprise: '企业' };
+const roleText = (r) => ROLE_LABEL[r] || r || '';
 
 /** 窄屏判定：<620px 时筛选区改为两列换行，避免落进横向滚动区。 */
 function useNarrow(px) {
@@ -93,10 +97,10 @@ const FORM_GRID = {
 };
 const FORM_FULL = { gridColumn: '1 / -1' };
 
-export default function FeaturePage() {
+export default function FeaturePage({ hub: isHub = false }) {
   const { module, feature } = useParams();
   const nav = useNavigate();
-  const { bootMeta, toast } = useApp();
+  const { bootMeta, toast, user } = useApp();
   const narrow = useNarrow(620);
   const [filters, setFilters] = useState({});
   const [kw, setKw] = useState('');
@@ -106,6 +110,16 @@ export default function FeaturePage() {
   const [form, setForm] = useState({});
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
+
+  /* 统一纳管视图下，需要每个环节的记录数（来自 /api/hub/overview 的真实聚合） */
+  const hubQ = useFetch(
+    () => (isHub ? hubApi.overview({ code: user?.region_code }) : Promise.resolve(null)),
+    [isHub, user?.region_code]
+  );
+  const flowInfo = useMemo(() => {
+    const mm = (hubQ.data?.modules || []).find((x) => x.key === module);
+    return (mm?.features || []).find((f) => f.key === feature) || null;
+  }, [hubQ.data, module, feature]);
 
   const mod = useMemo(() => (bootMeta?.modules || []).find((m) => m.key === module), [bootMeta, module]);
   const spec = useMemo(() => mod?.features.find((f) => f.key === feature), [mod, feature]);
@@ -449,11 +463,25 @@ export default function FeaturePage() {
       <header className="page-head">
         <div>
           <nav className="breadcrumb" aria-label="面包屑">
+            {isHub ? (
+              <>
+                <a
+                  href="/hub"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    nav('/hub');
+                  }}
+                >
+                  业务中枢
+                </a>
+                <span className="sep">/</span>
+              </>
+            ) : null}
             <a
-              href={`/biz/${module}`}
+              href={isHub ? `/hub?module=${module}` : `/biz/${module}`}
               onClick={(e) => {
                 e.preventDefault();
-                nav(`/biz/${module}`);
+                nav(isHub ? '/hub' : `/biz/${module}`);
               }}
             >
               {mod?.name || module}
@@ -480,6 +508,43 @@ export default function FeaturePage() {
           </button>
         </div>
       </header>
+
+      {isHub && spec.workflow ? (
+        <section className="card flow-strip" aria-label="业务流程环节">
+          <header className="flow-strip-head">
+            <b>业务流程</b>
+            <span className="muted small">
+              {mod?.name} › {spec.name} · 共 {spec.workflow.steps.length} 个环节
+            </span>
+          </header>
+          <ol className="flow-line">
+            {spec.workflow.steps.map((s, i) => {
+              const info = flowInfo?.steps?.find((x) => x.key === s.key);
+              const counts = (flowInfo?.steps || []).map((x) => x.count);
+              const max = counts.length ? Math.max(...counts) : 0;
+              const on = (info?.count || 0) > 0 && info.count === max;
+              return (
+                <li key={s.key} className={`flow-node${on ? ' is-on' : ''}`}>
+                  <span className="flow-node-idx">{i + 1}</span>
+                  <span className="flow-node-name">{s.key}</span>
+                  <span className="flow-node-count">{info ? info.count : '—'}</span>
+                  {s.role ? <span className="flow-node-role">{roleText(s.role)}</span> : null}
+                </li>
+              );
+            })}
+            {flowInfo?.other ? (
+              <li className="flow-node is-other">
+                <span className="flow-node-idx">·</span>
+                <span className="flow-node-name">未落环节</span>
+                <span className="flow-node-count">{flowInfo.other}</span>
+              </li>
+            ) : null}
+          </ol>
+          <p className="muted tiny" style={{ margin: '6px 0 0' }}>
+            环节顺序取自功能设计文档的功能定义；数量为当前区划权限内该环节的记录数，最多者标为「当前集中环节」。
+          </p>
+        </section>
+      ) : null}
 
       <div className="content">
         <div className="kpi-row">
@@ -800,13 +865,13 @@ export default function FeaturePage() {
                     return (
                       <div className={`step${i < idx ? ' is-done' : ''}${i === idx ? ' is-on' : ''}`} key={s.key}>
                         <b>{s.key}</b>
-                        <small>{s.role || '—'}</small>
+                        <small>{roleText(s.role) || '—'}</small>
                       </div>
                     );
                   })}
                 </div>
                 <div className="alert-line" style={{ marginTop: 12 }}>
-                  当前环节：{curStep?.key || '—'}；承办角色：{curStep?.role || '不限'}。提交后进入下一环节，终态自动置为「已办结」。
+                  当前环节：{curStep?.key || '—'}；承办角色：{roleText(curStep?.role) || '不限'}。提交后进入下一环节，终态自动置为「已办结」。
                 </div>
                 <div className="field" style={{ marginTop: 12 }}>
                   <label className="field-label" htmlFor="wf-comment">办理意见</label>

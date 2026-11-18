@@ -195,20 +195,40 @@ function screenDeposit(code) {
   const stageRows = listBy(`SELECT stage AS name, COUNT(*) AS value FROM mineral_deposit WHERE 1=1 ${d.sql} GROUP BY stage`, d.params);
   const degreeRows = listBy(`SELECT degree AS name, COUNT(*) AS value FROM mineral_deposit WHERE 1=1 ${d.sql} GROUP BY degree`, d.params);
   const mineralRows = listBy(`SELECT mineral AS name, COUNT(*) AS value FROM mineral_deposit WHERE 1=1 ${d.sql} GROUP BY mineral ORDER BY value DESC LIMIT 12`, d.params);
+  const scaleRows = listBy(`SELECT scale AS name, COUNT(*) AS value FROM mineral_deposit WHERE 1=1 ${d.sql} GROUP BY scale ORDER BY value DESC`, d.params);
+  const topRows = listBy(`SELECT name, reserve_t FROM mineral_deposit WHERE reserve_t > 0 ${d.sql} ORDER BY reserve_t DESC LIMIT 5`, d.params);
   const total = stageRows.reduce((s, x) => s + x.value, 0);
   const reserve = round(sumBy(`SELECT SUM(reserve_t) AS s FROM mineral_deposit WHERE 1=1 ${d.sql}`, d.params));
   return {
     left: [
       { key: 'stage', title: '勘查程度', type: 'ring-split', ring: { total, unit: '个', center: String(total) }, rows: stageRows.map((x) => ({ name: x.name, value: x.value, unit: '个' })) },
-      { key: 'mineral', title: '矿种分布', type: 'bars', rows: mineralRows.slice(0, 6) }
+      { key: 'mineral', title: '矿种分布', type: 'bars', rows: mineralRows.slice(0, 6) },
+      {
+        key: 'scale',
+        title: '规模结构',
+        type: 'stat-list',
+        rows: scaleRows.map((x) => ({
+          label: x.name,
+          value: x.value,
+          unit: '处',
+          suffix: total ? `占比 ${round((x.value / total) * 100, 1)}%` : ''
+        }))
+      }
     ],
     right: [
       { key: 'degree', title: '勘查阶段', type: 'stat-list', rows: degreeRows.map((x) => ({ label: x.name, value: x.value, unit: '个' })) },
-      { key: 'reserve', title: '资源家底', type: 'stat-list', rows: [
-        { label: '矿产地总数', value: total, unit: '处' },
-        { label: '保有资源量', value: reserve, unit: '万吨', decimals: 2 },
-        { label: '富硒/优势矿产', value: mineralRows.filter((m) => ['萤石', '叶蜡石', '膨润土'].includes(m.name)).reduce((s, m) => s + m.value, 0), unit: '处' }
-      ] }
+      {
+        key: 'reserve',
+        title: '资源家底',
+        type: 'stat-list',
+        rows: [
+          { label: '矿产地总数', value: total, unit: '处' },
+          { label: '保有资源量', value: reserve, unit: '万吨', decimals: 2 },
+          { label: '单矿平均资源量', value: total ? round(reserve / total, 2) : 0, unit: '万吨', decimals: 2 },
+          { label: '富硒/优势矿产', value: mineralRows.filter((m) => ['萤石', '叶蜡石', '膨润土'].includes(m.name)).reduce((s, m) => s + m.value, 0), unit: '处' }
+        ]
+      },
+      { key: 'top', title: '资源量 Top5', type: 'bars', unit: '万吨', rows: topRows.map((x) => ({ name: x.name, value: round(x.reserve_t) })) }
     ],
     map: { bubbles: countyBubbles(code) },
     list: listBy(`SELECT id, code, name, region_name, mineral, stage, reserve_t, lon, lat FROM mineral_deposit WHERE 1=1 ${d.sql} ORDER BY reserve_t DESC LIMIT 100`, d.params)
@@ -221,17 +241,42 @@ function screenPlan(code) {
   const i = cond(code, 'plan_indicator');
   const zoneGroups = listBy(`SELECT zone_type AS name, COUNT(*) AS value, ROUND(SUM(area),2) AS area FROM plan_zone WHERE 1=1 ${z.sql} GROUP BY zone_type`, z.params);
   const indicators = listBy(`SELECT name, target, actual, unit, warn FROM plan_indicator WHERE 1=1 ${i.sql} ORDER BY warn DESC LIMIT 8`, i.params);
+  const levelRows = listBy(`SELECT level AS name, COUNT(*) AS value FROM plan_zone WHERE 1=1 ${z.sql} GROUP BY level`, z.params);
   const warnCount = indicators.filter((x) => x.warn !== '正常').length;
+  const zoneTotal = zoneGroups.reduce((s, x) => s + x.value, 0);
+  const areaTotal = round(zoneGroups.reduce((s, x) => s + Number(x.area || 0), 0));
+  const rateRows = indicators
+    .filter((x) => Number(x.target) > 0)
+    .slice(0, 6)
+    .map((x) => ({ name: x.name, value: round((Number(x.actual) / Number(x.target)) * 100, 1) }));
+  const zoneTop = listBy(
+    `SELECT region_name AS name, COUNT(*) AS value FROM plan_zone WHERE 1=1 ${z.sql} GROUP BY region_name ORDER BY value DESC LIMIT 6`,
+    z.params
+  );
   return {
     left: [
-      { key: 'zones', title: '规划分区', type: 'ring-split', ring: { total: zoneGroups.reduce((s, x) => s + x.value, 0), unit: '个' }, rows: zoneGroups.map((x) => ({ name: x.name, value: x.value, unit: '个' })) },
-      { key: 'zoneArea', title: '分区面积', type: 'bars', unit: 'km²', rows: zoneGroups.map((x) => ({ name: x.name, value: round(x.area), unit: 'km²' })) }
+      { key: 'zones', title: '规划分区', type: 'ring-split', ring: { total: zoneTotal, unit: '个' }, rows: zoneGroups.map((x) => ({ name: x.name, value: x.value, unit: '个' })) },
+      { key: 'zoneArea', title: '分区面积', type: 'bars', unit: 'km²', rows: zoneGroups.map((x) => ({ name: x.name, value: round(x.area), unit: 'km²' })) },
+      {
+        key: 'level',
+        title: '规划层级',
+        type: 'stat-list',
+        rows: levelRows.map((x) => ({
+          label: x.name,
+          value: x.value,
+          unit: '个',
+          suffix: zoneTotal ? `占比 ${round((x.value / zoneTotal) * 100, 1)}%` : ''
+        }))
+      }
     ],
     right: [
+      { key: 'rate', title: '指标达成率', type: 'bars', unit: '%', rows: rateRows },
+      { key: 'zoneTop', title: '区块 Top6 区县', type: 'bars', rows: zoneTop },
       { key: 'warn', title: '指标预警', type: 'stat-list', rows: [
         { label: '红牌指标', value: indicators.filter((x) => x.warn === '红牌').length, unit: '项' },
         { label: '黄牌指标', value: indicators.filter((x) => x.warn === '黄牌').length, unit: '项' },
-        { label: '达标指标', value: indicators.filter((x) => x.warn === '正常').length, unit: '项' }
+        { label: '达标指标', value: indicators.filter((x) => x.warn === '正常').length, unit: '项' },
+        { label: '规划区总面积', value: areaTotal, unit: 'km²', decimals: 2 }
       ] }
     ],
     map: { bubbles: countyBubbles(code) },
@@ -246,15 +291,39 @@ function screenRights(code) {
   const byType = listBy(`SELECT right_type AS name, COUNT(*) AS value FROM mining_right WHERE 1=1 ${r.sql} GROUP BY right_type`, r.params);
   const byStatus = listBy(`SELECT status AS name, COUNT(*) AS value FROM mining_right WHERE 1=1 ${r.sql} GROUP BY status`, r.params);
   const byMethod = listBy(`SELECT method AS name, COUNT(*) AS value FROM mining_right WHERE 1=1 ${r.sql} GROUP BY method ORDER BY value DESC LIMIT 6`, r.params);
+  const byScale = listBy(`SELECT scale AS name, COUNT(*) AS value FROM mining_right WHERE 1=1 ${r.sql} GROUP BY scale ORDER BY value DESC`, r.params);
+  const byMineral = listBy(`SELECT mineral AS name, COUNT(*) AS value FROM mining_right WHERE 1=1 ${r.sql} GROUP BY mineral ORDER BY value DESC LIMIT 6`, r.params);
   const amount = round(sumBy(`SELECT SUM(price) AS s FROM mining_right WHERE 1=1 ${r.sql}`, r.params));
+  const total = byType.reduce((s, x) => s + x.value, 0);
   return {
     left: [
-      { key: 'type', title: '矿业权结构', type: 'ring-split', ring: { total: byType.reduce((s, x) => s + x.value, 0), unit: '宗' }, rows: byType.map((x) => ({ name: x.name, value: x.value, unit: '宗' })) },
-      { key: 'status', title: '登记状态', type: 'stat-list', rows: byStatus.map((x) => ({ label: x.name, value: x.value, unit: '宗' })) }
+      { key: 'type', title: '矿业权结构', type: 'ring-split', ring: { total, unit: '宗' }, rows: byType.map((x) => ({ name: x.name, value: x.value, unit: '宗' })) },
+      { key: 'status', title: '登记状态', type: 'stat-list', rows: byStatus.map((x) => ({ label: x.name, value: x.value, unit: '宗' })) },
+      {
+        key: 'scale',
+        title: '规模结构',
+        type: 'stat-list',
+        rows: byScale.map((x) => ({
+          label: x.name,
+          value: x.value,
+          unit: '宗',
+          suffix: total ? `占比 ${round((x.value / total) * 100, 1)}%` : ''
+        }))
+      }
     ],
     right: [
       { key: 'method', title: '出让方式', type: 'bars', rows: byMethod },
-      { key: 'amount', title: '出让收益', type: 'stat-list', rows: [{ label: '累计价款', value: amount, unit: '万元', decimals: 2 }] }
+      { key: 'mineral', title: '矿种 Top6', type: 'bars', rows: byMineral },
+      {
+        key: 'amount',
+        title: '出让收益',
+        type: 'stat-list',
+        rows: [
+          { label: '累计价款', value: amount, unit: '万元', decimals: 2 },
+          { label: '单宗平均价款', value: total ? round(amount / total, 2) : 0, unit: '万元', decimals: 2 },
+          { label: '有效矿业权', value: total, unit: '宗' }
+        ]
+      }
     ],
     map: { bubbles: countyBubbles(code) },
     list: listBy(`SELECT id, license_no, right_type, mine_name, holder, mineral, area, region_name, valid_from, valid_to, status, lon, lat FROM mining_right WHERE 1=1 ${r.sql} ORDER BY id DESC LIMIT 100`, r.params)
@@ -269,21 +338,53 @@ function screenGreen(code) {
   const byStage = listBy(`SELECT stage AS name, COUNT(*) AS value FROM green_apply WHERE 1=1 ${g.sql} GROUP BY stage`, g.params);
   const total = byLevel.reduce((s, x) => s + x.value, 0);
   const score = round(get(`SELECT AVG(total_score) AS s FROM green_apply WHERE stage='已入库' ${g.sql}`, g.params)?.s || 0, 1);
+  const dims = get(
+    `SELECT AVG(score_env) AS env, AVG(score_develop) AS develop, AVG(score_utilize) AS utilize,
+            AVG(score_energy) AS energy, AVG(score_tech) AS tech, AVG(score_manage) AS manage
+     FROM green_apply WHERE 1=1 ${g.sql}`,
+    g.params
+  ) || {};
+  const dimRows = [
+    { name: '矿区环境', value: round(dims.env, 1) },
+    { name: '开发方式', value: round(dims.develop, 1) },
+    { name: '综合利用', value: round(dims.utilize, 1) },
+    { name: '节能减排', value: round(dims.energy, 1) },
+    { name: '智能矿山', value: round(dims.tech, 1) },
+    { name: '企业管理', value: round(dims.manage, 1) }
+  ];
+  const digital = countBy(`SELECT COUNT(*) AS c FROM mine WHERE digital_level != '—' ${c.sql}`, c.params);
+  const smart = countBy(`SELECT COUNT(*) AS c FROM mine WHERE smart_level != '—' ${c.sql}`, c.params);
+  const o = cond(code, 'green_out');
+  const byOut = listBy(`SELECT out_type AS name, COUNT(*) AS value FROM green_out WHERE 1=1 ${o.sql} GROUP BY out_type`, o.params);
+  const outTotal = byOut.reduce((s, x) => s + x.value, 0);
   return {
     left: [
       { key: 'level', title: '绿色矿山分级', type: 'ring-split', ring: { total, unit: '家', center: String(total) }, rows: byLevel.map((x) => ({ name: x.name, value: x.value, unit: '家' })) },
       { key: 'digital', title: '名录结构', type: 'stat-list', rows: [
         { label: '绿色矿山', value: total, unit: '家' },
-        { label: '数字矿山', value: countBy(`SELECT COUNT(*) AS c FROM mine WHERE digital_level != '—' ${c.sql}`, c.params), unit: '家' },
-        { label: '智能矿山', value: countBy(`SELECT COUNT(*) AS c FROM mine WHERE smart_level != '—' ${c.sql}`, c.params), unit: '家' }
-      ] }
+        { label: '数字矿山', value: digital, unit: '家', suffix: total ? `占比 ${round((digital / total) * 100, 1)}%` : '' },
+        { label: '智能矿山', value: smart, unit: '家', suffix: total ? `占比 ${round((smart / total) * 100, 1)}%` : '' }
+      ] },
+      { key: 'dims', title: '六维平均得分', type: 'bars', unit: '分', rows: dimRows }
     ],
     right: [
       { key: 'stage', title: '申报进度', type: 'bars', rows: byStage },
-      { key: 'score', title: '评价得分', type: 'stat-list', rows: [
+      {
+        key: 'out',
+        title: '出库情况',
+        type: 'stat-list',
+        rows: byOut.map((x) => ({
+          label: x.name,
+          value: x.value,
+          unit: '家',
+          suffix: outTotal ? `占比 ${round((x.value / outTotal) * 100, 1)}%` : ''
+        }))
+      },
+      { key: 'score', title: '评价结果', type: 'stat-list', rows: [
         { label: '已入库平均得分', value: score, unit: '分' },
-        { label: '数字矿山', value: countBy(`SELECT COUNT(*) AS c FROM mine WHERE digital_level != '—' ${c.sql}`, c.params), unit: '家' },
-        { label: '智能矿山', value: countBy(`SELECT COUNT(*) AS c FROM mine WHERE smart_level != '—' ${c.sql}`, c.params), unit: '家' }
+        { label: '申报总数', value: byStage.reduce((s, x) => s + x.value, 0), unit: '件' },
+        { label: '已入库数', value: byStage.find((x) => x.name === '已入库')?.value || 0, unit: '件' },
+        { label: '入库率', value: byStage.reduce((s, x) => s + x.value, 0) ? round(((byStage.find((x) => x.name === '已入库')?.value || 0) / byStage.reduce((s, x) => s + x.value, 0)) * 100, 1) : 0, unit: '%' }
       ] }
     ],
     map: { bubbles: countyBubbles(code) },
@@ -304,21 +405,35 @@ function screenSupervise(code) {
   const online = countBy(`SELECT COUNT(*) AS c FROM device WHERE online=1 ${dv.sql}`, dv.params);
   const total = countBy(`SELECT COUNT(*) AS c FROM device WHERE 1=1 ${dv.sql}`, dv.params);
   const overdue = countBy(`SELECT COUNT(*) AS c FROM work_order WHERE overdue=1 AND status != '复核销号' ${w.sql}`, w.params);
+  const byDevice = listBy(`SELECT category AS name, COUNT(*) AS value FROM device WHERE 1=1 ${dv.sql} GROUP BY category ORDER BY value DESC LIMIT 6`, dv.params);
+  const byLevelAlert = listBy(`SELECT level AS name, COUNT(*) AS value FROM alert WHERE 1=1 ${a.sql} GROUP BY level`, a.params);
+  const orderTotal = byStatus.reduce((s, x) => s + x.value, 0);
+  const closed = countBy(`SELECT COUNT(*) AS c FROM work_order WHERE status = '复核销号' ${w.sql}`, w.params);
   return {
     left: [
       { key: 'alert', title: '预警类型', type: 'ring-split', ring: { total: byKind.reduce((s, x) => s + x.value, 0), unit: '条' }, rows: byKind.slice(0, 4).map((x) => ({ name: x.name, value: x.value, unit: '条' })) },
       { key: 'device', title: '感知设备', type: 'stat-list', rows: [
         { label: '设备总数', value: total, unit: '台套' },
         { label: '在线设备', value: online, unit: '台套' },
-        { label: '在线率', value: total ? round((online / total) * 100, 1) : 0, unit: '%' }
-      ] }
+        { label: '在线率', value: total ? round((online / total) * 100, 1) : 0, unit: '%' },
+        { label: '设备分类', value: byDevice.length, unit: '类' }
+      ] },
+      { key: 'deviceType', title: '设备类型 Top6', type: 'bars', rows: byDevice }
     ],
     right: [
       { key: 'order', title: '问题处置', type: 'bars', rows: byStatus },
-      { key: 'overdue', title: '督办亮灯', type: 'stat-list', rows: [
-        { label: '超时未处置', value: overdue, unit: '件' },
-        { label: '待核实', value: byStatus.find((x) => x.name === '现场核实')?.value || 0, unit: '件' }
-      ] }
+      {
+        key: 'overdue',
+        title: '督办与处置',
+        type: 'stat-list',
+        rows: [
+          { label: '超时未处置', value: overdue, unit: '件' },
+          { label: '待核实', value: byStatus.find((x) => x.name === '现场核实')?.value || 0, unit: '件' },
+          { label: '已销号', value: closed, unit: '件' },
+          { label: '销号率', value: orderTotal ? round((closed / orderTotal) * 100, 1) : 0, unit: '%' }
+        ]
+      },
+      { key: 'alertLevel', title: '预警等级', type: 'bars', rows: byLevelAlert }
     ],
     map: { bubbles: countyBubbles(code) },
     list: listBy(`SELECT id, alert_no, kind, level, mine_name, region_name, content, status, occurred_at FROM alert WHERE 1=1 ${a.sql} ORDER BY id DESC LIMIT 100`, a.params)
@@ -334,17 +449,38 @@ function screenGeology(code) {
   const byHazard = listBy(`SELECT type AS name, COUNT(*) AS value FROM hazard_point WHERE 1=1 ${hz.sql} GROUP BY type`, hz.params);
   const reserveAdd = round(sumBy(`SELECT SUM(reserve_add) AS s FROM geo_project WHERE 1=1 ${gp.sql}`, gp.params));
   const threat = countBy(`SELECT COUNT(*) AS c FROM hazard_point WHERE level IN ('一级','二级') ${hz.sql}`, hz.params);
+  const byStatus = listBy(`SELECT status AS name, COUNT(*) AS value FROM geo_project WHERE 1=1 ${gp.sql} GROUP BY status`, gp.params);
+  const byHzLevel = listBy(`SELECT level AS name, COUNT(*) AS value FROM hazard_point WHERE 1=1 ${hz.sql} GROUP BY level`, hz.params);
+  const agriArea = round(sumBy(`SELECT SUM(area) AS s FROM agri_plot WHERE 1=1 ${ag.sql}`, ag.params));
+  const projectTotal = byCat.reduce((s, x) => s + x.value, 0);
   return {
     left: [
-      { key: 'cat', title: '地勘项目', type: 'ring-split', ring: { total: byCat.reduce((s, x) => s + x.value, 0), unit: '个' }, rows: byCat.map((x) => ({ name: x.name, value: x.value, unit: '个' })) },
-      { key: 'reserve', title: '找矿成果', type: 'stat-list', rows: [{ label: '新增资源量', value: reserveAdd, unit: '万吨', decimals: 2 }] }
+      { key: 'cat', title: '地勘项目', type: 'ring-split', ring: { total: projectTotal, unit: '个' }, rows: byCat.map((x) => ({ name: x.name, value: x.value, unit: '个' })) },
+      {
+        key: 'reserve',
+        title: '找矿成果',
+        type: 'stat-list',
+        rows: [
+          { label: '新增资源量', value: reserveAdd, unit: '万吨', decimals: 2 },
+          { label: '项目总数', value: projectTotal, unit: '个' },
+          { label: '单项目均增', value: projectTotal ? round(reserveAdd / projectTotal, 2) : 0, unit: '万吨', decimals: 2 }
+        ]
+      },
+      { key: 'status', title: '项目状态', type: 'bars', rows: byStatus }
     ],
     right: [
       { key: 'hazard', title: '地灾隐患点', type: 'bars', rows: byHazard },
-      { key: 'agri', title: '农业地质', type: 'stat-list', rows: [
-        { label: '富硒地块', value: countBy(`SELECT COUNT(*) AS c FROM agri_plot WHERE level='富硒' ${ag.sql}`, ag.params), unit: '宗' },
-        { label: '重点隐患', value: threat, unit: '处' }
-      ] }
+      { key: 'level', title: '隐患等级', type: 'bars', rows: byHzLevel },
+      {
+        key: 'agri',
+        title: '农业地质',
+        type: 'stat-list',
+        rows: [
+          { label: '富硒地块', value: countBy(`SELECT COUNT(*) AS c FROM agri_plot WHERE level='富硒' ${ag.sql}`, ag.params), unit: '宗' },
+          { label: '调查面积', value: agriArea, unit: 'km²', decimals: 2 },
+          { label: '重点隐患', value: threat, unit: '处' }
+        ]
+      }
     ],
     map: { bubbles: countyBubbles(code) },
     list: listBy(`SELECT id, code, name, category, region_name, unit, progress, reserve_add, status FROM geo_project WHERE 1=1 ${gp.sql} ORDER BY id DESC LIMIT 100`, gp.params)

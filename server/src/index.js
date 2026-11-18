@@ -10,6 +10,7 @@ import publicRoutes from './routes/public.js';
 import featureRoutes from './routes/feature.js';
 import dashboardRoutes from './routes/dashboard.js';
 import toolRoutes from './routes/tools.js';
+import hubRoutes from './routes/hub.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -45,6 +46,7 @@ app.use('/api', publicRoutes);
 app.use('/api/biz', featureRoutes);
 app.use('/api/screen', dashboardRoutes);
 app.use('/api/tools', toolRoutes);
+app.use('/api/hub', hubRoutes);
 
 /* 生产模式：托管前端构建产物 */
 const DIST = path.resolve(ROOT, '../web/dist');

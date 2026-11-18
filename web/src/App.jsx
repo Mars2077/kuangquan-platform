@@ -5,6 +5,7 @@ import Login from './pages/Login.jsx';
 import { useApp } from './store.jsx';
 
 const Cockpit = lazy(() => import('./pages/Cockpit.jsx'));
+const Hub = lazy(() => import('./pages/Hub.jsx'));
 const ModuleHome = lazy(() => import('./pages/ModuleHome.jsx'));
 const FeaturePage = lazy(() => import('./pages/FeaturePage.jsx'));
 const Battle = lazy(() => import('./pages/Battle.jsx'));
@@ -38,6 +39,8 @@ export default function App() {
           <Route path="/dashboard" element={<Cockpit sceneKey="dashboard" />} />
           <Route path="/scene/:scene" element={<Cockpit />} />
           <Route path="/battle" element={<Battle />} />
+          <Route path="/hub" element={<Hub />} />
+          <Route path="/hub/:module/:feature" element={<FeaturePage hub />} />
           <Route path="/biz/:module" element={<ModuleHome />} />
           <Route path="/biz/:module/:feature" element={<FeaturePage />} />
           <Route path="/archive/:id" element={<Archive />} />

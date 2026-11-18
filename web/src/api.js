@@ -96,6 +96,11 @@ export const screen = {
   battle: (params) => api.get('/screen/task/battle', params)
 };
 
+/* 业务中枢：统一详情纳管的聚合数据 */
+export const hub = {
+  overview: (params) => api.get('/hub/overview', params)
+};
+
 export const biz = {
   list: (module, feature, params) => api.get(`/biz/${module}/${feature}`, params),
   detail: (module, feature, id) => api.get(`/biz/${module}/${feature}/${id}`),

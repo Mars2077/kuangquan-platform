@@ -28,6 +28,7 @@ export function StatRows({ rows }) {
           <span className="k">{r.label}</span>
           <span className={`v${r.tone === 'warm' ? ' warm' : ''}`}>{r.display ?? r.value}</span>
           {r.unit && <span className="u">{r.unit}</span>}
+          {r.suffix && <span className="sfx">{r.suffix}</span>}
           {r.delta !== undefined && r.delta !== null && (
             <span className={`d ${r.delta >= 0 ? 'up' : 'down'}`}>
               {r.delta >= 0 ? '▲' : '▼'} {Math.abs(r.delta).toFixed(1)}%

@@ -557,6 +557,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* 辅助说明（占比等），不随涨跌变色 */
+.stat-row .sfx {
+  font-size: var(--fs-11);
+  color: var(--text-4);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 .stat-row .d.down,
 .stat-row .d.is-down {
   color: var(--red);
@@ -1785,5 +1794,262 @@
 
   .page-title {
     font-size: 18px;
+  }
+}
+
+/* ============================================================
+   § v6 业务中枢（统一详情纳管）与业务流程条
+   ============================================================ */
+.hub-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 372px;
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+.hub-list {
+  padding: 0;
+  overflow: hidden;
+}
+
+.hub-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.hub-search {
+  width: 236px;
+}
+
+.hub-flow {
+  padding: 14px;
+  position: sticky;
+  top: calc(var(--topbar-h) + 12px);
+}
+
+.hub-flow-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.hub-flow-head h2 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.flow-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flow-step {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+}
+
+.flow-step.is-on {
+  background: rgba(46, 168, 255, 0.1);
+  border-color: rgba(46, 168, 255, 0.32);
+}
+
+.flow-idx {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.flow-step.is-on .flow-idx {
+  background: var(--cyan);
+  color: #04101f;
+}
+
+.flow-name {
+  font-size: 13px;
+}
+
+.flow-count {
+  font-size: 13px;
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.hub-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.hub-facts dt {
+  font-size: 11px;
+  color: var(--text-4);
+}
+
+.hub-facts dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hub-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--text-4);
+}
+
+.hub-legend span {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.data-table tbody tr.is-on {
+  background: rgba(46, 168, 255, 0.1);
+}
+
+/* —— 详情视图顶部的业务流程条 —— */
+.flow-strip {
+  padding: 12px 14px;
+  margin-bottom: var(--sp-4);
+}
+
+.flow-strip-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.flow-line {
+  list-style: none;
+  display: flex;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  align-items: stretch;
+}
+
+.flow-node {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 118px;
+  padding: 8px 12px 8px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  border-right: 0;
+}
+
+.flow-node:last-child {
+  border-right: 1px solid var(--line);
+  border-radius: 0 6px 6px 0;
+}
+
+.flow-node:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.flow-node.is-on {
+  background: rgba(46, 168, 255, 0.12);
+  border-color: rgba(46, 168, 255, 0.4);
+}
+
+.flow-node-idx {
+  font-size: 10px;
+  color: var(--text-4);
+}
+
+.flow-node-name {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.flow-node-count {
+  font-size: 15px;
+  color: var(--cyan);
+  font-variant-numeric: tabular-nums;
+}
+
+.flow-node-role {
+  font-size: 10px;
+  color: var(--text-4);
+}
+
+.flow-node.is-other {
+  opacity: 0.72;
+}
+
+@media (max-width: 1100px) {
+  .hub-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hub-flow {
+    position: static;
+  }
+}
+
+/* 业务中枢：左卡内部滚动，页面不再被 40 行表格拉长 */
+.hub-list {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 302px);
+  min-height: 420px;
+}
+
+.hub-list .hub-bar {
+  flex: 0 0 auto;
+}
+
+.hub-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.hub-table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+@media (max-width: 1100px) {
+  .hub-list {
+    height: auto;
+    max-height: none;
+  }
+
+  .hub-table-wrap {
+    max-height: 60vh;
   }
 }

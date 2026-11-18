@@ -168,6 +168,7 @@ export default function Shell() {
             </NavLink>
           ))}
           <span className="hd-nav-sep" aria-hidden="true" />
+          <NavLink to="/hub" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>业务中枢</NavLink>
           <NavLink to="/warehouse" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>数据仓</NavLink>
           <NavLink to="/mobile" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>移动端</NavLink>
           <NavLink to="/system" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>系统</NavLink>

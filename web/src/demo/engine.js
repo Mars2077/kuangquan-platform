@@ -812,6 +812,71 @@ function answerErr(msg, status = 400) {
   });
 }
 
+/* ---------------- 业务中枢（统一详情纳管） ---------------- */
+function hubScope(user) {
+  const role = user?.role || 'admin';
+  const rc = String(user?.region_code || '510000');
+  return (row) => {
+    if (role === 'admin' || role === 'province') return true;
+    const code = String(row.region_code || '');
+    if (!code) return false;
+    if (role === 'city') return code.slice(0, 4) === rc.slice(0, 4);
+    return code === rc;
+  };
+}
+
+function hubRows(feature, user) {
+  let list = rowsOf(feature.table);
+  if (feature.table === 'biz_record') list = list.filter((r) => r.feature === feature.key);
+  const scope = hubScope(user);
+  return list.filter(scope);
+}
+
+function stageOf(row) {
+  if (!row) return '';
+  if (row.stage !== undefined && row.stage !== null && row.stage !== '') return row.stage;
+  return row.status || '';
+}
+
+function hubHandler(req) {
+  const user = userOf(req) || {};
+  const modules = MODULES.map((m) => ({
+    key: m.key,
+    name: m.name,
+    route: m.route,
+    intro: m.intro,
+    features: (m.features || []).map((f) => {
+      const list = hubRows(f, user);
+      const steps = (f.workflow?.steps || []).map((s) => ({
+        key: s.key,
+        role: s.role || '',
+        count: list.filter((r) => stageOf(r) === s.key).length
+      }));
+      const keys = new Set(steps.map((s) => s.key));
+      const other = steps.length ? list.filter((r) => !keys.has(stageOf(r))).length : 0;
+      return {
+        key: f.key,
+        name: f.name,
+        table: f.table,
+        desc: f.desc || '',
+        special: f.special || '',
+        readonly: !!f.readonly,
+        count: list.length,
+        steps,
+        other
+      };
+    })
+  }));
+  const tables = new Set(MODULES.flatMap((m) => (m.features || []).map((f) => f.table)));
+  const totals = {
+    features: modules.reduce((s, m) => s + m.features.length, 0),
+    workflowFeatures: modules.reduce((s, m) => s + m.features.filter((f) => f.steps.length).length, 0),
+    tables: tables.size,
+    records: modules.reduce((s, m) => s + m.features.reduce((a, f) => a + f.count, 0), 0)
+  };
+  return { code: user.region_code || '510000', modules, totals };
+}
+
 async function route(req, url) {
   const p = url.pathname.replace(/^\/api/, '');
   const q = url.searchParams;
@@ -861,6 +926,9 @@ async function route(req, url) {
   }
   if (p === '/meta/regions') return answer({ list: rowsOf('region') });
   if ((m = p.match(/^\/meta\/dict\/(.+)$/))) return answer({ list: [] });
+
+  /* 业务中枢 */
+  if (p === '/hub/overview') return answer(hubHandler(req));
 
   /* 驾驶舱与图层 */
   if ((m = p.match(/^\/screen\/map\/([^/]+)$/))) return answer(layersHandler(m[1], q));
