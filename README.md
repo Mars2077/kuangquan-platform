@@ -9,8 +9,9 @@
 > **v4 视觉对齐**：整体风格回到「严格参照 `系统样式` 截图」——96px 梯形横幅顶栏 + 38px 主标题、40px 导航、面板 4px 圆角 + 40px 斜切标题条、深蓝渐变表头、驾驶舱地图 chrome（专题牌/左上控件/右下分段/右上双按钮）、门户切角卡、作战图梯形统计卡与四色旗帜；逐项对照与偏差见 [docs/14-视觉对齐说明-v4.md](docs/14-视觉对齐说明-v4.md)。
 > **v5 unslop 改造**：底部列表改为「收起窄条 + 点击悬浮浮层」、饼图圆心文字真正居中、面板「详情」按业务含义逐面板跳转、删除地图冗余专题按钮、掩膜变浅并按缩放分级展示（≤7 级只看聚合数量、≥8 级铺点）、移除平台分布页并把顶栏压成单行 60px 扁平导航；说明与实测见 [docs/15-界面改造-v5.md](docs/15-界面改造-v5.md)。
 > **v6 业务中枢**：新增统一详情纳管模块「业务中枢」（`/hub`，40 个功能点一张表、模块 Tab + 搜索），所有面板「详情」改指向 `/hub/:module/:feature`；15 个流程型功能点在总览与详情页显示环节条（顺序 / 各环节记录数 / 当前集中环节）；6 个业务域侧栏统计全部重做为 3+3 面板（结构占比、TopN、达成率等真实口径）。对照表、侧栏口径与验收见 [docs/16-统一详情纳管与统计重做.md](docs/16-统一详情纳管与统计重做.md)。
+> **v7 驾驶舱 Tab 化 + 业务流程图**：矿产地 / 保护与规划 / 矿业权 / 绿色矿山 / 智慧监管 / 数智地勘 六个专题收进数字驾驶舱，用 40px 高的 Tab 条切换（页内切数据、不跳路由、地图不重建），顶部导航收敛为「数字驾驶舱 / 重点任务 | 业务中枢 / 数据仓 / 移动端 / 系统」；业务中枢按 6 个业务域各画一条流程泳道（节点=功能点，带记录数与环节数，点击直接进详情）。说明见 [docs/17-驾驶舱Tab与业务流程图.md](docs/17-驾驶舱Tab与业务流程图.md)。
 >
-> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-tjuhv788ln.preview.iga-pages.com?iga_token=4f406ee8ba6367d152c6cd913eb687e0&iga_time=1795158507>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
+> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-16v8tyci3f.preview.iga-pages.com?iga_token=ff875fe87e442e58a327e25095010ba1&iga_time=1795159857>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
 
 ![数字驾驶舱](docs/shots/v5-dashboard.png)
 
@@ -97,7 +98,7 @@ npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
 ```
 
 - 上线：`cd web && iga pages deploy --name kuangquan-platform`（需先 `iga login`，配置见 `web/iga.json`）
-- 线上：<https://kuangquan-platfo-541ysnljv4-tjuhv788ln.preview.iga-pages.com?iga_token=4f406ee8ba6367d152c6cd913eb687e0&iga_time=1795158507>
+- 线上：<https://kuangquan-platfo-541ysnljv4-16v8tyci3f.preview.iga-pages.com?iga_token=ff875fe87e442e58a327e25095010ba1&iga_time=1795159857>
 - 差异：静态版的新增/修改/删除写入浏览器 `localStorage`（键 `kq_demo_journal_v1`），刷新后仍在、换设备不共享；服务端版写真实 SQLite。
 - 两个形态共用同一份前端代码与同一套接口契约，页面、交互、算法完全一致。
 

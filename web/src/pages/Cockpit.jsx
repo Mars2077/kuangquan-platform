@@ -44,6 +44,17 @@ const SCENE_META = {
   geology: { title: '地勘项目', module: 'geology', theme: 'hazard' }
 };
 
+/* v7：驾驶舱内的 7 个 Tab —— 总览 + 6 个业务专题（原二级场景页） */
+const SCENE_TABS = [
+  { key: 'dashboard', name: '综合总览', hint: '全省态势' },
+  { key: 'deposit', name: '矿产地', hint: '家底与清查' },
+  { key: 'plan', name: '保护与规划', hint: '规划与指标' },
+  { key: 'rights', name: '矿业权', hint: '登记与出让' },
+  { key: 'green', name: '绿色矿山', hint: '申报与名录' },
+  { key: 'supervise', name: '智慧监管', hint: '预警与处置' },
+  { key: 'geology', name: '数智地勘', hint: '项目与地灾' }
+];
+
 /* 面板「详情」落点：统一指向「业务中枢」里的对应视图（/hub/模块/功能点）。
  * 面板与功能点的对应关系按业务含义确定，见 docs/16-统一详情纳管与统计重做.md。 */
 const DETAIL_ROUTE = {
@@ -478,7 +489,12 @@ export default function Cockpit({ sceneKey }) {
   const params = useParams();
   const nav = useNavigate();
   const { user, toast } = useApp();
-  const scene = sceneKey || params.scene || 'dashboard';
+  const routeScene = sceneKey || params.scene || 'dashboard';
+  /* v7：6 个业务专题全部收进驾驶舱，用 Tab 切换（不再走二级页面） */
+  const [scene, setScene] = useState(routeScene);
+  useEffect(() => {
+    setScene(routeScene);
+  }, [routeScene]);
   const meta0 = SCENE_META[scene] || SCENE_META.dashboard;
 
   const [code, setCode] = useState('510000');
@@ -786,17 +802,39 @@ export default function Cockpit({ sceneKey }) {
   ));
 
   return (
-    <div
-      className="dash"
-      style={narrow ? {
-        minHeight: 'calc(100vh - var(--header-h) - var(--nav-h))',
-        gridTemplateColumns: 'minmax(0, 1fr)',
-        gridTemplateRows: 'minmax(0, 1fr)'
-      } : {
-        minHeight: 'calc(100vh - var(--header-h) - var(--nav-h))',
-        gridTemplateRows: 'minmax(0, 1fr)'
-      }}
-    >
+    <div className="dash-wrap">
+      <nav className="dash-tabs" role="tablist" aria-label="驾驶舱专题">
+        {SCENE_TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            role="tab"
+            aria-selected={scene === t.key}
+            title={t.hint}
+            className={`dash-tab${scene === t.key ? ' is-on' : ''}`}
+            onClick={() => {
+              if (t.key === scene) return;
+              setScene(t.key);
+              setSel(null);
+              setStages({});
+              setMeasure({ mode: 'none', points: [], closed: false });
+            }}
+          >
+            {t.name}
+          </button>
+        ))}
+      </nav>
+      <div
+        className="dash"
+        style={narrow ? {
+          minHeight: 'calc(100vh - var(--header-h) - var(--nav-h) - 40px)',
+          gridTemplateColumns: 'minmax(0, 1fr)',
+          gridTemplateRows: 'minmax(0, 1fr)'
+        } : {
+          minHeight: 'calc(100vh - var(--header-h) - var(--nav-h) - 40px)',
+          gridTemplateRows: 'minmax(0, 1fr)'
+        }}
+      >
       {/* ---------------- 左栏 ---------------- */}
       <aside className="dash-col--l">
         {leftPanels.map((p) => (
@@ -1341,6 +1379,7 @@ export default function Cockpit({ sceneKey }) {
           </div>
         )}
       </section>
+      </div>
     </div>
   );
 }

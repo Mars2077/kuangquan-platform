@@ -157,16 +157,9 @@ export default function Shell() {
           <Ic icon={Menu01Icon} size={16} />
         </button>
 
-        <nav className={`hd-nav${navOpen ? ' is-open' : ''}`} aria-label="一级场景导航">
-          {scenes.map((s) => (
-            <NavLink
-              key={s.key}
-              to={SCENE_ROUTES[s.key] || `/${s.key}`}
-              className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}
-            >
-              {s.name}
-            </NavLink>
-          ))}
+        <nav className={`hd-nav${navOpen ? ' is-open' : ''}`} aria-label="一级导航">
+          <NavLink to="/dashboard" className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>数字驾驶舱</NavLink>
+          <NavLink to="/battle" className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>重点任务</NavLink>
           <span className="hd-nav-sep" aria-hidden="true" />
           <NavLink to="/hub" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>业务中枢</NavLink>
           <NavLink to="/warehouse" className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>数据仓</NavLink>

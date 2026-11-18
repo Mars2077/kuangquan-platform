@@ -32,6 +32,18 @@ export default function Hub() {
     return list;
   }, [modules, active, kw]);
 
+  /* v7：按模块出「业务流程图」——每条泳道是一个业务域，节点是功能点，点击进入详情 */
+  const lanes = useMemo(() => modules
+    .filter((m) => active === 'all' || m.key === active)
+    .map((m) => ({
+      key: m.key,
+      name: m.name,
+      intro: m.intro,
+      features: m.features.filter((f) => !kw.trim()
+        || `${m.name}${f.name}${f.table}${f.desc || ''}`.includes(kw.trim()))
+    }))
+    .filter((m) => m.features.length), [modules, active, kw]);
+
   const current = picked || rows.find((r) => r.steps?.length) || null;
   const stepTotal = current?.steps?.reduce((s, x) => s + x.count, 0) || 0;
 
@@ -105,6 +117,35 @@ export default function Hub() {
                 aria-label="搜索功能点"
               />
             </label>
+          </div>
+
+          <div className="flow-map" aria-label="业务流程图">
+            {lanes.map((m) => (
+              <div className="flow-lane" key={m.key}>
+                <div className="flow-lane-head">
+                  <b>{m.name}</b>
+                  <span className="muted tiny">{m.features.length} 个功能点</span>
+                </div>
+                <div className="flow-track">
+                  {m.features.map((f, i) => (
+                    <button
+                      key={f.key}
+                      type="button"
+                      className={`flow-node${f.steps?.length ? ' is-workflow' : ''}`}
+                      title={`${f.name}｜${f.table}｜${f.count} 条${f.steps?.length ? `｜${f.steps.length} 个环节` : ''}`}
+                      onClick={() => nav(`/hub/${m.key}/${f.key}`)}
+                    >
+                      <span className="flow-node-no">{String(i + 1).padStart(2, '0')}</span>
+                      <b className="flow-node-name">{f.name}</b>
+                      <span className="flow-node-meta">
+                        {f.count.toLocaleString('zh-CN')} 条{f.steps?.length ? ` · ${f.steps.length} 环节` : ''}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {!lanes.length && <p className="muted small" style={{ padding: '6px 2px' }}>没有匹配的功能点</p>}
           </div>
 
           <div className="table-wrap hub-table-wrap">
