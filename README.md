@@ -23,8 +23,10 @@
 >
 > **v13 地图分级、数据仓入图与品牌字号**：①地图按缩放分级——<8 级只显示聚合气泡与数量、≥8 级显示具体点位、≥10 级叠加规划区块标注，并在地图左下给出当前层级提示；②数据仓资产台账新增「地图」列，矢量/栅格/三维资产可一键跳到对应专题图层并聚焦所属区划，三维资产额外提供「三维矿山模型示意」弹窗；③系统名称统一为「绿矿智用」（去掉「省域空间治理数字化平台」与「四川省」副标题），全站字号整体上调一档、层级收敛为 22/15/14/12 四组；④登录页左栏只保留品牌标与「绿矿智用」。说明见 [docs/25-v13-地图分级与品牌字号.md](docs/25-v13-地图分级与品牌字号.md)。
 >
-> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-qlq1mib6g0.preview.iga-pages.com?iga_token=096c805926528333c2b6423c78cedb0e&iga_time=1795232728>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
-![数字驾驶舱](docs/shots/v9-dashboard.png)
+> **v14 CoinPulse 设计系统与移动端重做**：按产品方给定的 CoinPulse 规范（深色近黑底 + 电光蓝 `#2563EB` + 青柠 `#84CC16` + 琥珀 `#F59E0B`，彩色光晕替代投影，圆角 4/8/12/16）重做全站视觉令牌与 antd 主题；品牌标识改用上传的 logo（顶栏 26px、移动端 20px、登录页 56px，favicon 同步）；移动端页面补回 `mobile-page` 根节点（此前移动端样式规则全部失效）、新增 44px 应用栏、列表行 40px、控件 36px、提交按钮 44px；地图在第 8 级起显示具体点位后**不再叠加数量气泡**。设计规范见仓库根 [DESIGN.md](DESIGN.md)，改动与实测见 [docs/26-v14-CoinPulse设计系统.md](docs/26-v14-CoinPulse设计系统.md)。
+>
+> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-h8w89u7hgf.preview.iga-pages.com?iga_token=59d74aec2874b3ca35d94e4025fb35e3&iga_time=1795245008>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
+![数字驾驶舱](docs/shots/iga-v14-dashboard.png)
 
 ---
 
@@ -109,7 +111,7 @@ npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
 ```
 
 - 上线：`cd web && iga pages deploy --name kuangquan-platform`（需先 `iga login`，配置见 `web/iga.json`）
-- 线上：<https://kuangquan-platfo-541ysnljv4-qlq1mib6g0.preview.iga-pages.com?iga_token=096c805926528333c2b6423c78cedb0e&iga_time=1795232728>
+- 线上：<https://kuangquan-platfo-541ysnljv4-h8w89u7hgf.preview.iga-pages.com?iga_token=59d74aec2874b3ca35d94e4025fb35e3&iga_time=1795245008>
 - 差异：静态版的新增/修改/删除写入浏览器 `localStorage`（键 `kq_demo_journal_v1`），刷新后仍在、换设备不共享；服务端版写真实 SQLite。
 - 两个形态共用同一份前端代码与同一套接口契约，页面、交互、算法完全一致。
 

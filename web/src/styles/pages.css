@@ -2628,3 +2628,146 @@
   .login-copy--min h1 { font-size: 40px; }
 }
 
+
+/* dialog title: title line + subtitle line */
+.dlg-title { display:flex; flex-direction:column; gap:3px; line-height:1.25; }
+.dlg-title > span { font-size:15px; font-weight:600; color:var(--text-1); }
+.dlg-title > em { font-style:normal; font-size:12px; font-weight:400; color:var(--text-4); }
+
+/* ===================================================================
+   § v14 CoinPulse：组件与移动端（规范见仓库根 DESIGN.md）
+   —— 只做视觉覆写，不改布局几何；令牌全部来自 tokens.css 的 v14 段
+   =================================================================== */
+
+/* 1. 顶栏与导航：纯色近黑底 + 发丝边，选中用主色底纹 */
+.app-header { background: #09090b !important; border-bottom: 1px solid var(--line); }
+.hd-nav { background: #18181b; border: 1px solid var(--line); border-radius: var(--r-md); padding: 3px; gap: 2px; }
+.hd-nav-link { height: 30px; border-radius: 6px; color: var(--text-3); font-size: 13px; }
+.hd-nav-link:hover { background: #27272a; color: var(--text-1); }
+.hd-nav-link.is-on { background: rgba(37, 99, 235, 0.16); color: #fafafa; border-color: transparent; box-shadow: none; }
+.hd-clock b, .hd-clock i { color: var(--text-3); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.hd-brand-text b { color: var(--text-1); }
+
+/* 2. 卡片 / 面板：面层 + 1px 发丝边 + 8/12 圆角 */
+.card, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: none; }
+.card-head, .panel-head { background: var(--panel-2); border-bottom: 1px solid var(--line); }
+.card-title, .panel-title, .panel-head h2 { color: var(--text-1); font-weight: 600; }
+.card-sub { color: var(--text-4); }
+.kpi-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-md); box-shadow: none; }
+.kpi-card:hover { border-color: var(--line-strong); }
+.kpi-value { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text-1); }
+.kpi-unit { color: var(--text-4); }
+
+/* 3. 按钮：主实心 / 次描边 / 幽灵；仅主按钮与聚焦带光晕 */
+.btn { border-radius: var(--r-md); font-size: 13px; height: 32px; border: 1px solid transparent; }
+.btn-primary { background: #2563eb; border-color: #2563eb; color: #fafafa; }
+.btn-primary:hover { background: #3b82f6; border-color: #3b82f6; box-shadow: 0 0 16px rgba(37, 99, 235, 0.35); }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--text-3); }
+.btn-ghost:hover { background: #27272a; color: var(--text-1); }
+.btn-danger { background: #ef4444; border-color: #ef4444; color: #fafafa; }
+.btn-danger:hover { background: #dc2626; box-shadow: 0 0 12px rgba(239, 68, 68, 0.32); }
+.btn:disabled, .btn[disabled] { opacity: 0.4; box-shadow: none; cursor: not-allowed; }
+
+/* 4. 输入：36px、8px 圆角、聚焦蓝描边 + 8px 光晕 */
+.input, .select, .textarea, select.input, input.input {
+  background: #18181b; border: 1px solid #3f3f46; border-radius: var(--r-md);
+  color: var(--text-1); height: 36px; padding: 0 12px; font-size: 13px;
+}
+.input:hover, .select:hover, .textarea:hover { border-color: #52525b; }
+.input:focus, .select:focus, .textarea:focus {
+  outline: none; border-color: #2563eb; box-shadow: 0 0 8px rgba(37, 99, 235, 0.25);
+}
+.textarea { height: auto; padding: 8px 12px; line-height: 1.5; }
+
+/* 5. 芯片 / 标签：4px 圆角 + 语义底 */
+.tag { border-radius: var(--r-sm); font-size: 12px; font-weight: 500; padding: 2px 8px; border: 1px solid transparent; }
+.tag--green, .tag.is-ok { background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.tag--red, .tag.is-bad { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.tag--yellow, .tag.is-warn { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.tag--blue, .tag--cyan { background: rgba(37, 99, 235, 0.1); border-color: rgba(37, 99, 235, 0.22); color: #3b82f6; }
+.tag--grey { background: #27272a; border-color: #3f3f46; color: var(--text-3); }
+
+/* 6. 表格：表头 38、行 40、悬停抬一层面、选中左侧 2px 主色 */
+.data-table thead th { background: #1f1f23; color: var(--text-3); font-weight: 500; height: 38px; border-bottom: 1px solid var(--line); }
+.data-table tbody td { height: 40px; border-bottom: 1px solid var(--line-faint); color: var(--text-2); }
+.data-table tbody tr:hover td { background: #27272a; }
+.data-table tbody tr.is-on td { background: rgba(37, 99, 235, 0.1); }
+.data-table tbody tr.is-on td:first-child { box-shadow: inset 2px 0 0 #2563eb; }
+.data-table .num, .data-table .right { font-variant-numeric: tabular-nums; }
+
+/* 7. 驾驶舱：侧栏统计与列表跟随新配色 */
+.screen, .dash { background: #09090b; }
+.stat-row .k { color: var(--text-3); font-size: 13px; }
+.stat-row .v { color: var(--text-1); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.stat-row .u, .stat-row .sfx { color: var(--text-4); }
+.stat-row .d.up { color: #22c55e; }
+.stat-row .d.down { color: #ef4444; }
+.dash-tabs { background: #09090b; border-bottom: 1px solid var(--line); }
+.dash-tab { border-radius: 6px; color: var(--text-3); }
+.dash-tab:hover { background: #18181b; color: var(--text-1); }
+.dash-tab.is-on { background: rgba(37, 99, 235, 0.16); color: #fafafa; }
+.dash-tab.is-on::after { background: #2563eb; box-shadow: 0 0 8px rgba(37, 99, 235, 0.6); }
+.dash-arrow { background: rgba(24, 24, 27, 0.86); border: 1px solid var(--line); border-radius: var(--r-md); color: var(--text-3); }
+.dash-arrow:hover { background: #27272a; border-color: var(--line-strong); color: var(--text-1); }
+.dash-list-toggle { background: rgba(9, 9, 11, 0.92) !important; border: 1px solid var(--line-strong) !important; border-radius: var(--r-full); color: var(--text-2); }
+.dash-list-toggle:hover { border-color: #2563eb; box-shadow: 0 0 12px rgba(37, 99, 235, 0.3); }
+.dash-list-float { background: rgba(9, 9, 11, 0.98) !important; border: 1px solid var(--line-strong) !important; border-radius: var(--r-md) !important; }
+.map-title, .map-zoom-hint { background: rgba(9, 9, 11, 0.86); border: 1px solid var(--line); border-radius: var(--r-md); color: var(--text-2); }
+.amap-bubble { background: linear-gradient(180deg, rgba(24, 24, 27, 0.96), rgba(9, 9, 11, 0.96)); border: 1px solid rgba(37, 99, 235, 0.45); border-radius: var(--r-sm); }
+.amap-bubble b { color: #3b82f6; }
+.amap-bubble span { color: var(--text-3); }
+
+/* 8. 登录页：近黑底 + 单卡 */
+.login-wrap { background: #09090b; }
+.login-card { background: #18181b; border: 1px solid var(--line); border-radius: var(--r-xl); box-shadow: 0 0 40px rgba(0, 0, 0, 0.6); }
+.login-copy h1 { color: #fafafa; }
+.demo-chip { background: #27272a; border: 1px solid #3f3f46; border-radius: var(--r-sm); color: var(--text-3); }
+.demo-chip:hover { border-color: #2563eb; color: #3b82f6; background: rgba(37, 99, 235, 0.1); }
+
+/* 9. 移动端（DESIGN.md §9：40px 列表、36px 控件、安全区、单主按钮） */
+.mobile-page .m-phone { background: #09090b; }
+.m-user { background: #18181b; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 12px; }
+.m-user .avatar { background: rgba(37, 99, 235, 0.16); color: #fafafa; border: 1px solid rgba(37, 99, 235, 0.35); border-radius: var(--r-full); }
+.m-user b { color: var(--text-1); font-size: 14px; font-weight: 600; }
+.m-user small { color: var(--text-4); font-size: 12px; }
+.m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.m-tile { background: #18181b !important; border: 1px solid var(--line) !important; border-radius: var(--r-md) !important; }
+.m-tile:hover { border-color: #2563eb !important; box-shadow: 0 0 12px rgba(37, 99, 235, 0.22); }
+.m-tile b { color: var(--text-1); font-family: var(--font-mono); font-size: 16px; font-variant-numeric: tabular-nums; }
+.m-tile span { color: var(--text-4); font-size: 12px; }
+.m-list { background: #18181b; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+.m-list .ant-list-item { min-height: 40px; padding: 8px 12px !important; border-bottom: 1px solid var(--line-faint) !important; }
+.m-list .ant-list-item:last-child { border-bottom: 0 !important; }
+.m-list .ant-list-item:hover { background: #27272a; }
+.list-main { color: var(--text-2); font-size: 13px; }
+.list-meta { color: var(--text-4); font-size: 11px; font-family: var(--font-mono); }
+
+/* 10. 窄屏（≤900px）：移动端规范直接生效，桌面预览框取消 */
+@media (max-width: 900px) {
+  .mobile-page .m-phone {
+    border: 0; border-radius: 0; background: #09090b;
+    padding: 0 0 calc(12px + var(--safe-b)) 0; height: auto !important; min-height: 0 !important;
+  }
+  .mobile-page .m-grid { grid-template-columns: 1fr 1fr; }
+  .mobile-page .ant-form-item-label > label { font-size: 12px; color: var(--text-3); }
+  .mobile-page .ant-btn { height: 44px; border-radius: var(--r-md); }
+}
+
+/* 移动端顶栏（DESIGN.md §9）：44px、logo 20 + 名称 14/600、右侧区域名 */
+.m-appbar {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 44px; padding: 0 2px; margin-bottom: 10px;
+  border-bottom: 1px solid var(--line-faint);
+}
+.m-appbar-brand { display: inline-flex; align-items: center; gap: 8px; }
+.m-appbar-brand b { font-size: 14px; font-weight: 600; color: var(--text-1); letter-spacing: .02em; }
+.m-appbar-region { font-size: 12px; color: var(--text-4); }
+.m-list .ant-list-item { min-height: 40px; }
+
+/* 移动端顶栏收敛：≤620 只保留品牌、汉堡、告警入口与头像（DESIGN.md §9） */
+@media (max-width: 620px) {
+  .hd-clock { display: none; }
+  .hd-brand-text i { display: none; }
+  .app-header { padding-left: 10px; padding-right: 10px; }
+  .m-list .ant-list-item { height: 40px; }
+}

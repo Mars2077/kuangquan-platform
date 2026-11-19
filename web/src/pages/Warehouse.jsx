@@ -68,6 +68,9 @@ export default function Warehouse() {
   const topics = data?.topics || [];
   const assets = data?.assets || [];
   const current = topics[tab];
+  /* 资产台账跟随专题 Tab：每个专题库单独成表，避免「三维模型」「栅格图件」被前 40 条截掉 */
+  const curTopicName = current?.topic || TOPICS[tab] || TOPICS[0];
+  const topicAssets = assets.filter((a) => a.topic === curTopicName);
 
   const totalRows = topics.reduce((s, t) => s + (t.totalRows || 0), 0);
   const totalTables = topics.reduce((s, t) => s + (t.items || []).length, 0);
@@ -214,18 +217,18 @@ export default function Warehouse() {
               <div className="card">
                 <div className="card-head">
                   <h3 className="card-title"><Ic icon={File01Icon} size={15} /> 资产台账</h3>
-                  <span className="card-sub">最近入库 {Math.min(assets.length, 40)} 条 / 共 {nf(assets.length)} 条</span>
+                  <span className="card-sub">{curTopicName} · {nf(topicAssets.length)} 条</span>
                 </div>
                 <div className="card-body" style={{ padding: 0 }}>
-                  {assets.length === 0 ? (
+                  {topicAssets.length === 0 ? (
                     <div className="empty" style={{ minHeight: 140 }}>
                       <span className="empty-icon"><Ic icon={CloudServerIcon} size={18} /></span>
-                      <p className="empty-text">暂无入库资产，可在右侧上传首个文件。</p>
+                      <p className="empty-text">{curTopicName}暂无入库资产，可在右侧上传。</p>
                     </div>
                   ) : (
                     <DataTable
                       dense
-                      rows={assets.slice(0, 40)}
+                      rows={topicAssets}
                       empty="暂无入库资产"
                       scrollX={narrow ? 720 : undefined}
                       columns={[
@@ -344,7 +347,7 @@ export default function Warehouse() {
       <Modal
         open={!!model}
         title="三维矿山模型示意"
-        subtitle={model ? `${model.name} · ${model.topic}` : ''}
+        subtitle={model ? `${model.name}（${model.topic}）` : ''}
         onClose={() => setModel(null)}
         footer={(
           <>

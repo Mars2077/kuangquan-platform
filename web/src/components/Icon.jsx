@@ -20,22 +20,17 @@ export function Ic({ icon, size = 16, strokeWidth = 1.7, className = '', color =
 
 /** 平台六边形标志（本产品自有标识） */
 export function BrandMark({ size = 34 }) {
+  /* 品牌标识使用上传的 logo（web/public/brand/logo-128.png 为等比缩放版） */
   return (
-    <svg className="brand-logo" viewBox="0 0 40 46" width={size} height={size * 1.15} aria-hidden="true">
-      <defs>
-        <linearGradient id="bmStroke" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#9be6ff" />
-          <stop offset="100%" stopColor="#2d8ee0" />
-        </linearGradient>
-        <linearGradient id="bmFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#5fd0ff" />
-          <stop offset="100%" stopColor="#1c6fd6" />
-        </linearGradient>
-      </defs>
-      <path d="M20 2 36.5 11.5v21L20 43 3.5 32.5v-21z" fill="none" stroke="url(#bmStroke)" strokeWidth="1.6" />
-      <path d="M20 9.5 30 15v10.5L20 31l-10-5.5V15z" fill="url(#bmFill)" opacity="0.9" />
-      <path d="M20 15.5 25.5 18.5v6L20 27.5 14.5 24.5v-6z" fill="#eaf9ff" opacity="0.92" />
-    </svg>
+    <img
+      className="brand-logo"
+      src="/brand/logo-128.png"
+      width={size}
+      height={size}
+      alt="绿矿智用"
+      draggable="false"
+      style={{ width: size, height: size, objectFit: 'contain', borderRadius: size >= 40 ? 10 : 8 }}
+    />
   );
 }
 

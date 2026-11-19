@@ -1,49 +1,49 @@
 import { theme } from 'antd';
 
 /**
- * antd 主题：把设计令牌映射到 antd token，让组件库自带的排版/间距/边框生效，
- * 同时保留深色政务底色的观感。刻意不做发光、不做渐变、不做彩色阴影——
- * 深度靠表面层级 + 1px 发丝边（与 unslop 的约束一致）。
+ * antd 主题：映射 CoinPulse 设计系统（仓库根 DESIGN.md）。
+ * 深色近黑底 + 电光蓝主色 + 青柠正向 + 琥珀待处理；深度靠面层与 1px 发丝边，
+ * 光晕只用于主按钮/聚焦/告警，避免整屏发光。
  */
 export const antdTheme = {
   algorithm: theme.darkAlgorithm,
   token: {
-    colorPrimary: '#2ea8ff',
-    colorInfo: '#2ea8ff',
-    colorSuccess: '#35d39a',
-    colorWarning: '#ffcc44',
-    colorError: '#ff5f57',
-    colorBgBase: '#050f21',
-    colorBgContainer: '#0a1e33',
-    colorBgElevated: '#0d2740',
-    colorBgLayout: '#050f21',
-    colorBorder: 'rgba(73, 195, 255, 0.22)',
-    colorBorderSecondary: 'rgba(255, 255, 255, 0.07)',
-    colorText: '#cfe4ff',
-    colorTextSecondary: '#9db3cc',
-    colorTextTertiary: '#7fa6cc',
-    colorTextQuaternary: '#5d7d99',
-    colorFillAlter: 'rgba(46, 168, 255, 0.06)',
-    colorFillSecondary: 'rgba(46, 168, 255, 0.12)',
-    borderRadius: 6,
-    borderRadiusLG: 8,
+    colorPrimary: '#2563eb',
+    colorInfo: '#2563eb',
+    colorSuccess: '#22c55e',
+    colorWarning: '#f59e0b',
+    colorError: '#ef4444',
+    colorBgBase: '#09090b',
+    colorBgContainer: '#18181b',
+    colorBgElevated: '#1f1f23',
+    colorBgLayout: '#09090b',
+    colorBorder: '#3f3f46',
+    colorBorderSecondary: '#27272a',
+    colorText: '#fafafa',
+    colorTextSecondary: '#a1a1aa',
+    colorTextTertiary: '#71717a',
+    colorTextQuaternary: '#52525b',
+    colorFillAlter: 'rgba(37, 99, 235, 0.06)',
+    colorFillSecondary: 'rgba(37, 99, 235, 0.12)',
+    borderRadius: 8,
+    borderRadiusLG: 12,
     borderRadiusSM: 4,
     fontSize: 14,
     fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif',
-    controlHeight: 30,
-    controlHeightSM: 26,
+      '"DM Sans", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif',
+    controlHeight: 32,
+    controlHeightSM: 28,
     wireframe: false,
     motionDurationMid: '0.18s'
   },
   components: {
     Layout: {
-      headerBg: '#061526',
-      bodyBg: '#050f21',
-      siderBg: '#061526'
+      headerBg: '#09090b',
+      bodyBg: '#09090b',
+      siderBg: '#18181b'
     },
     Card: {
-      colorBgContainer: '#0a1e33',
+      colorBgContainer: '#18181b',
       headerBg: 'transparent',
       headerHeight: 38,
       headerFontSize: 13,
@@ -51,30 +51,30 @@ export const antdTheme = {
       borderRadiusLG: 8
     },
     Table: {
-      headerBg: '#0d2740',
-      headerColor: '#9db3cc',
+      headerBg: '#1f1f23',
+      headerColor: '#a1a1aa',
       headerSplitColor: 'transparent',
-      borderColor: 'rgba(255, 255, 255, 0.07)',
-      rowHoverBg: 'rgba(46, 168, 255, 0.08)',
-      rowSelectedBg: 'rgba(46, 168, 255, 0.14)',
-      rowSelectedHoverBg: 'rgba(46, 168, 255, 0.18)',
+      borderColor: '#27272a',
+      rowHoverBg: 'rgba(37, 99, 235, 0.10)',
+      rowSelectedBg: 'rgba(37, 99, 235, 0.14)',
+      rowSelectedHoverBg: 'rgba(37, 99, 235, 0.18)',
       cellPaddingBlock: 8,
       cellPaddingInline: 10,
       cellFontSize: 13
     },
     Tabs: {
-      itemColor: '#9db3cc',
-      itemSelectedColor: '#e8f4ff',
-      itemHoverColor: '#cfe4ff',
-      inkBarColor: '#49c3ff',
+      itemColor: '#a1a1aa',
+      itemSelectedColor: '#fafafa',
+      itemHoverColor: '#d4d4d8',
+      inkBarColor: '#2563eb',
       horizontalItemGutter: 22,
       horizontalItemPadding: '7px 0'
     },
     Segmented: {
-      itemColor: '#9db3cc',
-      itemSelectedColor: '#e8f4ff',
-      trackBg: 'rgba(6, 21, 38, 0.9)',
-      itemSelectedBg: 'rgba(46, 168, 255, 0.18)',
+      itemColor: '#a1a1aa',
+      itemSelectedColor: '#fafafa',
+      trackBg: 'rgba(24, 24, 27, 0.9)',
+      itemSelectedBg: 'rgba(37, 99, 235, 0.18)',
       trackPadding: 2
     },
     Button: {
@@ -83,17 +83,17 @@ export const antdTheme = {
       dangerShadow: 'none',
       fontWeight: 400
     },
-    Input: { activeShadow: '0 0 0 2px rgba(46, 168, 255, 0.16)' },
-    Select: { optionSelectedBg: 'rgba(46, 168, 255, 0.16)' },
-    Modal: { contentBg: '#0a1e33', headerBg: '#0d2740', titleFontSize: 14, titleColor: '#e8f4ff' },
-    Drawer: { colorBgElevated: '#0a1e33' },
-    Tag: { defaultBg: 'rgba(46, 168, 255, 0.1)', defaultColor: '#9db3cc' },
-    Descriptions: { labelBg: 'rgba(46, 168, 255, 0.06)', titleMarginBottom: 8 },
+    Input: { activeShadow: '0 0 0 2px rgba(37, 99, 235, 0.16)' },
+    Select: { optionSelectedBg: 'rgba(37, 99, 235, 0.16)' },
+    Modal: { contentBg: '#18181b', headerBg: '#1f1f23', titleFontSize: 14, titleColor: '#fafafa' },
+    Drawer: { colorBgElevated: '#18181b' },
+    Tag: { defaultBg: 'rgba(37, 99, 235, 0.10)', defaultColor: '#a1a1aa' },
+    Descriptions: { labelBg: 'rgba(37, 99, 235, 0.06)', titleMarginBottom: 8 },
     Statistic: { contentFontSize: 22, titleFontSize: 12 },
-    Pagination: { itemActiveBg: 'rgba(46, 168, 255, 0.18)' },
-    Steps: { colorPrimary: '#49c3ff', navArrowColor: '#5d7d99' },
-    Progress: { defaultColor: '#49c3ff', remainingColor: 'rgba(255, 255, 255, 0.08)' },
-    Upload: { colorFillAlter: 'rgba(46, 168, 255, 0.05)' },
-    Empty: { colorTextDescription: '#5d7d99' }
+    Pagination: { itemActiveBg: 'rgba(37, 99, 235, 0.18)' },
+    Steps: { colorPrimary: '#2563eb', navArrowColor: '#71717a' },
+    Progress: { defaultColor: '#2563eb', remainingColor: 'rgba(255, 255, 255, 0.08)' },
+    Upload: { colorFillAlter: 'rgba(37, 99, 235, 0.05)' },
+    Empty: { colorTextDescription: '#71717a' }
   }
 };

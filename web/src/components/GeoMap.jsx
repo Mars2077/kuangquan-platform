@@ -12,16 +12,16 @@ const VIEW_W = 1000;
 const VIEW_H = 620;
 const PAD = 26;
 
-const CYAN = '#49c3ff';
-const CYAN_2 = '#7fe3ff';
+const CYAN = '#2563eb';
+const CYAN_2 = '#3b82f6';
 const TEXT_1 = '#eaf4ff';
 const TEXT_3 = '#8fb0cc';
 const TEXT_4 = '#5d7d99';
 // 卫星影像之上的暗色蒙版：压暗辖区、保证青色描边与白字可读，同时让地形透出来。
-const MASK_FILL = '#061a34';
-const MASK_FILL_HOVER = '#0a2b4d';
-const MASK_FILL_ON = '#0d3f70';
-const STAGE_TONE = { 待查: '#7fa6cc', 在查: '#ffcc44', 查明: '#35d39a', 规划: '#ff8a3d' };
+const MASK_FILL = '#0b0b0d';
+const MASK_FILL_HOVER = '#26262a';
+const MASK_FILL_ON = '#37373c';
+const STAGE_TONE = { 待查: '#71717a', 在查: '#f59e0b', 查明: '#22c55e', 规划: '#84cc16' };
 /* 下钻/返回的缩放动画时长（ms）：1.2s 让镜头推近有可感知的过程，不至于"闪一下就换了" */
 const ZOOM_MS = 1200;
 
@@ -136,10 +136,10 @@ const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
 function markerTone(p = {}) {
   if (p.color) return p.color;
   if (p.tone && /^#/.test(String(p.tone))) return p.tone;
-  if (p.status === '生产中') return '#35d39a';
-  if (p.right_type === '探矿权') return '#ffcc44';
-  if (p.level === '一级' || p.level === '二级' || p.level === '红色') return '#ff5f57';
-  if (p.level === '黄色') return '#ffcc44';
+  if (p.status === '生产中') return '#22c55e';
+  if (p.right_type === '探矿权') return '#f59e0b';
+  if (p.level === '一级' || p.level === '二级' || p.level === '红色') return '#ef4444';
+  if (p.level === '黄色') return '#f59e0b';
   if (p.stage && STAGE_TONE[p.stage]) return STAGE_TONE[p.stage];
   return CYAN;
 }
@@ -536,18 +536,20 @@ export default function GeoMap({
 
     const showPoints = zoomRef.current >= 8;
     const showZones = zoomRef.current >= 10;
+    /* 显示具体点位后不再叠加「区县名 + 数量」气泡，避免数字与点位重复表达 */
+    const showBubbles = !showPoints;
 
     /* 规划区块：10 级起叠加，颜色按分区类型区分（重点勘查/重点开采/砂石土料集中开采） */
     const ZONE_TONE = {
-      重点勘查区: '#ffcc44',
-      重点开采区: '#ff8a3d',
-      砂石土料集中开采区: '#49c3ff'
+      重点勘查区: '#f59e0b',
+      重点开采区: '#84cc16',
+      砂石土料集中开采区: '#2563eb'
     };
     (showZones ? zones || [] : []).forEach((z) => {
       const lon = Number(z.lon ?? z.center_lon);
       const lat = Number(z.lat ?? z.center_lat);
       if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
-      const tone = ZONE_TONE[z.zone_type] || '#35d39a';
+      const tone = ZONE_TONE[z.zone_type] || '#22c55e';
       const html = `<div class="amap-zone" style="display:flex;align-items:center;gap:4px;`
         + `transform:translate(-50%,-50%);white-space:nowrap;cursor:pointer">`
         + `<i style="width:7px;height:7px;transform:rotate(45deg);background:${tone};`
@@ -588,7 +590,7 @@ export default function GeoMap({
       created.push(dot);
     });
 
-    (bubbles || []).forEach((b) => {
+    (showBubbles ? bubbles || [] : []).forEach((b) => {
       const lon = Number(b.lon);
       const lat = Number(b.lat);
       if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
@@ -622,7 +624,7 @@ export default function GeoMap({
     if (measure?.mode !== 'none' && mPts.length) {
       const line = new AMap.Polyline({
         path: mPts.map(([lon, lat]) => [lon, lat]),
-        strokeColor: '#ffcc44',
+        strokeColor: '#f59e0b',
         strokeWeight: 2,
         strokeOpacity: 0.95,
         zIndex: 130
@@ -632,9 +634,9 @@ export default function GeoMap({
       if (measure.mode === 'area' && mPts.length >= 3) {
         const poly = new AMap.Polygon({
           path: mPts.map(([lon, lat]) => [lon, lat]),
-          fillColor: '#ffcc44',
+          fillColor: '#f59e0b',
           fillOpacity: 0.12,
-          strokeColor: '#ffcc44',
+          strokeColor: '#f59e0b',
           strokeWeight: 1.6,
           strokeOpacity: 0.9,
           zIndex: 125
@@ -646,7 +648,7 @@ export default function GeoMap({
         const v = new AMap.CircleMarker({
           center: [lon, lat],
           radius: 4,
-          fillColor: '#ffcc44',
+          fillColor: '#f59e0b',
           fillOpacity: 1,
           strokeColor: '#050e1c',
           strokeWeight: 1,
@@ -862,7 +864,7 @@ export default function GeoMap({
                       <polygon
                         points={ringPoints(measurePoints, projection.project)}
                         fill="rgba(255,204,68,0.12)"
-                        stroke="#ffcc44"
+                        stroke="#f59e0b"
                         strokeWidth="1.5"
                         strokeDasharray="4 3"
                       />
@@ -870,13 +872,13 @@ export default function GeoMap({
                     <polyline
                       points={ringPoints(measurePoints, projection.project)}
                       fill="none"
-                      stroke="#ffcc44"
+                      stroke="#f59e0b"
                       strokeWidth="1.6"
                       strokeLinejoin="round"
                     />
                     {measurePoints.map(([lon, lat], i) => {
                       const [x, y] = projection.project(lon, lat);
-                      return <circle key={i} cx={x} cy={y} r="3.4" fill="#ffcc44" stroke="#050e1c" strokeWidth="1" />;
+                      return <circle key={i} cx={x} cy={y} r="3.4" fill="#f59e0b" stroke="#050e1c" strokeWidth="1" />;
                     })}
                   </g>
                 )}

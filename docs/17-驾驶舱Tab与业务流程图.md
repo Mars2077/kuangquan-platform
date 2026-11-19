@@ -99,5 +99,5 @@
 ## 六、上线记录
 
 - 部署 ID：`16v8tyci3f`（IGA Pages 项目 `541ysnljv4`）
-- 预览地址：https://kuangquan-platfo-541ysnljv4-qlq1mib6g0.preview.iga-pages.com?iga_token=096c805926528333c2b6423c78cedb0e&iga_time=1795232728
+- 预览地址：https://kuangquan-platfo-541ysnljv4-h8w89u7hgf.preview.iga-pages.com?iga_token=59d74aec2874b3ca35d94e4025fb35e3&iga_time=1795245008
 - 线上复验（静态演示版）：`__KQ_DEMO__=true`、登录 code 0、`#/dashboard` 7 个 Tab 且默认「综合总览」、21 个地市气泡、`scrollWidth=1920`；`#/hub` 6 条泳道 / 40 个节点、`scrollWidth=1920`。截图：`docs/shots/iga-v7-dashboard.png`、`docs/shots/iga-v7-hub.png`。

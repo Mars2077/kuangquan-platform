@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Alert, Button, Empty, Form, Input, InputNumber, List, Select, Spin, Tabs, Tag } from 'antd';
-import { Ic } from '../components/Icon';
+import { Ic, BrandMark } from '../components/Icon';
 import { useApp, useFetch } from '../store.jsx';
 import { sys } from '../api';
 import {
@@ -92,7 +92,7 @@ export default function Mobile() {
   );
 
   return (
-    <>
+    <div className="page mobile-page">
       <header className="page-head">
         <div>
           <h1 className="page-title">政务移动端（掌上应用）</h1>
@@ -167,9 +167,12 @@ export default function Mobile() {
           <div className="span-5 content-col" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', height: '100%' }}>
             <div className="m-phone" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 16 }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '0 2px 10px' }}>
-                  <span className="card-sub" style={{ margin: 0 }}>{user.region || '四川省'}</span>
-                  <span className="card-sub" style={{ margin: 0 }}>掌上绿矿</span>
+                <div className="m-appbar">
+                  <span className="m-appbar-brand">
+                    <BrandMark size={20} />
+                    <b>绿矿智用</b>
+                  </span>
+                  <span className="m-appbar-region">{user.region || '四川省'}</span>
                 </div>
 
                 <div className="m-user">
@@ -256,6 +259,6 @@ export default function Mobile() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

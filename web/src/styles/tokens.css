@@ -139,3 +139,104 @@
   --shadow-panel: var(--sh-1);
   --shadow-pop: var(--sh-2);
 }
+
+/* ===================================================================
+   § v14 CoinPulse 设计令牌（覆盖上方 v3 值；规范见仓库根 DESIGN.md）
+   深色近黑底 + 电光蓝主色 + 青柠正向 + 琥珀待处理；靠面层与光晕表达层级
+   =================================================================== */
+:root {
+  /* —— 底色（近黑） —— */
+  --bg-0: #09090b;
+  --bg-1: #111113;
+  --bg-2: #18181b;
+
+  /* —— 面层（逐级抬起，不用投影表达深度） —— */
+  --panel: #18181b;
+  --panel-2: #1f1f23;
+  --panel-3: #27272a;
+
+  /* —— 描边 —— */
+  --line: #27272a;
+  --line-strong: #3f3f46;
+  --line-soft: rgba(63, 63, 70, 0.6);
+  --line-faint: rgba(63, 63, 70, 0.35);
+
+  /* —— 主色（电光蓝） —— */
+  --cyan: #2563eb;
+  --cyan-2: #3b82f6;
+  --blue: #2563eb;
+
+  /* —— 语义色 —— */
+  --green: #22c55e;
+  --orange: #f59e0b;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --lime: #84cc16;
+
+  /* —— 文字 —— */
+  --text-1: #fafafa;
+  --text-2: #d4d4d8;
+  --text-3: #a1a1aa;
+  --text-4: #71717a;
+
+  /* —— 圆角（0/4/8/12/16/全圆） —— */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-full: 9999px;
+
+  /* —— 光影：彩色光晕替代传统投影 —— */
+  --sh-1: 0 0 16px rgba(37, 99, 235, 0.25);
+  --sh-2: 0 0 24px rgba(37, 99, 235, 0.35);
+  --glow-subtle: 0 0 8px rgba(37, 99, 235, 0.15);
+  --glow-medium: 0 0 16px rgba(37, 99, 235, 0.25);
+  --glow-large: 0 0 24px rgba(37, 99, 235, 0.35);
+  --glow-overlay: 0 0 40px rgba(0, 0, 0, 0.6);
+  --glow-profit: 0 0 12px rgba(34, 197, 94, 0.3);
+  --glow-loss: 0 0 12px rgba(239, 68, 68, 0.3);
+  --glow-soft: var(--glow-medium);
+
+  /* —— 顶栏 / 面板皮肤（coinpulse：纯色面 + 发丝边，去掉渐变横幅） —— */
+  --hd-bg: #09090b;
+  --hd-plate: none;
+  --panel-bg: #18181b;
+  --panel-head-bg: #1f1f23;
+  --list-head-bg: #1f1f23;
+
+  /* —— 图表序列（蓝 → 青柠 → 琥珀 → 绿 → 红 → 灰） —— */
+  --chart-1: #2563eb;
+  --chart-2: #84cc16;
+  --chart-3: #f59e0b;
+  --chart-4: #22c55e;
+  --chart-5: #3b82f6;
+  --chart-6: #ef4444;
+  --chart-7: #71717a;
+  --chart-8: #a3e635;
+
+  /* —— 字体：首选 Space Mono / DM Sans，回退系统等宽与中文黑体（内网可用） —— */
+  --font-sans: 'DM Sans', 'PingFang SC', 'Microsoft YaHei', 'Source Han Sans SC', 'Noto Sans SC',
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+
+  /* —— 半透明阶（06/10/16/1A/28/33） —— */
+  --cyan-a06: rgba(37, 99, 235, 0.06);
+  --cyan-a10: rgba(37, 99, 235, 0.1);
+  --cyan-a16: rgba(37, 99, 235, 0.16);
+  --cyan-a28: rgba(37, 99, 235, 0.28);
+  --green-a12: rgba(34, 197, 94, 0.12);
+  --green-a32: rgba(34, 197, 94, 0.32);
+  --red-a10: rgba(239, 68, 68, 0.1);
+  --red-a28: rgba(239, 68, 68, 0.28);
+  --orange-a12: rgba(245, 158, 11, 0.12);
+  --yellow-a12: rgba(245, 158, 11, 0.12);
+
+  /* —— 焦点环与唯一发光 —— */
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.24);
+  --glow-cyan: var(--glow-medium);
+
+  /* —— 布局（移动端安全区） —— */
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}

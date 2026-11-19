@@ -18,11 +18,11 @@ echarts.use([
 ]);
 
 /* 与 tokens.css 同源的调色板（禁止紫色系） */
-export const COLORS = ['#49c3ff', '#35d39a', '#ff8a3d', '#ffcc44', '#5ee0d0', '#ff5f57', '#7fa6cc', '#2ea8ff'];
+export const COLORS = ['#2563eb', '#84cc16', '#f59e0b', '#22c55e', '#3b82f6', '#ef4444', '#71717a', '#a3e635'];
 
-export const TEXT = '#cfe4ff';
-export const TEXT_DIM = '#7fa6cc';
-export const LINE = 'rgba(64,158,255,0.22)';
+export const TEXT = '#fafafa';
+export const TEXT_DIM = '#a1a1aa';
+export const LINE = 'rgba(63,63,70,0.6)';
 
 const TOOLTIP = {
   backgroundColor: 'rgba(6,22,44,0.94)',
@@ -125,7 +125,7 @@ export function donutOption(parts = [], opts = {}) {
         formatter: (p) => `${p.name}\n${(p.percent || 0).toFixed(0)}%`
       } : { show: false },
       labelLine: { show: !!showLabel, length: 8, length2: 6, lineStyle: { color: LINE } },
-      emphasis: { scale: true, scaleSize: 4, itemStyle: { shadowBlur: 14, shadowColor: 'rgba(73,195,255,.45)' } },
+      emphasis: { scale: true, scaleSize: 4, itemStyle: { shadowBlur: 14, shadowColor: 'rgba(37,99,235,.45)' } },
       data: data.map((item, i) => ({
         ...item,
         /* 只让首个扇区显示圆心文字，避免每个扇区各画一次 */
@@ -291,7 +291,7 @@ export function lineOption(rows = [], opts = {}) {
     },
     series: [{
       type: 'line', smooth, symbol: 'circle', symbolSize: 5, showSymbol: rows.length <= 14,
-      lineStyle: { width: 2, color: COLORS[0], shadowBlur: 10, shadowColor: 'rgba(73,195,255,.45)' },
+      lineStyle: { width: 2, color: COLORS[0], shadowBlur: 10, shadowColor: 'rgba(37,99,235,.45)' },
       itemStyle: { color: COLORS[0] },
       areaStyle: area ? {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
