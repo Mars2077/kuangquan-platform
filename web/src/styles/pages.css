@@ -2771,3 +2771,13 @@
   .app-header { padding-left: 10px; padding-right: 10px; }
   .m-list .ant-list-item { height: 40px; }
 }
+
+/* ---- v14 补遗：单位与数值的呼吸 + 地图提示条 ---- */
+.stat-row .u { margin-left: 6px; letter-spacing: 0; }
+.dash-col--l .stat-row .v, .dash-col--r .stat-row .v { letter-spacing: -.5px; }
+.map-zoom-hint { background: #18181b !important; border-color: #3f3f46 !important; color: #a1a1aa; }
+.amap-zone { background: #18181b !important; border-color: #3f3f46 !important; color: #fafafa !important; }.dash-col--l .stat-row .u,
+.dash-col--r .stat-row .u { margin-left: 6px; }.dash-col--l, .dash-col--r { padding-bottom: 8px; }
+.amap-bubble { background: rgba(24, 24, 27, .94) !important; border-color: rgba(37, 99, 235, .55) !important; }
+.amap-bubble b { color: #fafafa !important; }
+.amap-bubble span { color: #a1a1aa !important; }

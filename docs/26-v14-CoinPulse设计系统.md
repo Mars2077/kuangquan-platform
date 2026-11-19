@@ -89,3 +89,20 @@
 1. Space Mono / DM Sans 未随包引入（无网络依赖），实际渲染回退到系统等宽与中文黑体；字形不同，但字号、行高、`tabular-nums` 对齐一致。
 2. CoinPulse 原文含「实时价格闪烁」类动效，本系统只保留「涨跌短闪」的语义，不做循环脉冲（与无障碍和政务演示场景冲突）。
 3. 同屏彩色光晕由 unslop 阶段的「不超过 2 处」放宽到 3 处（主按钮 + 当前选中 + 一处告警），仍禁止整屏发光。
+
+---
+
+## 九、收尾核对（2026-11-19）
+
+上线后按截图复核，发现并修掉 4 处与 CoinPulse 令牌不一致的残留：
+
+| # | 位置 | 现象 | 修法 | 复测 |
+| --- | --- | --- | --- | --- |
+| 1 | web/src/pages/Cockpit.jsx 地图专题牌 | 仍是 gba(7,22,40,.92) 深蓝底 + 青边框，与新近黑面板割裂 | 改 ackground:#18181b、order:1px solid #3f3f46、adius 8、标题字色 #fafafa；底下强调线沿用 ar(--cyan) | 计算样式 gb(24,24,27) / gb(63,63,70) |
+| 2 | .amap-bubble 区县气泡 | 背景透明，压在明亮的卫星影像上不易读 | 补 gba(24,24,27,.94) 底 + 1px rgba(37,99,235,.55) 边， 白 / span #a1a1aa | 计算样式 gba(24,24,27,.94) |
+| 3 | 左右两栏底部 | 第三块面板底边贴着视口底（y=1080），最后一行几乎被切 | .dash-col--l/.dash-col--r { padding-bottom: 8px } | 面板底边 1080 → **1072** |
+| 4 | 数值与单位 | 4,508,895.38 与「万吨」之间只有 4px，读数挤 | 追加 .dash-col--l .stat-row .u, .dash-col--r .stat-row .u { margin-left:6px }（覆盖先前 4px 的高优先级规则），数值加 letter-spacing:-.5px | 计算样式 6px |
+
+**另核实**：.panel 计算背景确为 gb(24,24,27)、.panel-head 为 gb(31,31,35)（截图观感偏蓝来自缩放后的色彩错觉，非样式问题）；涨跌语义正确——▼ 2.4% 为红 gb(239,68,68)、▲ 4.8% 为绿，箭头与颜色一致。
+
+**最终部署**：zkvtb6bsv → <https://kuangquan-platfo-541ysnljv4-vzkvtb6bsv.preview.iga-pages.com?iga_token=9a23a40bf5175fd46805209f0819ba9e&iga_time=1795245587>（README / docs/04 / docs/16 / docs/17 地址已同步替换）。线上复验：__KQ_DEMO__=true、logo /brand/logo-128.png 加载成功、气泡 21、气泡底 gba(24,24,27,.94)、专题牌 gb(24,24,27)、docSW=1920、h1=1。

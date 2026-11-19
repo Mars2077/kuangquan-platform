@@ -1170,10 +1170,10 @@ export default function Cockpit({ sceneKey }) {
             width: isPhone ? 'calc(100% - 120px)' : 'min(440px, calc(100% - 200px))',
             height: plateH,
             padding: isPhone ? '0 12px' : '0 20px',
-            background: 'rgba(7,22,40,.92)',
-            border: '1px solid rgba(127,227,255,.22)',
-            borderRadius: 6,
-            boxShadow: '0 6px 18px rgba(0,0,0,.35)',
+            background: '#18181b',
+            border: '1px solid #3f3f46',
+            borderRadius: 8,
+            boxShadow: '0 8px 24px rgba(0,0,0,.55)',
             pointerEvents: 'none',
             overflow: 'hidden'
           }}
@@ -1182,7 +1182,7 @@ export default function Cockpit({ sceneKey }) {
             fontFamily: 'var(--font-sans)',
             fontSize: isPhone ? 13 : 20,
             fontWeight: 600,
-            color: '#eaf4ff',
+            color: '#fafafa',
             letterSpacing: isPhone ? '0.5px' : '1px',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
