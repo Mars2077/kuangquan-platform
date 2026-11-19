@@ -4,7 +4,7 @@
  * 面板只用 .panel / .stat-list / .ring-card / .ring-legend / .bars / .chart。
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Segmented } from 'antd';
 import GeoMap from '../components/GeoMap.jsx';
 import Chart, {
@@ -235,7 +235,7 @@ function StatRowList({ rows = [], rowStyle }) {
     const numeric = r.value !== null && r.value !== undefined && Number.isFinite(Number(r.value));
     return (
       <div className="stat-row" key={`${r.label || r.name}-${i}`} style={rowStyle}>
-        <span className="k" title={r.label} style={{ fontSize: 13 }}>
+        <span className="k" title={r.label}>
           {r.label}
           {r.sub ? <span className="muted tiny" style={{ marginLeft: 4 }}>{r.sub}</span> : null}
         </span>
@@ -243,7 +243,6 @@ function StatRowList({ rows = [], rowStyle }) {
         <span
           className="v"
           style={{
-            fontSize: 25,
             lineHeight: 1.15,
             ...(r.tone === 'warm' ? { color: 'var(--orange)' } : null)
           }}
@@ -650,6 +649,39 @@ export default function Cockpit({ sceneKey }) {
 
   const screenQ = useFetch(() => screenApi.get(scene, { code }), [scene, code]);
   const pointsQ = useFetch(() => screenApi.layers(theme, { code }), [theme, code]);
+  /* 规划区块：10 级起叠加到任意专题（数据仓「地图查看」也会落到这一层） */
+  const zonesQ = useFetch(() => screenApi.layers('topo', { code }), [code]);
+  const zones = zonesQ.data?.list || [];
+
+  /* 数据仓 →「地图查看」：`?layer=<theme>&focus=<区划名>` 进入时套用该图层与聚焦区划。
+     图层可以立刻切；区划要等 regions 到位后再匹配，且只在匹配成功时记一次去重键，
+     否则首帧 regions 为空就会把机会用掉（历史 bug）。 */
+  const [searchParams] = useSearchParams();
+  const layerParam = searchParams.get('layer');
+  const focusParam = searchParams.get('focus');
+  const layerApplied = React.useRef('');
+  useEffect(() => {
+    if (layerParam && THEMES.some((t) => t.key === layerParam)) setTheme(layerParam);
+  }, [layerParam]);
+  useEffect(() => {
+    if (!focusParam) return;
+    const list = regionsQ.data?.list || [];
+    if (!list.length) return;
+    const key = `focus|${focusParam}`;
+    if (layerApplied.current === key) return;
+    const hit = list.find((r) => String(r.name) === String(focusParam) || String(r.short) === String(focusParam));
+    if (!hit) return;
+    layerApplied.current = key;
+    setCode(String(hit.code));
+  }, [focusParam, regionsQ.data]);
+
+  /* 缩放分级提示：<8 只显示数量气泡；≥8 显示点位；≥10 叠加规划区块 */
+  const [mapZoom, setMapZoom] = useState(7);
+  const zoomHint = mapZoom >= 10
+    ? `第 ${mapZoom.toFixed(1)} 级 · 已叠加规划区块与具体点位`
+    : mapZoom >= 8
+      ? `第 ${mapZoom.toFixed(1)} 级 · 已显示具体点位`
+      : `第 ${mapZoom.toFixed(1)} 级 · 仅显示数量，放大到第 8 级查看点位`;
 
   const data = screenQ.data;
   const allPoints = pointsQ.data?.list || [];
@@ -1114,6 +1146,8 @@ export default function Cockpit({ sceneKey }) {
         onDrill={measure.mode === 'none' ? drill : undefined}
         bubbles={bubbles}
         points={points}
+        zones={zones}
+        onZoom={setMapZoom}
         selected={sel}
         onSelectPoint={(pt) => setSel(pt)}
         onSelectRegion={measure.mode === 'none' ? (b) => { if (b?.code) drill(b.code); } : undefined}
@@ -1274,7 +1308,7 @@ export default function Cockpit({ sceneKey }) {
         {toolOpen && (
           <div className="card" style={{ position: 'absolute', right: 12, top: 54, width: 272, zIndex: 9 }}>
             <header className="card-head" style={{ minHeight: 40, padding: '0 12px' }}>
-              <h3 className="card-title" style={{ fontSize: 13 }}>工具</h3>
+              <h3 className="card-title">工具</h3>
               <button type="button" className="btn btn-text btn-sm" onClick={() => setToolOpen(false)}>关闭</button>
             </header>
             <div className="card-body" style={{ padding: 10 }}>
@@ -1341,7 +1375,7 @@ export default function Cockpit({ sceneKey }) {
         {layerOpen && (
           <div className="card" style={{ position: 'absolute', right: 12, top: 54, width: 272, zIndex: 9 }}>
             <header className="card-head" style={{ minHeight: 40, padding: '0 12px' }}>
-              <h3 className="card-title" style={{ fontSize: 13 }}>图层控制</h3>
+              <h3 className="card-title">图层控制</h3>
               <button
                 type="button"
                 className="btn btn-text btn-sm"
@@ -1442,7 +1476,7 @@ export default function Cockpit({ sceneKey }) {
             }}
           >
             <header className="card-head" style={{ minHeight: 40, padding: '0 12px' }}>
-              <h3 className="card-title" style={{ fontSize: 13, minWidth: 0 }}>
+              <h3 className="card-title" style={{ minWidth: 0 }}>
                 <span className="ellipsis" title={sel.name || sel.mine_name || ''}>
                   {sel.name || sel.mine_name || '要素详情'}
                 </span>
@@ -1530,6 +1564,11 @@ export default function Cockpit({ sceneKey }) {
           )
         ) : null}
 
+        {/* 缩放分级提示：说明当前层级看到的是数量、点位还是规划区块 */}
+        <div className="map-zoom-hint" role="status">
+          <Ic icon={Search01Icon} size={11} />
+          <span>{zoomHint}</span>
+        </div>
       </GeoMap>
 
       {/* ---------------- 右栏 ---------------- */}

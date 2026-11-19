@@ -28,7 +28,7 @@ export const antdTheme = {
     borderRadius: 6,
     borderRadiusLG: 8,
     borderRadiusSM: 4,
-    fontSize: 13,
+    fontSize: 14,
     fontFamily:
       '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif',
     controlHeight: 30,

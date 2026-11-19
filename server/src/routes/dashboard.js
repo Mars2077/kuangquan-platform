@@ -532,7 +532,16 @@ router.get('/map/:theme', wrap((req, res) => {
     },
     topo: () => {
       const c = cond(code, 'plan_zone');
-      return listBy(`SELECT id, name, region_name, zone_type, area FROM plan_zone WHERE 1=1 ${c.sql} LIMIT 400`, c.params);
+      /* plan_zone 是行政区面数据、没有坐标列：按 region_name 关联 region 中心点，
+         再用 id 做有序小抖动避免同类区块完全重叠；只影响展示落点，不改变业务属性。 */
+      return listBy(
+        `SELECT p.id, p.name, p.region_name, p.zone_type, p.area,
+                ROUND(r.center_lon + ((p.id % 17) - 8) * 0.028, 5) AS lon,
+                ROUND(r.center_lat + ((p.id % 13) - 6) * 0.022, 5) AS lat
+           FROM plan_zone p LEFT JOIN region r ON r.name = p.region_name
+          WHERE 1=1 ${c.sql} LIMIT 400`,
+        c.params
+      ).filter((x) => x.lon != null && x.lat != null);
     }
   };
   const fn = map[theme];

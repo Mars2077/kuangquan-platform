@@ -1,14 +1,30 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Tabs, Tag } from 'antd';
 import { Ic } from '../components/Icon';
 import { DataTable } from '../components/DataTable.jsx';
+import { Modal } from '../components/Modal.jsx';
 import { useApp, useFetch } from '../store.jsx';
 import { sys } from '../api';
 import {
-  Add01Icon, CloudServerIcon, Database01Icon, File01Icon, Refresh01Icon, Upload01Icon
+  Add01Icon, CloudServerIcon, CubeIcon, Database01Icon, File01Icon, MapsLocation01Icon, Refresh01Icon,
+  Upload01Icon
 } from '@hugeicons/core-free-icons';
 
 const TOPICS = ['地质勘查专题库', '储量评审备案范围专题库', '矿山开发利用统计年报专题库', '在采矿山专题库'];
+
+/* 专题库 → 地图载体：矢量/栅格/三维类资产可直接在驾驶舱对应图层定位查看。
+ * 只映射到系统里已经存在的专题图层（online 在线矿山 / deposit 矿产地），不虚构图层。 */
+const SPATIAL = {
+  地质勘查专题库: { scene: 'geology', layer: 'deposit', note: '矿产地载体图层' },
+  储量评审备案范围专题库: { scene: 'deposit', layer: 'deposit', note: '矿产地载体图层' },
+  矿山开发利用统计年报专题库: { scene: 'dashboard', layer: 'online', note: '在线矿山图层' },
+  在采矿山专题库: { scene: 'dashboard', layer: 'online', note: '在线矿山图层' }
+};
+const SPATIAL_TYPES = ['矢量', '栅格', '三维'];
+const spatialOf = (asset) => (
+  asset && SPATIAL_TYPES.includes(asset.file_type) && SPATIAL[asset.topic] ? SPATIAL[asset.topic] : null
+);
 
 const nf = (v) => Number(v || 0).toLocaleString('zh-CN');
 
@@ -37,7 +53,10 @@ function useNarrow(px) {
 
 export default function Warehouse() {
   const { bootMeta, toast } = useApp();
+  const nav = useNavigate();
   const narrow = useNarrow(620);
+  /* 「三维示意」弹窗：仅对 三维 类资产开放，内容全部取自台账字段，标注为演示示意 */
+  const [model, setModel] = useState(null);
   const q = useFetch(() => sys.warehouse(), []);
   const [tab, setTab] = useState(0);
   const [form, setForm] = useState({ topic: TOPICS[0], year: new Date().getFullYear(), note: '' });
@@ -215,7 +234,33 @@ export default function Warehouse() {
                         { key: 'file_type', label: '类型', width: 80, render: (a) => <Tag color="blue">{a.file_type}</Tag> },
                         { key: 'size_kb', label: '大小', width: 100, align: 'right', render: (a) => `${nf(a.size_kb)} KB` },
                         { key: 'year', label: '年度', width: 80 },
-                        { key: 'uploaded_at', label: '入库时间', width: 150, ellipsis: narrow || undefined, render: (a) => <span className="muted" title={a.uploaded_at}>{a.uploaded_at}</span> }
+                        { key: 'uploaded_at', label: '入库时间', width: 150, ellipsis: narrow || undefined, render: (a) => <span className="muted" title={a.uploaded_at}>{a.uploaded_at}</span> },
+                        {
+                          key: '__map',
+                          label: '地图',
+                          width: narrow ? 92 : 150,
+                          render: (a) => {
+                            const s = spatialOf(a);
+                            if (!s) return <span className="muted small">—</span>;
+                            return (
+                              <span style={{ display: 'inline-flex', gap: 4 }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost btn-sm"
+                                  title={`在驾驶舱「${s.note}」定位查看（聚焦 ${a.region_name || '全省'}）`}
+                                  onClick={() => nav(`/scene/${s.scene}?layer=${s.layer}&focus=${encodeURIComponent(a.region_name || '')}`)}
+                                >
+                                  <Ic icon={MapsLocation01Icon} size={12} /> 地图查看
+                                </button>
+                                {a.file_type === '三维' && (
+                                  <button type="button" className="btn btn-ghost btn-sm" title="查看三维示意" onClick={() => setModel(a)}>
+                                    <Ic icon={CubeIcon} size={12} />
+                                  </button>
+                                )}
+                              </span>
+                            );
+                          }
+                        }
                       ]}
                     />
                   )}
@@ -294,6 +339,73 @@ export default function Warehouse() {
           </div>
         )}
       </div>
+
+      {/* 三维模型示意：字段全部取自 data_asset 台账，图中标注为演示示意 */}
+      <Modal
+        open={!!model}
+        title="三维矿山模型示意"
+        subtitle={model ? `${model.name} · ${model.topic}` : ''}
+        onClose={() => setModel(null)}
+        footer={(
+          <>
+            <button type="button" className="btn btn-ghost" onClick={() => setModel(null)}>关闭</button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                const s = model && SPATIAL[model.topic];
+                setModel(null);
+                if (s) nav(`/scene/${s.scene}?layer=${s.layer}&focus=${encodeURIComponent(model.region_name || '')}`);
+              }}
+            >
+              <Ic icon={MapsLocation01Icon} size={13} /> 在地图中定位
+            </button>
+          </>
+        )}
+      >
+        {model ? (
+          <div className="model-demo">
+            <div className="model-demo-stage" aria-hidden="true">
+              <svg viewBox="0 0 320 180" width="100%" height="100%">
+                <defs>
+                  <linearGradient id="md-top" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stopColor="#12456f" stopOpacity="0.95" />
+                    <stop offset="1" stopColor="#0d3055" stopOpacity="0.95" />
+                  </linearGradient>
+                  <linearGradient id="md-side" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#0b2b4c" stopOpacity="0.95" />
+                    <stop offset="1" stopColor="#061a30" stopOpacity="0.95" />
+                  </linearGradient>
+                </defs>
+                <polygon points="160,18 300,78 160,138 20,78" fill="url(#md-top)" stroke="rgba(73,195,255,.5)" />
+                <polygon points="20,78 160,138 160,170 20,110" fill="url(#md-side)" stroke="rgba(73,195,255,.28)" />
+                <polygon points="300,78 160,138 160,170 300,110" fill="url(#md-side)" stroke="rgba(73,195,255,.28)" />
+                <path d="M60 84 L160 126 L262 84" fill="none" stroke="rgba(73,195,255,.55)" strokeDasharray="4 4" />
+                <circle cx="112" cy="76" r="3.2" fill="#49c3ff" />
+                <circle cx="196" cy="96" r="3.2" fill="#35d39a" />
+                <circle cx="150" cy="54" r="3.2" fill="#ffcc44" />
+                <text x="112" y="66" fill="#9db3cc" fontSize="8" textAnchor="middle">GNSS</text>
+                <text x="196" y="86" fill="#9db3cc" fontSize="8" textAnchor="middle">雨量</text>
+                <text x="150" y="44" fill="#9db3cc" fontSize="8" textAnchor="middle">摄像头</text>
+              </svg>
+            </div>
+            <div className="desc-list" style={{ marginTop: 12 }}>
+              <div className="desc-row"><span className="desc-key">资产名称</span><span className="desc-value">{model.name}</span></div>
+              <div className="desc-row"><span className="desc-key">所属专题库</span><span className="desc-value">{model.topic}</span></div>
+              <div className="desc-row"><span className="desc-key">数据类型</span><span className="desc-value">{model.file_type} · {nf(model.size_kb)} KB · {model.year} 年度</span></div>
+              <div className="desc-row"><span className="desc-key">空间范围</span><span className="desc-value">{model.region_name || '全省'}</span></div>
+              <div className="desc-row"><span className="desc-key">入库时间</span><span className="desc-value">{model.uploaded_at || '—'}</span></div>
+              <div className="desc-row">
+                <span className="desc-key">说明</span>
+                <span className="desc-value">
+                  演示环境无三维引擎，上图按台账字段生成矿山模型示意（含钻孔/设备点位），不代表真实几何精度；
+                  真实部署需接入三维引擎后加载原始模型文件。
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
     </>
   );
 }

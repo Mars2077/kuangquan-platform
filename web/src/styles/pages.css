@@ -1,4 +1,4 @@
-﻿/* ===================================================================
+/* ===================================================================
    绿矿智用 · v3 页面模板层（pages）
    契约：docs/11-组件契约-v3.md §3 页面模板 / §5 驾驶舱 /
         §6 门户 · 作战图 · 移动端版式骨架
@@ -2510,3 +2510,121 @@
 
   .hd-nav-link { height: 34px; }
 }
+
+/* ==========================================================================
+   § v13 字号统一与地图新增控件（缩放提示 / 规划区块标注 / 数据仓三维示意）
+   ========================================================================== */
+
+/* 地图缩放分级提示：贴在左栏下方，避开居中列表按钮与右上图层/工具 */
+.map-zoom-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 62%;
+  padding: 5px 9px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(73, 195, 255, 0.22);
+  background: rgba(5, 16, 32, 0.86);
+  color: var(--text-3);
+  font-size: var(--fs-12);
+  line-height: 1.3;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.map-zoom-hint svg { color: var(--cyan); flex: 0 0 auto; }
+
+/* 规划区块标注（高德 Marker 内部 DOM，用内联样式生成，这里只兜底交互） */
+.amap-zone { pointer-events: auto; }
+.amap-zone span { letter-spacing: 0.01em; }
+
+/* 登录页：左侧只保留系统名称 */
+.login-copy--min {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.login-copy--min h1 {
+  font-size: 56px;
+  line-height: 1.08;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin: 0;
+  color: #fff;
+}
+
+/* 数据仓「三维示意」弹窗 */
+.model-demo-stage {
+  height: 220px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(73, 195, 255, 0.18);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(30, 98, 168, 0.28) 0%, rgba(6, 21, 38, 0) 70%),
+    #071729;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* 字号层级（v13）：整体上调一档，层级只保留四组 —— 页面标题 22 / 模块标题 15 / 正文 14 / 辅助 12 */
+.page-title { font-size: var(--fs-20); }
+
+.panel-head h2,
+.panel-head .panel-title,
+.card-title,
+.panel-title,
+.dialog-title { font-size: var(--fs-14); }
+
+.page-desc,
+.card-sub,
+.desc-value { font-size: var(--fs-13); }
+
+.desc-key,
+.field-label,
+.filter-label { font-size: var(--fs-12); }
+
+.data-table { font-size: var(--fs-13); }
+
+/* 驾驶舱侧栏：标签与数值的层级固定，不随 Tab 变化 */
+.dash-col--l .stat-row .k,
+.dash-col--r .stat-row .k,
+.stat-row .k { font-size: var(--fs-13); }
+
+.dash-col--l .stat-row .v,
+.dash-col--r .stat-row .v,
+.stat-row .v { font-size: 27px; }
+
+.dash-col--l .stat-row .u,
+.dash-col--r .stat-row .u,
+.stat-row .u { font-size: var(--fs-12); }
+
+.dash-col--l .stat-row .d,
+.dash-col--r .stat-row .d,
+.stat-row .d { font-size: var(--fs-11); }
+
+.stat-row .sfx { font-size: var(--fs-11); }
+
+/* 顶栏与一级/二级导航同字号 */
+.hd-brand-text b { font-size: var(--fs-14); }
+.hd-nav-link { font-size: var(--fs-13); }
+.dash-tab { font-size: var(--fs-13); }
+.hd-clock b,
+.hd-clock i { font-size: var(--fs-12); }
+
+/* 表格内标签与链接操作 */
+.tag { font-size: var(--fs-11); }
+.data-table .link-btn { font-size: var(--fs-12); }
+
+@media (max-width: 900px) {
+  .map-zoom-hint { max-width: calc(100% - 24px); left: 12px; right: 12px; bottom: 54px; }
+  .login-copy--min h1 { font-size: 40px; }
+}
+

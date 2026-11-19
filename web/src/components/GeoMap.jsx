@@ -220,6 +220,8 @@ export default function GeoMap({
   onDrill,
   bubbles = [],
   points = [],
+  zones = [],
+  onZoom,
   selected = null,
   onSelectPoint,
   onSelectRegion,
@@ -264,7 +266,7 @@ export default function GeoMap({
 
   /* 回调放进 ref，避免父组件每次渲染都重建地图 */
   const cbRef = useRef({});
-  cbRef.current = { onDrill, onSelectPoint, onSelectRegion, onMapClick };
+  cbRef.current = { onDrill, onSelectPoint, onSelectRegion, onMapClick, onZoom };
 
   const selectRegion = String(selectedRegion || code || '');
   /* 面事件（hover/mouseout）里读当前选中辖区，避免闭包拿到首帧的旧值 */
@@ -363,13 +365,15 @@ export default function GeoMap({
       map.on('click', (e) => {
         if (e?.lnglat) cbRef.current.onMapClick?.([e.lnglat.getLng(), e.lnglat.getLat()]);
       });
-      /* 缩放分级：缩小时只显示「数量气泡」聚合，放大到 8 级才显示具体矿点，
-       * 避免省级视角 400+ 个点位糊成一片（用户要求 5）。 */
+      /* 缩放分级：6 级以下只显示「数量气泡」聚合；8 级起显示矿山/矿业权点位；
+       * 10 级起叠加规划区块。避免省级视角 400+ 个点糊成一片（用户要求 1/5）。 */
       const onZoom = () => {
         zoomRef.current = map.getZoom();
         setZoomTick((n) => n + 1);
+        cbRef.current.onZoom?.(zoomRef.current);
       };
       map.on('zoomend', onZoom);
+      cbRef.current.onZoom?.(map.getZoom());
     } catch (e) {
       console.warn('[GeoMap] 高德地图初始化失败，降级为矢量底图：', e?.message);
       setMode('svg');
@@ -531,6 +535,36 @@ export default function GeoMap({
     const created = [];
 
     const showPoints = zoomRef.current >= 8;
+    const showZones = zoomRef.current >= 10;
+
+    /* 规划区块：10 级起叠加，颜色按分区类型区分（重点勘查/重点开采/砂石土料集中开采） */
+    const ZONE_TONE = {
+      重点勘查区: '#ffcc44',
+      重点开采区: '#ff8a3d',
+      砂石土料集中开采区: '#49c3ff'
+    };
+    (showZones ? zones || [] : []).forEach((z) => {
+      const lon = Number(z.lon ?? z.center_lon);
+      const lat = Number(z.lat ?? z.center_lat);
+      if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
+      const tone = ZONE_TONE[z.zone_type] || '#35d39a';
+      const html = `<div class="amap-zone" style="display:flex;align-items:center;gap:4px;`
+        + `transform:translate(-50%,-50%);white-space:nowrap;cursor:pointer">`
+        + `<i style="width:7px;height:7px;transform:rotate(45deg);background:${tone};`
+        + `box-shadow:0 0 0 2px rgba(5,14,28,.9)"></i>`
+        + `<span style="padding:1px 5px;border-radius:3px;background:rgba(5,14,28,.82);border:1px solid ${tone};`
+        + `color:${tone};font:500 10px/1.3 system-ui,-apple-system,'Segoe UI',sans-serif">`
+        + `${escapeHtml(String(z.name || z.zone_type || '').slice(0, 14))}</span></div>`;
+      const marker = new AMap.Marker({
+        position: [lon, lat],
+        content: html,
+        anchor: 'center',
+        zIndex: 110,
+        title: `${z.name || ''}｜${z.zone_type || ''}${z.area ? `｜${z.area} km²` : ''}`
+      });
+      map.add(marker);
+      created.push(marker);
+    });
 
     (showPoints ? points || [] : []).forEach((p) => {
       const lon = Number(p.lon);
@@ -630,7 +664,7 @@ export default function GeoMap({
       });
       overlaysRef.current = [];
     };
-  }, [mode, points, bubbles, selected, measure, code, mapTick, zoomTick]);
+  }, [mode, points, bubbles, zones, selected, measure, code, mapTick, zoomTick]);
 
   const measurePoints = measure?.points || [];
   const measureMode = measure?.mode || 'none';

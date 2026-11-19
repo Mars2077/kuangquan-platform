@@ -162,11 +162,9 @@ export default function Shell() {
         <div className="hd-brand">
           <BrandMark size={26} />
           <span className="hd-brand-text">
-            <b>{narrow ? '绿矿智用' : '省域空间治理数字化平台 · 绿矿智用'}</b>
-            <i>四川省矿产资源数字化管理</i>
+            <b>绿矿智用</b>
           </span>
         </div>
-
         {narrow && (
           <Button
             size="small"
@@ -234,7 +232,7 @@ export default function Shell() {
 
       <main className="app-main">
         {/^\/(scene|dashboard)/.test(loc.pathname) && (
-          <h1 className="sr-only">省域空间治理数字化平台 - 绿矿智用 · 四川省矿产资源数字化管理</h1>
+          <h1 className="sr-only">绿矿智用 · 矿权管理系统</h1>
         )}
         <div className={bleed ? 'app-page app-page--bleed' : 'app-page'}>
           <Outlet />
