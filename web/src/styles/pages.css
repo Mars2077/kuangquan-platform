@@ -348,6 +348,14 @@
   letter-spacing: .04em;
 }
 
+/* 开关上的业务名词（「矿山列表」等），比原来的纯数字更好认 */
+.dash-list-toggle-text {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
 .dash-list-float {
   display: flex;
   flex-direction: column;

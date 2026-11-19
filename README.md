@@ -17,7 +17,9 @@
 >
 > **v10 掩膜回归与下钻缩放**：行政区划内的掩膜恢复（常态 0.22 / 悬停 0.42 / 选中 0.34，只压暗辖区内部、不再生成覆盖邻省的全域暗化面）；地图点击辖区改为**原地缩放**——建图 effect 只依赖 `mode`，面图层在 3b effect 内替换并 `setBounds(..., false)` 平滑过渡，不再销毁重建地图（实测实例标记不变、面 68→26、zoom 6.88→9.49）。说明见 [docs/22-v10-掩膜回归与下钻缩放.md](docs/22-v10-掩膜回归与下钻缩放.md)。
 >
-> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-ojxr8ka6ao.preview.iga-pages.com?iga_token=8754511bb4117e3370096515f4b1fdde&iga_time=1795226617>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
+> **v11 下钻动画与列表标签**：下钻缩放改为自绘 `tweenView` 逐帧插值（1.2s、easeInOutQuad、zoom + center 同步过渡，带后台节流兜底），实测 6.88→9.49 用满 1200ms；驾驶舱底部列表按钮由「100」这种纯数字改为业务名词「矿山列表」（其余专题为矿产地列表 / 规划区块列表 / 矿业权列表 / 绿色矿山列表 / 预警列表 / 项目列表），条数保留在 tooltip 与无障碍文案。说明见 [docs/23-v11-缩放动画与列表标签.md](docs/23-v11-缩放动画与列表标签.md)。
+>
+> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-ab4tfoe883.preview.iga-pages.com?iga_token=9cb473c599cf4c74794b343d0aec0f2c&iga_time=1795230274>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
 
 ![数字驾驶舱](docs/shots/v9-dashboard.png)
 
@@ -104,7 +106,7 @@ npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
 ```
 
 - 上线：`cd web && iga pages deploy --name kuangquan-platform`（需先 `iga login`，配置见 `web/iga.json`）
-- 线上：<https://kuangquan-platfo-541ysnljv4-ojxr8ka6ao.preview.iga-pages.com?iga_token=8754511bb4117e3370096515f4b1fdde&iga_time=1795226617>
+- 线上：<https://kuangquan-platfo-541ysnljv4-ab4tfoe883.preview.iga-pages.com?iga_token=9cb473c599cf4c74794b343d0aec0f2c&iga_time=1795230274>
 - 差异：静态版的新增/修改/删除写入浏览器 `localStorage`（键 `kq_demo_journal_v1`），刷新后仍在、换设备不共享；服务端版写真实 SQLite。
 - 两个形态共用同一份前端代码与同一套接口契约，页面、交互、算法完全一致。
 

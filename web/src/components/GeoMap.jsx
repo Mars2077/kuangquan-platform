@@ -22,6 +22,72 @@ const MASK_FILL = '#061a34';
 const MASK_FILL_HOVER = '#0a2b4d';
 const MASK_FILL_ON = '#0d3f70';
 const STAGE_TONE = { 待查: '#7fa6cc', 在查: '#ffcc44', 查明: '#35d39a', 规划: '#ff8a3d' };
+/* 下钻/返回的缩放动画时长（ms）：1.2s 让镜头推近有可感知的过程，不至于"闪一下就换了" */
+const ZOOM_MS = 1200;
+
+/* ---------------------------------------------------------------- 视野缓动 */
+/* 高德 setZoomAndCenter(…, false, 1200) 实测约 300ms 就停止（duration 生效不明显），
+   所以这里用 rAF 逐帧插值 zoom + center，配合 easeInOutQuad，做到"镜头慢慢推近"。 */
+function tweenView(map, to, durationMs, rafRef) {
+  if (!map) return;
+  if (rafRef.current) cancelAnimationFrame(rafRef.current);
+  if (rafRef.timer) clearTimeout(rafRef.timer);
+  let fromZoom;
+  let fromCenter;
+  try {
+    fromZoom = map.getZoom();
+    const c = map.getCenter();
+    fromCenter = [c.getLng(), c.getLat()];
+  } catch {
+    return;
+  }
+  const dZoom = (to.zoom || fromZoom) - fromZoom;
+  const dLon = (to.center ? to.center[0] : fromCenter[0]) - fromCenter[0];
+  const dLat = (to.center ? to.center[1] : fromCenter[1]) - fromCenter[1];
+  if (Math.abs(dZoom) < 0.01 && Math.abs(dLon) < 1e-4 && Math.abs(dLat) < 1e-4) return;
+  const t0 = performance.now();
+  const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+  let done = false;
+  const apply = (k) => {
+    try {
+      map.setZoomAndCenter(
+        fromZoom + dZoom * k,
+        [fromCenter[0] + dLon * k, fromCenter[1] + dLat * k],
+        true
+      );
+    } catch {
+      /* ignore */
+    }
+  };
+  const stop = () => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (rafRef.timer) {
+      clearTimeout(rafRef.timer);
+      rafRef.timer = null;
+    }
+  };
+  const step = () => {
+    const p = Math.min(1, (performance.now() - t0) / durationMs);
+    apply(ease(p));
+    if (p < 1) {
+      rafRef.current = requestAnimationFrame(step);
+    } else {
+      done = true;
+      stop();
+    }
+  };
+  rafRef.current = requestAnimationFrame(step);
+  /* 兜底：标签页被浏览器节流时 rAF 可能几乎不回调，此时不要卡在中间视野 */
+  rafRef.timer = setTimeout(() => {
+    if (done) return;
+    done = true;
+    apply(1);
+    stop();
+  }, durationMs + 400);
+}
 
 /* ---------------------------------------------------------------- 高德加载 */
 function loadAMap() {
@@ -170,6 +236,9 @@ export default function GeoMap({
   const mapRef = useRef(null);
   const polygonsRef = useRef([]);
   const overlaysRef = useRef([]);
+  /* 自己驱动缩放的 rAF 句柄（高德自带的 duration 参数实测约 300ms 就到位，
+     做不到"慢慢推近"，所以逐帧插值 zoom/center） */
+  const tweenRef = useRef(null);
 
   const [mode, setMode] = useState('loading');
   /* 地图完成一帧/瓦片就绪后自增一次，用于强制重建覆盖物：
@@ -398,24 +467,45 @@ export default function GeoMap({
         });
       });
     });
+    /* 不在容器里做 setBounds（它会一次性跳到位，且没有可控时长）：
+       先按墨卡托投影算出「刚好装下」的级别，再用 setZoomAndCenter 带 1.2s 时长做缓动缩放，
+       让下钻像镜头推近而不是换一张图。 */
     const flyTo = () => {
       const m = mapRef.current;
       if (!m || !Number.isFinite(minLon) || !(maxLon > minLon)) return;
-      try {
-        const padX = (maxLon - minLon) * 0.06;
-        const padY = (maxLat - minLat) * 0.08;
-        m.setBounds(
-          new AMap.Bounds([minLon - padX, minLat - padY], [maxLon + padX, maxLat + padY]),
-          false,
-          [24, 24, 24, 24]
-        );
-      } catch {
-        /* ignore */
+      const padX = (maxLon - minLon) * 0.06;
+      const padY = (maxLat - minLat) * 0.08;
+      const west = minLon - padX;
+      const east = maxLon + padX;
+      const south = Math.max(-85, minLat - padY);
+      const north = Math.min(85, maxLat + padY);
+      const el = boxRef.current;
+      const w = Math.max(160, (el ? el.clientWidth : 1000) - 48);
+      const h = Math.max(160, (el ? el.clientHeight : 620) - 48);
+      const mercY = (lat) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+      const xUnit = ((east - west) / 360) * 256;
+      const yUnit = ((mercY(north) - mercY(south)) / (2 * Math.PI)) * 256;
+      const fitZoom = Math.min(
+        Math.log2(w / Math.max(xUnit, 1e-9)),
+        Math.log2(h / Math.max(yUnit, 1e-9))
+      );
+      const zoom = Math.max(4, Math.min(15, fitZoom));
+      const center = [(west + east) / 2, (south + north) / 2];
+      tweenView(m, { zoom, center }, ZOOM_MS, tweenRef);
+    };
+    /* 等一帧让容器尺寸就绪，再启动一次动画（不要重复调用，否则动画会被重置） */
+    const flyRaf = requestAnimationFrame(flyTo);
+    return () => {
+      cancelAnimationFrame(flyRaf);
+      if (tweenRef.current) {
+        cancelAnimationFrame(tweenRef.current);
+        tweenRef.current = null;
+      }
+      if (tweenRef.timer) {
+        clearTimeout(tweenRef.timer);
+        tweenRef.timer = null;
       }
     };
-    flyTo();
-    const flyTimer = setTimeout(flyTo, 320);
-    return () => clearTimeout(flyTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, features]);
 

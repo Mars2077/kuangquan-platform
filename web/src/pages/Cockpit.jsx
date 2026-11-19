@@ -56,6 +56,17 @@ const SCENE_TABS = [
   { key: 'geology', name: '数智地勘', hint: '项目与地灾' }
 ];
 
+/* 底部列表开关上的文字：按专题取一个业务名词，避免只显示一个数字看不懂 */
+const LIST_LABEL = {
+  dashboard: '矿山列表',
+  deposit: '矿产地列表',
+  plan: '规划区块列表',
+  rights: '矿业权列表',
+  green: '绿色矿山列表',
+  supervise: '预警列表',
+  geology: '项目列表'
+};
+
 /* 面板「详情」落点：统一指向「业务中枢」里的对应视图（/hub/模块/功能点）。
  * 面板与功能点的对应关系按业务含义确定，见 docs/16-统一详情纳管与统计重做.md。 */
 const DETAIL_ROUTE = {
@@ -546,7 +557,7 @@ function ListToggle({ count, open = false, onClick, label = '列表' }) {
         background: hover ? 'rgba(10, 32, 64, 0.95)' : undefined
       }}
     >
-      <span className="dash-list-toggle-num">{count}</span>
+      <span className="dash-list-toggle-text">{label}</span>
       <Ic icon={open ? ChevronDownIcon : ChevronUpIcon} size={14} />
       <span className="sr-only">{open ? `收起${label}` : `展开${label}`}</span>
     </button>
@@ -992,7 +1003,7 @@ export default function Cockpit({ sceneKey }) {
           count={list.length}
           open
           onClick={() => setListOpen(false)}
-          label={`${meta0.title}列表`}
+          label={LIST_LABEL[scene] || `${meta0.title}列表`}
         />
       </div>
     </div>
@@ -1453,7 +1464,7 @@ export default function Cockpit({ sceneKey }) {
                   count={list.length}
                   open={false}
                   onClick={() => setListOpen(true)}
-                  label={`${meta0.title}列表`}
+                  label={LIST_LABEL[scene] || `${meta0.title}列表`}
                 />
               </div>
             </div>
@@ -1516,7 +1527,7 @@ export default function Cockpit({ sceneKey }) {
       {!narrow ? (
         <section className={`dash-list${listOpen ? ' is-open' : ''}`} aria-label={`${meta0.title}列表`}>
           {!listOpen
-            ? <ListToggle count={list.length} open={false} onClick={() => setListOpen(true)} label={`${meta0.title}列表`} />
+            ? <ListToggle count={list.length} open={false} onClick={() => setListOpen(true)} label={LIST_LABEL[scene] || `${meta0.title}列表`} />
             : listFloat()}
         </section>
       ) : null}
