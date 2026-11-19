@@ -8,7 +8,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Segmented } from 'antd';
 import GeoMap from '../components/GeoMap.jsx';
 import Chart, {
-  COLORS, donutOption, barOption, indicatorOption, formatValue
+  COLORS, donutOption, barOption, indicatorOption, formatValue, pieOption
 } from '../components/Chart.jsx';
 import { Ic } from '../components/Icon';
 import { useApp, useFetch } from '../store.jsx';
@@ -430,6 +430,29 @@ function PanelBody({ panel, extra, dense = false }) {
             />
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (panel.type === 'pie') {
+    const rows = panel.rows || [];
+    return (
+      <div className="pie-panel">
+        <Chart
+          label={`${panel.title || ''}占比`}
+          height={152}
+          style={{ flex: '0 0 152px' }}
+          option={pieOption(rows, { unit: panel.unit || '', radius: ['0%', '74%'] })}
+        />
+        <ul className="pie-legend">
+          {rows.map((r, i) => (
+            <li key={r.name}>
+              <i style={{ background: COLORS[i % COLORS.length] }} />
+              <span className="n">{r.name}</span>
+              <b className="v">{formatValue(r.value, panel.unit, 1)}</b>
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }
@@ -1289,8 +1312,8 @@ export default function Cockpit({ sceneKey }) {
               {['待查', '在查', '查明', '规划'].map((st) => (
                 <label
                   key={st}
-                  className="row center gap-2"
-                  style={{ minHeight: 26, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}
+                  className="row gap-2"
+                  style={{ minHeight: 26, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer', justifyContent: 'flex-start' }}
                 >
                   <input
                     type="checkbox"

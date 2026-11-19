@@ -286,43 +286,6 @@ export default function GeoMap({
       } catch (e) {
         console.warn('[GeoMap] 卫星影像层加载失败，沿用深色底图：', e?.message);
       }
-      // Dark veil over the whole extent (below province polygons) so the neighbouring
-      // provinces read as deep navy instead of bright satellite green.
-      try {
-        let minLon = 999, maxLon = -999, minLat = 999, maxLat = -999;
-        features.forEach((f) => {
-          f.rings.forEach((ring) => {
-            ring.forEach(([lon, lat]) => {
-              if (lon < minLon) minLon = lon;
-              if (lon > maxLon) maxLon = lon;
-              if (lat < minLat) minLat = lat;
-              if (lat > maxLat) maxLat = lat;
-            });
-          });
-        });
-        if (minLon < maxLon) {
-          const padX = (maxLon - minLon) * 0.9;
-          const padY = (maxLat - minLat) * 0.9;
-          const veil = new AMap.Polygon({
-            path: [
-              [minLon - padX, minLat - padY],
-              [maxLon + padX, minLat - padY],
-              [maxLon + padX, maxLat + padY],
-              [minLon - padX, maxLat + padY]
-            ],
-            fillColor: '#04101f',
-            /* 掩膜只做轻微压暗（0.52 → 0.22），避免邻省黑成一片、省界看不清 */
-            fillOpacity: 0.22,
-            strokeWeight: 0,
-            zIndex: 2,
-            clickable: false,
-            bubble: false
-          });
-          veil.setMap(map);
-        }
-      } catch (e) {
-        console.warn('[GeoMap] 底图暗化层绘制失败：', e?.message);
-      }
       map.on('click', (e) => {
         if (e?.lnglat) cbRef.current.onMapClick?.([e.lnglat.getLng(), e.lnglat.getLat()]);
       });
@@ -339,7 +302,8 @@ export default function GeoMap({
           const poly = new AMap.Polygon({
             path: ring.map(([lon, lat]) => [lon, lat]),
             fillColor: MASK_FILL,
-            fillOpacity: 0.34,
+            /* 深色掩膜已去掉：填充仅保留极低不透明度用于承接点击，视觉上不压暗卫星影像 */
+            fillOpacity: 0.001,
             strokeColor: CYAN,
             strokeOpacity: 0.62,
             strokeWeight: 1.2,
@@ -347,14 +311,14 @@ export default function GeoMap({
           });
           poly.on('click', () => cbRef.current.onDrill?.(f.adcode));
           poly.on('mouseover', () => {
-            poly.setOptions({ fillColor: MASK_FILL_HOVER, fillOpacity: 0.68 });
+            poly.setOptions({ fillColor: MASK_FILL_HOVER, fillOpacity: 0.12 });
             if (f.name) setTip({ fixed: true, text: f.name });
           });
           poly.on('mouseout', () => {
             const on = String(f.adcode) === selectRegion;
             poly.setOptions({
               fillColor: on ? MASK_FILL_ON : MASK_FILL,
-              fillOpacity: on ? 0.62 : 0.55
+              fillOpacity: on ? 0.16 : 0.001
             });
             setTip(null);
           });
@@ -442,7 +406,7 @@ export default function GeoMap({
       const on = String(adcode) === selectRegion;
       poly.setOptions({
         fillColor: on ? MASK_FILL_ON : MASK_FILL,
-        fillOpacity: on ? 0.62 : 0.55,
+        fillOpacity: on ? 0.16 : 0.001,
         strokeColor: on ? CYAN_2 : CYAN,
         strokeWeight: on ? 2 : 1
       });

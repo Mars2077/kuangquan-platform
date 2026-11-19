@@ -13,9 +13,11 @@
 >
 > **v8 antd 组件化 + 四项整改**：①底部矿山列表由横贯长条改为地图内居中箭头胶囊按钮（点击浮出 100 行浮层，双入口收起）；②驾驶舱侧栏字号与间距重做（数值 25px、标签 13px，行高按 2–3 行 84–88px / 4 行以上 42–63px 分档，发丝分隔线）；③饼图圆心文字改用 `series.label` 定位，像素级验证 dx≤0.5px；④九个界面的子模块统一由 antd / @ant-design/x 承载（Table/Tabs/Switch/Select/DatePicker/Drawer/Form/Descriptions/Timeline/Statistic/Pagination），并清掉样式层发光、渐变、彩色阴影等装饰。说明见 [docs/20-v8-antd重构与四项整改.md](docs/20-v8-antd重构与四项整改.md)，回归与评审见 [docs/18-antd重构回归报告.md](docs/18-antd重构回归报告.md)、[docs/19-界面评审-antd重构后.md](docs/19-界面评审-antd重构后.md)。
 >
-> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-znz3pm72er.preview.iga-pages.com?iga_token=f930545f776be27e34e1d1bfa403e096&iga_time=1795167628>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
+> **v9 四项界面调整**：①地图深色掩膜全部去掉（删除全域暗化面、行政区面填充降到 0.001，卫星影像与省界完整可见）；②图层控制「矿产地」4 个复选项左对齐（原被 `.center` 居中）；③绿色矿山「六维平均得分」由条形图改为饼图（数据口径不变）；④顶部导航 6 项并联（数字驾驶舱 / 重点任务 / 业务中枢 / 数据仓 / 移动端 / 系统），字号 13/12px → 统一 15px。说明见 [docs/21-v9-四项界面调整.md](docs/21-v9-四项界面调整.md)。
+>
+> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-0xh7zr582i.preview.iga-pages.com?iga_token=fcd3b207ec01bac52a81d5d7c69bad91&iga_time=1795223799>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
 
-![数字驾驶舱](docs/shots/v8-dashboard.png)
+![数字驾驶舱](docs/shots/v9-dashboard.png)
 
 ---
 
@@ -100,7 +102,7 @@ npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
 ```
 
 - 上线：`cd web && iga pages deploy --name kuangquan-platform`（需先 `iga login`，配置见 `web/iga.json`）
-- 线上：<https://kuangquan-platfo-541ysnljv4-znz3pm72er.preview.iga-pages.com?iga_token=f930545f776be27e34e1d1bfa403e096&iga_time=1795167628>
+- 线上：<https://kuangquan-platfo-541ysnljv4-0xh7zr582i.preview.iga-pages.com?iga_token=fcd3b207ec01bac52a81d5d7c69bad91&iga_time=1795223799>
 - 差异：静态版的新增/修改/删除写入浏览器 `localStorage`（键 `kq_demo_journal_v1`），刷新后仍在、换设备不共享；服务端版写真实 SQLite。
 - 两个形态共用同一份前端代码与同一套接口契约，页面、交互、算法完全一致。
 

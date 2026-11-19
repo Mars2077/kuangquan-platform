@@ -152,6 +152,41 @@ export function donutOption(parts = [], opts = {}) {
   };
 }
 
+/* ---------------------------------------------------------------- 整圆饼图 */
+/* 与 donutOption 的区别：无圆心文字、无内圈，用于「结构占比」型面板（如六维平均得分） */
+export function pieOption(rows = [], opts = {}) {
+  const { unit = '', decimals, radius = ['0%', '70%'], showLabel = false } = opts;
+  const d = unitDecimals(unit, decimals);
+  const data = rows.map((r, i) => ({
+    name: r.name,
+    value: Number(r.value || 0),
+    itemStyle: { color: r.color || COLORS[i % COLORS.length] }
+  }));
+  return {
+    animationDuration: 700,
+    color: COLORS,
+    tooltip: {
+      ...TOOLTIP,
+      trigger: 'item',
+      formatter: (p) => `${p.marker}${p.name}：<b>${fmt(p.value, d)}</b> ${unit} · ${p.percent}%`
+    },
+    legend: { show: false },
+    series: [{
+      type: 'pie',
+      radius,
+      center: ['50%', '50%'],
+      padAngle: 1.2,
+      itemStyle: { borderColor: 'rgba(6,22,44,0.6)', borderWidth: 1 },
+      label: showLabel
+        ? { show: true, color: TEXT_DIM, fontSize: 11, formatter: '{b}' }
+        : { show: false },
+      labelLine: { show: false },
+      emphasis: { scale: true, scaleSize: 4 },
+      data
+    }]
+  };
+}
+
 /* ---------------------------------------------------------------- 条形图（横向） */
 export function barOption(rows = [], opts = {}) {
   const { unit = '', decimals, maxWidth = '96%', colorBy = false, showValue = true } = opts;

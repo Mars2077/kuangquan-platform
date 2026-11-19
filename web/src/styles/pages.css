@@ -1499,37 +1499,41 @@
 .hd-nav {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
   overflow: hidden;
 }
 
+/* 六个一级场景并联展示：统一字号 15px，不再区分主/次 */
 .hd-nav-link {
   display: inline-flex;
   align-items: center;
-  height: 30px;
-  padding: 0 10px;
-  font-size: var(--fs-13);
-  color: var(--text-3);
+  height: 34px;
+  padding: 0 14px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--text-2);
   text-decoration: none;
   white-space: nowrap;
-  border-radius: var(--r-sm);
+  border-radius: 6px;
   transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
 }
 
 .hd-nav-link:hover {
   color: var(--text-1);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .hd-nav-link.is-on {
-  color: var(--cyan);
-  background: rgba(73, 195, 255, 0.1);
+  color: #ffffff;
+  font-weight: 600;
+  background: rgba(73, 195, 255, 0.16);
 }
 
 .hd-nav-link--sub {
-  font-size: var(--fs-12);
-  color: var(--text-4);
+  font-size: 15px;
+  color: var(--text-2);
 }
 
 .hd-nav-sep {
@@ -2253,4 +2257,54 @@
 
 @media (max-width: 1100px) {
   .flow-map { height: 268px; }
+}
+/* § v9 六维得分饼图面板 */
+.pie-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pie-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 12px;
+}
+
+.pie-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.pie-legend i {
+  width: 8px;
+  height: 3px;
+  border-radius: 1px;
+  flex: 0 0 8px;
+}
+
+.pie-legend .n {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pie-legend .v {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
 }

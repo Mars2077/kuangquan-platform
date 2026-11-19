@@ -365,7 +365,7 @@ function screenGreen(code) {
         { label: '数字矿山', value: digital, unit: '家', suffix: total ? `占比 ${round((digital / total) * 100, 1)}%` : '' },
         { label: '智能矿山', value: smart, unit: '家', suffix: total ? `占比 ${round((smart / total) * 100, 1)}%` : '' }
       ] },
-      { key: 'dims', title: '六维平均得分', type: 'bars', unit: '分', rows: dimRows }
+      { key: 'dims', title: '六维平均得分', type: 'pie', unit: '分', rows: dimRows }
     ],
     right: [
       { key: 'stage', title: '申报进度', type: 'bars', rows: byStage },

@@ -181,11 +181,10 @@ export default function Shell() {
         <nav className={`hd-nav${navOpen ? ' is-open' : ''}`} aria-label="一级导航">
           <NavLink to="/dashboard" style={navLinkStyle} className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>数字驾驶舱</NavLink>
           <NavLink to="/battle" style={navLinkStyle} className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>重点任务</NavLink>
-          <span className="hd-nav-sep" aria-hidden="true" />
-          <NavLink to="/hub" style={navLinkStyle} className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>业务中枢</NavLink>
-          <NavLink to="/warehouse" style={navLinkStyle} className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>数据仓</NavLink>
-          <NavLink to="/mobile" style={navLinkStyle} className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>移动端</NavLink>
-          <NavLink to="/system" style={navLinkStyle} className={({ isActive }) => `hd-nav-link hd-nav-link--sub${isActive ? ' is-on' : ''}`}>系统</NavLink>
+          <NavLink to="/hub" style={navLinkStyle} className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>业务中枢</NavLink>
+          <NavLink to="/warehouse" style={navLinkStyle} className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>数据仓</NavLink>
+          <NavLink to="/mobile" style={navLinkStyle} className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>移动端</NavLink>
+          <NavLink to="/system" style={navLinkStyle} className={({ isActive }) => `hd-nav-link${isActive ? ' is-on' : ''}`}>系统</NavLink>
         </nav>
 
         <div className="hd-right">
