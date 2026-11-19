@@ -198,6 +198,9 @@ export default function GeoMap({
   cbRef.current = { onDrill, onSelectPoint, onSelectRegion, onMapClick };
 
   const selectRegion = String(selectedRegion || code || '');
+  /* 面事件（hover/mouseout）里读当前选中辖区，避免闭包拿到首帧的旧值 */
+  const selectRef = useRef(selectRegion);
+  selectRef.current = selectRegion;
 
   /* -------- 1. 高德加载（失败降级矢量） -------- */
   useEffect(() => {
@@ -258,9 +261,11 @@ export default function GeoMap({
     return buildProjection(coords);
   }, [features, points, bubbles]);
 
-  /* -------- 3. 高德实例：行政区面 -------- */
+  /* -------- 3. 高德实例：只建一次 --------
+   * 下钻 / 切换专题时不再销毁重建地图（那会闪一下白、像整页切换），
+   * 而是由 3b 原地重绘行政区面并做缩放动画。 */
   useEffect(() => {
-    if (mode !== 'amap' || !features.length || !boxRef.current) return undefined;
+    if (mode !== 'amap' || !boxRef.current) return undefined;
     const AMap = window.AMap;
     let map = null;
     let fitTimer = null;
@@ -296,81 +301,6 @@ export default function GeoMap({
         setZoomTick((n) => n + 1);
       };
       map.on('zoomend', onZoom);
-      const polygons = [];
-      features.forEach((f) => {
-        f.rings.forEach((ring) => {
-          const poly = new AMap.Polygon({
-            path: ring.map(([lon, lat]) => [lon, lat]),
-            fillColor: MASK_FILL,
-            /* 深色掩膜已去掉：填充仅保留极低不透明度用于承接点击，视觉上不压暗卫星影像 */
-            fillOpacity: 0.001,
-            strokeColor: CYAN,
-            strokeOpacity: 0.62,
-            strokeWeight: 1.2,
-            zIndex: 5
-          });
-          poly.on('click', () => cbRef.current.onDrill?.(f.adcode));
-          poly.on('mouseover', () => {
-            poly.setOptions({ fillColor: MASK_FILL_HOVER, fillOpacity: 0.12 });
-            if (f.name) setTip({ fixed: true, text: f.name });
-          });
-          poly.on('mouseout', () => {
-            const on = String(f.adcode) === selectRegion;
-            poly.setOptions({
-              fillColor: on ? MASK_FILL_ON : MASK_FILL,
-              fillOpacity: on ? 0.16 : 0.001
-            });
-            setTip(null);
-          });
-          polygons.push({ poly, adcode: f.adcode });
-        });
-      });
-      polygonsRef.current = polygons;
-      if (polygons.length) {
-        map.add(polygons.map((p) => p.poly));
-        // 用要素自带经纬度包围盒算视野，等底图 complete 后再设一次：
-        // 高德首次 setFitView 常在容器尺寸/底图未就绪时失效，导致视野落在辖区之外。
-        let minLon = 180;
-        let maxLon = -180;
-        let minLat = 90;
-        let maxLat = -90;
-        features.forEach((f) => {
-          (f.rings || []).forEach((ring) => {
-            ring.forEach(([lon, lat]) => {
-              if (lon < minLon) minLon = lon;
-              if (lon > maxLon) maxLon = lon;
-              if (lat < minLat) minLat = lat;
-              if (lat > maxLat) maxLat = lat;
-            });
-          });
-        });
-        let fitted = false;
-        const fit = () => {
-          if (fitted || !mapRef.current) return;
-          fitted = true;
-          try {
-            if (Number.isFinite(minLon) && maxLon > minLon) {
-              const padX = (maxLon - minLon) * 0.06;
-              const padY = (maxLat - minLat) * 0.08;
-              map.setBounds(
-                new AMap.Bounds([minLon - padX, minLat - padY], [maxLon + padX, maxLat + padY]),
-                true,
-                [24, 24, 24, 24]
-              );
-            } else {
-              map.setFitView(polygons.map((p) => p.poly), true, [24, 24, 24, 24]);
-            }
-          } catch {
-            /* ignore */
-          }
-        };
-        fit();
-        fitTimer = setTimeout(fit, 260);
-        map.once('complete', fit);
-      } else {
-        map.setZoomAndCenter(7, [104.07, 30.65]);
-      }
-      setTip(null);
     } catch (e) {
       console.warn('[GeoMap] 高德地图初始化失败，降级为矢量底图：', e?.message);
       setMode('svg');
@@ -398,15 +328,104 @@ export default function GeoMap({
     };
     // selectRegion 只用于初始化时的选中态，不触发重建
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  /* -------- 3b. 行政区面：下钻/切专题时原地重绘 + 缩放过渡 --------
+   * 取代原来的「销毁重建地图」：地图实例、底图瓦片、缩放级别都保留，
+   * 点击上级区域后只是把新的下级辖区分面铺上去，并平滑缩放到其范围。 */
+  useEffect(() => {
+    if (mode !== 'amap') return undefined;
+    const map = mapRef.current;
+    if (!map || !features.length) return undefined;
+    const AMap = window.AMap;
+
+    // 先摘掉上一级的面，避免省/市/县三层叠在一起
+    if (polygonsRef.current.length) {
+      try { map.remove(polygonsRef.current.map((p) => p.poly)); } catch { /* ignore */ }
+      polygonsRef.current = [];
+    }
+
+    const polygons = [];
+    /* 行政区划内的掩膜：常态较透明（卫星影像仍可辨），hover 时加深一档，
+     * 选中（当前辖区）取中间值。 */
+    const BASE = 0.22;
+    const HOVER = 0.42;
+    const ON = 0.34;
+    features.forEach((f) => {
+      f.rings.forEach((ring) => {
+        const poly = new AMap.Polygon({
+          path: ring.map(([lon, lat]) => [lon, lat]),
+          fillColor: MASK_FILL,
+          fillOpacity: BASE,
+          strokeColor: CYAN,
+          strokeOpacity: 0.62,
+          strokeWeight: 1.2,
+          zIndex: 5
+        });
+        poly.on('click', () => cbRef.current.onDrill?.(f.adcode));
+        poly.on('mouseover', () => {
+          poly.setOptions({ fillColor: MASK_FILL_HOVER, fillOpacity: HOVER, strokeOpacity: 0.95 });
+          if (f.name) setTip({ fixed: true, text: f.name });
+        });
+        poly.on('mouseout', () => {
+          const on = String(f.adcode) === selectRef.current;
+          poly.setOptions({
+            fillColor: on ? MASK_FILL_ON : MASK_FILL,
+            fillOpacity: on ? ON : BASE,
+            strokeOpacity: 0.62
+          });
+          setTip(null);
+        });
+        polygons.push({ poly, adcode: f.adcode });
+      });
+    });
+    polygonsRef.current = polygons;
+    if (!polygons.length) return undefined;
+    map.add(polygons.map((p) => p.poly));
+
+    // 平滑缩放到当前辖区（immediately=false → 走动画）
+    let minLon = 180;
+    let maxLon = -180;
+    let minLat = 90;
+    let maxLat = -90;
+    features.forEach((f) => {
+      (f.rings || []).forEach((ring) => {
+        ring.forEach(([lon, lat]) => {
+          if (lon < minLon) minLon = lon;
+          if (lon > maxLon) maxLon = lon;
+          if (lat < minLat) minLat = lat;
+          if (lat > maxLat) maxLat = lat;
+        });
+      });
+    });
+    const flyTo = () => {
+      const m = mapRef.current;
+      if (!m || !Number.isFinite(minLon) || !(maxLon > minLon)) return;
+      try {
+        const padX = (maxLon - minLon) * 0.06;
+        const padY = (maxLat - minLat) * 0.08;
+        m.setBounds(
+          new AMap.Bounds([minLon - padX, minLat - padY], [maxLon + padX, maxLat + padY]),
+          false,
+          [24, 24, 24, 24]
+        );
+      } catch {
+        /* ignore */
+      }
+    };
+    flyTo();
+    const flyTimer = setTimeout(flyTo, 320);
+    return () => clearTimeout(flyTimer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, features]);
 
-  /* 选中行政区高亮 */
+  /* 选中行政区高亮：常态 0.22 / 选中 0.34（hover 由面自身事件处理为 0.42） */
   useEffect(() => {
     polygonsRef.current.forEach(({ poly, adcode }) => {
       const on = String(adcode) === selectRegion;
       poly.setOptions({
         fillColor: on ? MASK_FILL_ON : MASK_FILL,
-        fillOpacity: on ? 0.16 : 0.001,
+        fillOpacity: on ? 0.34 : 0.22,
         strokeColor: on ? CYAN_2 : CYAN,
         strokeWeight: on ? 2 : 1
       });
@@ -607,7 +626,7 @@ export default function GeoMap({
                         <path
                           key={ri}
                           d={ringPath(ring, projection.project)}
-                          fill={on ? 'rgba(73,195,255,0.20)' : 'rgba(46,168,255,0.08)'}
+                          fill={on ? 'rgba(73,195,255,0.28)' : 'rgba(46,168,255,0.14)'}
                           stroke={on ? CYAN_2 : 'rgba(73,195,255,0.42)'}
                           strokeWidth={on ? 1.6 : 1}
                           style={{ cursor: 'pointer', transition: 'fill .16s ease' }}
