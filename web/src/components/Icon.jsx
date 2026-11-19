@@ -18,18 +18,18 @@ export function Ic({ icon, size = 16, strokeWidth = 1.7, className = '', color =
   );
 }
 
-/** 平台六边形标志（本产品自有标识） */
+/** 平台标志（上传 logo 的白色单色透明版，适配近黑界面） */
 export function BrandMark({ size = 34 }) {
-  /* 品牌标识使用上传的 logo（web/public/brand/logo-128.png 为等比缩放版） */
+  /* logo-mark-128.png 由上传图裁白边 + 去水印 + 转白色单色透明生成（scripts 说明见 docs/26 §十） */
   return (
     <img
       className="brand-logo"
-      src="/brand/logo-128.png"
+      src="/brand/logo-mark-128.png"
       width={size}
       height={size}
       alt="绿矿智用"
       draggable="false"
-      style={{ width: size, height: size, objectFit: 'contain', borderRadius: size >= 40 ? 10 : 8 }}
+      style={{ width: size, height: size, objectFit: 'contain' }}
     />
   );
 }

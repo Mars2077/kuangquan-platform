@@ -12,6 +12,7 @@ import Chart, {
 } from '../components/Chart.jsx';
 import { Ic } from '../components/Icon';
 import { useApp, useFetch } from '../store.jsx';
+import { useTheme } from '../theme.jsx';
 import { meta as metaApi, screen as screenApi } from '../api';
 import {
   ArrowLeft01Icon, ArrowRight01Icon,
@@ -552,9 +553,9 @@ function ListToggle({ count, open = false, onClick, label = '列表' }) {
       onMouseLeave={() => setHover(false)}
       style={{
         ...(open ? { position: 'static', left: 'auto', bottom: 'auto', transform: 'none' } : null),
-        borderColor: hover ? 'rgba(73, 195, 255, 0.8)' : 'rgba(73, 195, 255, 0.45)',
-        color: hover ? 'var(--text-1)' : undefined,
-        background: hover ? 'rgba(10, 32, 64, 0.95)' : undefined
+        borderColor: hover ? 'var(--cyan)' : 'var(--line-strong)',
+        color: 'var(--text-2)',
+        background: hover ? 'rgba(37,99,235,.10)' : 'var(--panel)'
       }}
     >
       <span className="dash-list-toggle-text">{label}</span>
@@ -576,6 +577,11 @@ export default function Cockpit({ sceneKey }) {
   const params = useParams();
   const nav = useNavigate();
   const { user, toast } = useApp();
+  const { mode } = useTheme();
+  /* v15：地图浮层控件的主题色（浅色下改白底深字，避免白底页面上出现深色方块） */
+  const chromeBg = mode === 'light' ? 'rgba(255,255,255,.94)' : 'rgba(12,44,78,.85)';
+  const chromeFg = mode === 'light' ? 'var(--text-2)' : '#cfe4ff';
+  const chromeBorder = mode === 'light' ? 'var(--line-strong)' : 'rgba(73,195,255,.45)';
   const routeScene = sceneKey || params.scene || 'dashboard';
   /* v7：6 个业务专题全部收进驾驶舱，用 Tab 切换（不再走二级页面） */
   const [scene, setScene] = useState(routeScene);
@@ -1148,6 +1154,7 @@ export default function Cockpit({ sceneKey }) {
         points={points}
         zones={zones}
         onZoom={setMapZoom}
+        themeMode={mode}
         selected={sel}
         onSelectPoint={(pt) => setSel(pt)}
         onSelectRegion={measure.mode === 'none' ? (b) => { if (b?.code) drill(b.code); } : undefined}
@@ -1156,8 +1163,9 @@ export default function Cockpit({ sceneKey }) {
         measure={measure}
         style={narrow ? { order: -1 } : undefined}
       >
-        {/* 专题标题牌：扁平深色底 + 发丝边框 + 一段强调线（去发光/渐变） */}
+        {/* 专题标题牌：扁平底 + 发丝边框 + 一段强调线（深/浅色由 .map-plate 主题接管） */}
         <div
+          className="map-plate"
           style={{
             position: 'absolute',
             left: '50%',
@@ -1170,10 +1178,6 @@ export default function Cockpit({ sceneKey }) {
             width: isPhone ? 'calc(100% - 120px)' : 'min(440px, calc(100% - 200px))',
             height: plateH,
             padding: isPhone ? '0 12px' : '0 20px',
-            background: '#18181b',
-            border: '1px solid #3f3f46',
-            borderRadius: 8,
-            boxShadow: '0 8px 24px rgba(0,0,0,.55)',
             pointerEvents: 'none',
             overflow: 'hidden'
           }}
@@ -1182,7 +1186,7 @@ export default function Cockpit({ sceneKey }) {
             fontFamily: 'var(--font-sans)',
             fontSize: isPhone ? 13 : 20,
             fontWeight: 600,
-            color: '#fafafa',
+            color: 'var(--text-1)',
             letterSpacing: isPhone ? '0.5px' : '1px',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -1248,10 +1252,10 @@ export default function Cockpit({ sceneKey }) {
                 appearance: 'none',
                 WebkitAppearance: 'none',
                 fontSize: 12,
-                color: '#dff0ff',
-                background: CHROME_BG,
-                border: '1px solid rgba(73,195,255,.55)',
-                borderRadius: 2
+                color: 'var(--text-1)',
+                background: chromeBg,
+                border: `1px solid ${chromeBorder}`,
+                borderRadius: 6
               }}
             >
               {regionOptions.map((o) => (
@@ -1278,9 +1282,9 @@ export default function Cockpit({ sceneKey }) {
               width: 36,
               height: 36,
               borderRadius: 2,
-              background: 'rgba(12,44,78,.85)',
-              borderColor: toolOpen ? 'var(--cyan)' : 'rgba(73,195,255,.45)',
-              color: toolOpen ? 'var(--cyan)' : '#cfe4ff'
+              background: chromeBg,
+              borderColor: toolOpen ? 'var(--cyan)' : chromeBorder,
+              color: toolOpen ? 'var(--cyan)' : chromeFg
             }}
             onClick={() => { setToolOpen((v) => !v); setLayerOpen(false); }}
           >
@@ -1295,9 +1299,9 @@ export default function Cockpit({ sceneKey }) {
               width: 36,
               height: 36,
               borderRadius: 2,
-              background: 'rgba(12,44,78,.85)',
-              borderColor: layerOpen ? 'var(--cyan)' : 'rgba(73,195,255,.45)',
-              color: layerOpen ? 'var(--cyan)' : '#cfe4ff'
+              background: chromeBg,
+              borderColor: layerOpen ? 'var(--cyan)' : chromeBorder,
+              color: layerOpen ? 'var(--cyan)' : chromeFg
             }}
             onClick={() => { setLayerOpen((v) => !v); setToolOpen(false); }}
           >
@@ -1452,7 +1456,7 @@ export default function Cockpit({ sceneKey }) {
             fontSize: 12,
             color: 'var(--text-1)',
             whiteSpace: 'nowrap',
-            background: 'rgba(5,14,28,.86)',
+            background: chromeBg,
             border: '1px solid var(--line-strong)',
             borderRadius: 8
           }}>

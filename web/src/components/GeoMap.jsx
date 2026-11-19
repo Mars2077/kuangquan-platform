@@ -18,9 +18,8 @@ const TEXT_1 = '#eaf4ff';
 const TEXT_3 = '#8fb0cc';
 const TEXT_4 = '#5d7d99';
 // 卫星影像之上的暗色蒙版：压暗辖区、保证青色描边与白字可读，同时让地形透出来。
-const MASK_FILL = '#0b0b0d';
-const MASK_FILL_HOVER = '#26262a';
-const MASK_FILL_ON = '#37373c';
+const MASK_DARK = { base: '#0b0b0d', hover: '#26262a', on: '#37373c' };
+const MASK_LIGHT = { base: '#f4f4f5', hover: '#e4e4e7', on: '#dbeafe' };
 const STAGE_TONE = { 待查: '#71717a', 在查: '#f59e0b', 查明: '#22c55e', 规划: '#84cc16' };
 /* 下钻/返回的缩放动画时长（ms）：1.2s 让镜头推近有可感知的过程，不至于"闪一下就换了" */
 const ZOOM_MS = 1200;
@@ -229,9 +228,11 @@ export default function GeoMap({
   onMapClick,
   measure = { mode: 'none', points: [] },
   showRings = true,
+  themeMode = 'dark',
   style,
   children
 }) {
+  const mask = themeMode === 'light' ? MASK_LIGHT : MASK_DARK;
   const stageRef = useRef(null);
   const boxRef = useRef(null);
   const svgRef = useRef(null);
@@ -344,7 +345,7 @@ export default function GeoMap({
       map = new AMap.Map(boxRef.current, {
         zoom: 7,
         viewMode: '2D',
-        mapStyle: 'amap://styles/dark',
+        mapStyle: themeMode === 'light' ? 'amap://styles/normal' : 'amap://styles/dark',
         // 高德把「国界线」并入 road 特征组渲染：dark 样式下西南段国界线是红色虚线，
         // 位置正对四川西侧（察隅/米什米一带），在厅演示时会被误读成告警。
         // 本专题图不需要底图道路，去掉 road 组即可彻底移除红线；保留 bg（陆地/水域）与 point（地名）。
@@ -357,8 +358,12 @@ export default function GeoMap({
       // 卫星影像底图：参考截图的观感是「深色影像 + 晕渲地形」，纯色底图太空。
       // 瓦片层置于最底层（行政区 Polygon/点位/气泡都画在图层之上），失败只告警、不降级整块地图。
       try {
-        const sat = new AMap.TileLayer.Satellite({ zIndex: 1, opacity: 0.45, zooms: [4, 17] });
-        sat.setMap(map);
+        const sat = new AMap.TileLayer.Satellite({
+          zIndex: 1,
+          opacity: themeMode === 'light' ? 0 : 0.45,
+          zooms: [4, 17]
+        });
+        if (themeMode !== 'light') sat.setMap(map);
       } catch (e) {
         console.warn('[GeoMap] 卫星影像层加载失败，沿用深色底图：', e?.message);
       }
@@ -401,7 +406,7 @@ export default function GeoMap({
     };
     // selectRegion 只用于初始化时的选中态，不触发重建
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+  }, [mode, themeMode]);
 
   /* -------- 3b. 行政区面：下钻/切专题时原地重绘 + 缩放过渡 --------
    * 取代原来的「销毁重建地图」：地图实例、底图瓦片、缩放级别都保留，
@@ -428,7 +433,7 @@ export default function GeoMap({
       f.rings.forEach((ring) => {
         const poly = new AMap.Polygon({
           path: ring.map(([lon, lat]) => [lon, lat]),
-          fillColor: MASK_FILL,
+          fillColor: mask.base,
           fillOpacity: BASE,
           strokeColor: CYAN,
           strokeOpacity: 0.62,
@@ -437,13 +442,13 @@ export default function GeoMap({
         });
         poly.on('click', () => cbRef.current.onDrill?.(f.adcode));
         poly.on('mouseover', () => {
-          poly.setOptions({ fillColor: MASK_FILL_HOVER, fillOpacity: HOVER, strokeOpacity: 0.95 });
+          poly.setOptions({ fillColor: mask.hover, fillOpacity: HOVER, strokeOpacity: 0.95 });
           if (f.name) setTip({ fixed: true, text: f.name });
         });
         poly.on('mouseout', () => {
           const on = String(f.adcode) === selectRef.current;
           poly.setOptions({
-            fillColor: on ? MASK_FILL_ON : MASK_FILL,
+            fillColor: on ? mask.on : mask.base,
             fillOpacity: on ? ON : BASE,
             strokeOpacity: 0.62
           });
@@ -511,20 +516,20 @@ export default function GeoMap({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, features]);
+  }, [mode, features, themeMode]);
 
   /* 选中行政区高亮：常态 0.22 / 选中 0.34（hover 由面自身事件处理为 0.42） */
   useEffect(() => {
     polygonsRef.current.forEach(({ poly, adcode }) => {
       const on = String(adcode) === selectRegion;
       poly.setOptions({
-        fillColor: on ? MASK_FILL_ON : MASK_FILL,
+        fillColor: on ? mask.on : mask.base,
         fillOpacity: on ? 0.34 : 0.22,
         strokeColor: on ? CYAN_2 : CYAN,
         strokeWeight: on ? 2 : 1
       });
     });
-  }, [mode, selectRegion, features]);
+  }, [mode, selectRegion, features, themeMode]);
 
   /* -------- 4. 高德覆盖物：点位 / 气泡 / 测量 -------- */
   useEffect(() => {
@@ -595,17 +600,19 @@ export default function GeoMap({
       const lat = Number(b.lat);
       if (!Number.isFinite(lon) || !Number.isFinite(lat)) return;
       const tone = CYAN_2;
+      const bubbleBg = themeMode === 'light' ? 'rgba(255,255,255,.96)' : 'rgba(5,14,28,.86)';
+      const bubbleFg = (t) => (themeMode === 'light' ? '#18181b' : t);
       const nameHtml = showBubbleName(b)
         ? `<span style="font:500 9px/1.2 system-ui,-apple-system,'Segoe UI',sans-serif;color:${TEXT_3};`
-          + `text-shadow:0 1px 4px rgba(2,8,18,.9)">${escapeHtml(b.name)}</span>`
+          + `text-shadow:${themeMode === 'light' ? 'none' : '0 1px 4px rgba(2,8,18,.9)'}">${escapeHtml(b.name)}</span>`
         : '';
       const html = `<div class="amap-bubble" style="display:flex;flex-direction:column;align-items:center;gap:2px;`
         + `transform:translate(-50%,-50%);cursor:pointer;white-space:nowrap">`
         + nameHtml
         + `<span title="${escapeHtml(b.name)}" style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;`
-        + `padding:1px 6px;border-radius:8px;background:rgba(5,14,28,.86);border:1px solid ${tone};`
-        + `color:${tone};font:600 10px/1.3 system-ui,-apple-system,'Segoe UI',sans-serif;`
-        + `box-shadow:0 2px 10px rgba(2,8,18,.55)">${escapeHtml(fmtNum(b.value))}</span></div>`;
+        + `padding:1px 6px;border-radius:8px;background:${bubbleBg};border:1px solid ${tone};`
+        + `color:${bubbleFg(tone)};font:600 10px/1.3 system-ui,-apple-system,'Segoe UI',sans-serif;`
+        + `box-shadow:0 2px 10px rgba(2,8,18,.35)">${escapeHtml(fmtNum(b.value))}</span></div>`;
       const marker = new AMap.Marker({
         position: [lon, lat],
         content: html,
@@ -666,7 +673,7 @@ export default function GeoMap({
       });
       overlaysRef.current = [];
     };
-  }, [mode, points, bubbles, zones, selected, measure, code, mapTick, zoomTick]);
+  }, [mode, points, bubbles, zones, selected, measure, code, mapTick, zoomTick, themeMode]);
 
   const measurePoints = measure?.points || [];
   const measureMode = measure?.mode || 'none';

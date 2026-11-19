@@ -4,10 +4,11 @@ import { Avatar, Button, Dropdown } from 'antd';
 import { Ic, BrandMark } from '../components/Icon';
 import Drawer from '../components/Drawer';
 import { Toasts, useApp } from '../store';
+import { useTheme } from '../theme.jsx';
 import { sys } from '../api';
 import {
   Alert02Icon, Database01Icon, Logout01Icon, Menu01Icon,
-  SmartPhone01Icon, UserIcon
+  Moon02Icon, SmartPhone01Icon, Sun01Icon, UserIcon
 } from '@hugeicons/core-free-icons';
 
 const SCENE_ROUTES = {
@@ -99,6 +100,7 @@ function ProblemDrawer({ open, onClose }) {
 
 export default function Shell() {
   const { user, bootMeta, logout } = useApp();
+  const { mode, toggle: toggleTheme } = useTheme();
   const nav = useNavigate();
   const loc = useLocation();
   const clock = useClock();
@@ -190,6 +192,14 @@ export default function Shell() {
             <b>{clock.time}</b>
             <i>{clock.date.slice(5)}</i>
           </span>
+          <Button
+            size="small"
+            aria-label={mode === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
+            title={mode === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
+            onClick={toggleTheme}
+            icon={<Ic icon={mode === 'dark' ? Sun01Icon : Moon02Icon} size={14} />}
+            style={{ ...hdBtnStyle, display: 'inline-flex', alignItems: 'center' }}
+          />
           <Button
             size="small"
             icon={<Ic icon={Alert02Icon} size={13} />}

@@ -4,6 +4,7 @@
  * 不得再引入其它图表库或手绘 SVG/CSS 图表。
  */
 import React, { useEffect, useRef } from 'react';
+import { useTheme } from '../theme.jsx';
 import * as echarts from 'echarts/core';
 import { PieChart, BarChart, LineChart, GaugeChart, ScatterChart } from 'echarts/charts';
 import {
@@ -374,11 +375,46 @@ export function indicatorOption(items = []) {
 }
 
 /* ---------------------------------------------------------------- 组件 */
+
+/* 浅色主题下把深色图表里的文字/轴线色映射为浅色可读值（canvas 不解析 CSS 变量） */
+const LIGHT_MAP = {
+  '#fafafa': '#18181b',
+  '#a1a1aa': '#52525b',
+  '#cfe4ff': '#3f3f46',
+  '#7fa6cc': '#71717a',
+  '#e8f4ff': '#18181b',
+  'rgba(63,63,70,0.6)': 'rgba(24,24,27,0.10)',
+  'rgba(64,158,255,0.22)': 'rgba(24,24,27,0.10)'
+};
+
+function adaptForTheme(input) {
+  if (typeof document === 'undefined') return input;
+  if (document.documentElement.dataset.theme !== 'light') return input;
+  const seen = new WeakSet();
+  const walk = (v) => {
+    if (typeof v === 'string') return LIGHT_MAP[v] || v;
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === 'object') {
+      if (seen.has(v)) return v;
+      seen.add(v);
+      const out = {};
+      for (const k of Object.keys(v)) {
+        if (typeof v[k] === 'function') out[k] = v[k];
+        else out[k] = walk(v[k]);
+      }
+      return out;
+    }
+    return v;
+  };
+  return walk(input);
+}
+
 export default function Chart({
   option, height = 150, style, className = '', onEvents, notMerge = true, group, label
 }) {
   const boxRef = useRef(null);
   const instRef = useRef(null);
+  const { mode } = useTheme();
 
   useEffect(() => {
     const el = boxRef.current;
@@ -386,7 +422,7 @@ export default function Chart({
     const inst = echarts.getInstanceByDom(el) || echarts.init(el, null, { renderer: 'canvas' });
     instRef.current = inst;
     if (group) inst.group = group;
-    inst.setOption(option, notMerge);
+    inst.setOption(adaptForTheme(option), notMerge);
     let raf = 0;
     const ro = new ResizeObserver(() => {
       cancelAnimationFrame(raf);
@@ -399,7 +435,7 @@ export default function Chart({
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [option, notMerge, group]);
+  }, [option, notMerge, group, mode]);
 
   useEffect(() => () => {
     if (instRef.current) { instRef.current.dispose(); instRef.current = null; }
