@@ -95,7 +95,7 @@ function seedRegions() {
 
 function seedUsers() {
   const users = [
-    { username: 'admin', password: 'admin123', name: '赵丹蕾', org: '成都市规划和自然资源局', role: 'admin', title: '系统管理员', region_code: '510100', region_name: '成都市' },
+    { username: 'admin', password: 'admin123', name: '马若涵', org: '成都市规划和自然资源局', role: 'admin', title: '系统管理员', region_code: '510100', region_name: '成都市' },
     { username: 'province', password: '123456', name: '陈嘉禾', org: '四川省自然资源厅', role: 'province', title: '矿业权管理处处长', region_code: '510000', region_name: '四川省' },
     { username: 'city', password: '123456', name: '沈立群', org: '成都市规划和自然资源局', role: 'city', title: '地质勘查与矿产资源管理科科长', region_code: '510100', region_name: '成都市' },
     { username: 'county', password: '123456', name: '王永祥', org: '彭州市自然资源和规划局', role: 'county', title: '矿产资源管理科科员', region_code: '510182', region_name: '彭州市' },

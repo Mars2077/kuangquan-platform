@@ -1,4 +1,4 @@
-/* ===================================================================
+﻿/* ===================================================================
    绿矿智用 · v3 页面模板层（pages）
    契约：docs/11-组件契约-v3.md §3 页面模板 / §5 驾驶舱 /
         §6 门户 · 作战图 · 移动端版式骨架
@@ -2315,4 +2315,198 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--text-1);
+}
+
+/* ============ § v12 顶栏导航轨 / 场景导航 / 地图左右翻页 / 统一时钟字号 ============ */
+/* 顶栏改为三等分：品牌 | 居中导航轨 | 右侧信息区（替代原来平铺的一排链接） */
+.app-header {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) minmax(0, auto);
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  background: #061526;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.hd-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+.hd-brand-text b {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #eaf4ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hd-brand-text i {
+  display: block;
+  font-size: 11px;
+  font-style: normal;
+  color: #7fa6cc;
+}
+
+.hd-nav {
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: #0a1c31;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 9px;
+}
+
+.hd-nav-link {
+  height: 30px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #9db3cc;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.hd-nav-link:hover { color: #eaf4ff; background: rgba(255, 255, 255, 0.05); }
+
+.hd-nav-link.is-on {
+  color: #fff;
+  background: rgba(73, 195, 255, 0.16);
+  border-color: transparent;
+}
+
+.hd-right { justify-self: end; display: flex; align-items: center; gap: 10px; }
+
+/* 时间与日期统一字号（此前 13px / 11px 不一致） */
+.hd-clock { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.hd-clock b, .hd-clock i { font-size: 13px; line-height: 1; }
+.hd-clock b { color: #eaf4ff; font-weight: 600; font-variant-numeric: tabular-nums; }
+.hd-clock i { color: #7fa6cc; font-style: normal; font-variant-numeric: tabular-nums; }
+
+/* 二级：场景导航轨（46px），选中项青色下划线 + 淡底 */
+.dash-tabs {
+  height: 46px;
+  flex: 0 0 46px;
+  gap: 4px;
+  padding: 0 14px;
+  background: #07182b;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dash-tab {
+  height: 30px;
+  padding: 0 14px;
+  border-color: transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 28px;
+  color: #9db3cc;
+}
+
+.dash-tab:hover { color: #eaf4ff; background: rgba(255, 255, 255, 0.05); }
+
+.dash-tab.is-on {
+  color: #fff;
+  background: rgba(73, 195, 255, 0.14);
+  border-color: transparent;
+}
+
+.dash-tab.is-on::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -9px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--cyan);
+}
+
+/* 地图左右翻页按钮：贴在地图两侧中部 */
+.dash { position: relative; }
+
+.dash-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 24;
+  width: 34px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cfe4ff;
+  background: rgba(6, 20, 40, 0.72);
+  border: 1px solid rgba(73, 195, 255, 0.22);
+  border-radius: 8px;
+  backdrop-filter: blur(6px);
+  opacity: 0.55;
+  transition: opacity 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+  cursor: pointer;
+}
+
+.dash-arrow:hover {
+  opacity: 1;
+  background: rgba(10, 32, 64, 0.92);
+  border-color: rgba(73, 195, 255, 0.55);
+}
+
+.dash {
+  --dash-side: 300px;
+  --dash-gap: var(--sp-3);
+}
+
+.dash-arrow--l { left: calc(var(--dash-side) + var(--dash-gap) + 8px); }
+.dash-arrow--r { right: calc(var(--dash-side) + var(--dash-gap) + 8px); }
+
+@media (min-width: 1600px) {
+  .dash { --dash-side: 320px; }
+}
+
+@media (max-width: 1360px) {
+  .dash { --dash-side: 280px; }
+}
+
+/* 专题切换过渡：左右栏朝切换方向滑出淡出，舞台轻微收缩淡出 */
+.dash-col--l, .dash-col--r, .dash-map {
+  transition: opacity 0.26s ease, transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dash-wrap.is-swap-next .dash-col--l { opacity: 0; transform: translateX(-18px); }
+.dash-wrap.is-swap-next .dash-col--r { opacity: 0; transform: translateX(18px); }
+.dash-wrap.is-swap-prev .dash-col--l { opacity: 0; transform: translateX(18px); }
+.dash-wrap.is-swap-prev .dash-col--r { opacity: 0; transform: translateX(-18px); }
+.dash-wrap.is-swap .dash-map { opacity: 0.4; transform: scale(0.996); }
+
+@media (max-width: 1100px) {
+  .dash-arrow { display: none; }
+}
+
+@media (max-width: 900px) {
+  /* v12 导航轨在窄屏恢复为抽屉：默认收起，点汉堡展开 */
+  .hd-nav {
+    display: none;
+    position: absolute;
+    top: var(--header-h);
+    left: 8px;
+    right: 8px;
+    justify-self: stretch;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 8px;
+    background: #0a1c31;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 9px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+    z-index: var(--z-popover);
+  }
+
+  .hd-nav.is-open { display: flex; }
+
+  .hd-nav-link { height: 34px; }
 }

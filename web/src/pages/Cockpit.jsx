@@ -14,6 +14,7 @@ import { Ic } from '../components/Icon';
 import { useApp, useFetch } from '../store.jsx';
 import { meta as metaApi, screen as screenApi } from '../api';
 import {
+  ArrowLeft01Icon, ArrowRight01Icon,
   Camera01Icon, ChevronDownIcon, ChevronUpIcon, Download01Icon, FilterIcon, Layers01Icon,
   Location01Icon, More01Icon, Refresh01Icon, RulerIcon, Search01Icon, ToolsIcon
 } from '@hugeicons/core-free-icons';
@@ -595,6 +596,33 @@ export default function Cockpit({ sceneKey }) {
   const [measure, setMeasure] = useState({ mode: 'none', points: [], closed: false });
   const [locate, setLocate] = useState('');
 
+  /* v12：专题切换加过渡——左右栏向切换方向滑出淡出，240ms 后换数据再淡入；
+     switchScene 供 Tab 与地图左右箭头共用，避免两套逻辑。 */
+  const [swapping, setSwapping] = useState(false);
+  const [swapDir, setSwapDir] = useState(1);
+  const swapTimer = React.useRef(null);
+  useEffect(() => () => clearTimeout(swapTimer.current), []);
+  const switchScene = useCallback((key) => {
+    if (!key || key === scene) return;
+    const from = SCENE_TABS.findIndex((t) => t.key === scene);
+    const to = SCENE_TABS.findIndex((t) => t.key === key);
+    setSwapDir(to >= from ? 1 : -1);
+    setSwapping(true);
+    clearTimeout(swapTimer.current);
+    swapTimer.current = setTimeout(() => {
+      setScene(key);
+      setSel(null);
+      setStages({});
+      setMeasure({ mode: 'none', points: [], closed: false });
+      setSwapping(false);
+    }, 240);
+  }, [scene]);
+  const stepScene = useCallback((step) => {
+    const i = SCENE_TABS.findIndex((t) => t.key === scene);
+    const next = SCENE_TABS[(i + step + SCENE_TABS.length) % SCENE_TABS.length];
+    if (next) switchScene(next.key);
+  }, [scene, switchScene]);
+
   /* 视口：≤1360 收成单列，避免三栏把面板压到内容以下（与 pages.css 断点协同） */
   const [vw, setVw] = useState(() => (typeof window === 'undefined' ? 1920 : window.innerWidth));
   useEffect(() => {
@@ -1010,7 +1038,7 @@ export default function Cockpit({ sceneKey }) {
   );
 
   return (
-    <div className="dash-wrap">
+    <div className={`dash-wrap${swapping ? ` is-swap is-swap-${swapDir > 0 ? 'next' : 'prev'}` : ''}`}>
       <nav className="dash-tabs" role="tablist" aria-label="驾驶舱专题">
         {SCENE_TABS.map((t) => (
           <button
@@ -1020,13 +1048,7 @@ export default function Cockpit({ sceneKey }) {
             aria-selected={scene === t.key}
             title={t.hint}
             className={`dash-tab${scene === t.key ? ' is-on' : ''}`}
-            onClick={() => {
-              if (t.key === scene) return;
-              setScene(t.key);
-              setSel(null);
-              setStages({});
-              setMeasure({ mode: 'none', points: [], closed: false });
-            }}
+            onClick={() => switchScene(t.key)}
           >
             {t.name}
           </button>
@@ -1035,14 +1057,37 @@ export default function Cockpit({ sceneKey }) {
       <div
         className="dash"
         style={narrow ? {
-          minHeight: 'calc(100vh - var(--header-h) - var(--nav-h) - 40px)',
+          minHeight: 'calc(100vh - var(--header-h) - var(--nav-h) - 46px)',
           gridTemplateColumns: 'minmax(0, 1fr)',
           gridTemplateRows: 'minmax(0, 1fr)'
         } : {
-          minHeight: 'calc(100vh - var(--header-h) - var(--nav-h) - 40px)',
+          minHeight: 'calc(100vh - var(--header-h) - var(--nav-h) - 46px)',
           gridTemplateRows: 'minmax(0, 1fr)'
         }}
       >
+      {/* 地图左右翻页：点击切到上一/下一专题（窄屏隐藏，用 Tab 切换） */}
+      {!narrow && (
+        <>
+          <button
+            type="button"
+            className="dash-arrow dash-arrow--l"
+            onClick={() => stepScene(-1)}
+            aria-label="上一专题"
+            title="上一专题"
+          >
+            <Ic icon={ArrowLeft01Icon} size={18} />
+          </button>
+          <button
+            type="button"
+            className="dash-arrow dash-arrow--r"
+            onClick={() => stepScene(1)}
+            aria-label="下一专题"
+            title="下一专题"
+          >
+            <Ic icon={ArrowRight01Icon} size={18} />
+          </button>
+        </>
+      )}
       {/* ---------------- 左栏 ---------------- */}
       <aside className="dash-col--l">
         {leftPanels.map((p) => (

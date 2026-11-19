@@ -19,7 +19,9 @@
 >
 > **v11 下钻动画与列表标签**：下钻缩放改为自绘 `tweenView` 逐帧插值（1.2s、easeInOutQuad、zoom + center 同步过渡，带后台节流兜底），实测 6.88→9.49 用满 1200ms；驾驶舱底部列表按钮由「100」这种纯数字改为业务名词「矿山列表」（其余专题为矿产地列表 / 规划区块列表 / 矿业权列表 / 绿色矿山列表 / 预警列表 / 项目列表），条数保留在 tooltip 与无障碍文案。说明见 [docs/23-v11-缩放动画与列表标签.md](docs/23-v11-缩放动画与列表标签.md)。
 >
-> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-ab4tfoe883.preview.iga-pages.com?iga_token=9cb473c599cf4c74794b343d0aec0f2c&iga_time=1795230274>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
+> **v12 导航重做与专题切场**：顶栏改为三段式（品牌 / 居中导航轨 / 时间与用户），删除「指标监测」入口，日期与时间统一 13px；二级场景条改 46px 轨 + 青色下划线；地图左右各加一枚 34×64 箭头（落在地图内，`栏宽+间距+8px`），点击切换上一/下一专题，左右栏 260ms 反向滑出淡出再淡入；登录用户姓名改为「马若涵」。说明见 [docs/24-v12-导航与切场动画.md](docs/24-v12-导航与切场动画.md)。
+>
+> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-qlq1mib6g0.preview.iga-pages.com?iga_token=096c805926528333c2b6423c78cedb0e&iga_time=1795232728>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
 
 ![数字驾驶舱](docs/shots/v9-dashboard.png)
 
@@ -106,7 +108,7 @@ npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
 ```
 
 - 上线：`cd web && iga pages deploy --name kuangquan-platform`（需先 `iga login`，配置见 `web/iga.json`）
-- 线上：<https://kuangquan-platfo-541ysnljv4-ab4tfoe883.preview.iga-pages.com?iga_token=9cb473c599cf4c74794b343d0aec0f2c&iga_time=1795230274>
+- 线上：<https://kuangquan-platfo-541ysnljv4-qlq1mib6g0.preview.iga-pages.com?iga_token=096c805926528333c2b6423c78cedb0e&iga_time=1795232728>
 - 差异：静态版的新增/修改/删除写入浏览器 `localStorage`（键 `kq_demo_journal_v1`），刷新后仍在、换设备不共享；服务端版写真实 SQLite。
 - 两个形态共用同一份前端代码与同一套接口契约，页面、交互、算法完全一致。
 

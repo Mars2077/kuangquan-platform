@@ -148,12 +148,12 @@ export default function Shell() {
     color: '#cfe4ff'
   };
 
-  // 选中态用 1px 描边，不做渐变填充/发光
-  const navLinkStyle = ({ isActive }) => ({
+  // 选中态由 pages.css 的导航胶囊承担，这里只清掉旧的内联描边/发光
+  const navLinkStyle = () => ({
     textShadow: 'none',
     boxShadow: 'none',
-    border: `1px solid ${isActive ? 'rgba(73, 195, 255, 0.55)' : 'transparent'}`,
-    background: isActive ? 'transparent' : undefined
+    border: '1px solid transparent',
+    background: undefined
   });
 
   return (
@@ -192,7 +192,6 @@ export default function Shell() {
             <b>{clock.time}</b>
             <i>{clock.date.slice(5)}</i>
           </span>
-          <Button size="small" onClick={() => nav('/battle')} style={hdBtnStyle}>指标监测</Button>
           <Button
             size="small"
             icon={<Ic icon={Alert02Icon} size={13} />}
