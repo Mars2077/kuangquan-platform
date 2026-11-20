@@ -3,7 +3,7 @@ import { Segmented } from 'antd';
 import { Ic } from './Icon';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
 
-export function Panel({ title, more, onMore, children, className = '', style, bodyClass = '', actions }) {
+export function Panel({ title, more, onMore, children, className = '', style, bodyClass = '', bodyStyle, actions }) {
   return (
     <section className={`panel ${className}`} style={style}>
       <header className="panel-head">
@@ -16,7 +16,7 @@ export function Panel({ title, more, onMore, children, className = '', style, bo
           </button>
         )}
       </header>
-      <div className={`panel-body ${bodyClass}`}>{children}</div>
+      <div className={`panel-body ${bodyClass}`} style={bodyStyle}>{children}</div>
     </section>
   );
 }

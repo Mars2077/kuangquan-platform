@@ -27,7 +27,7 @@
 >
 > **v15 深色 / 浅色双主题**：顶栏新增主题切换（`localStorage['kq_theme']`，默认深色），全站令牌、antd 主题、图表画布文字、高德底图与掩膜、地图浮层控件随主题切换；面层与描边成对反相，主色 `#2563EB` 两套保持一致。说明见 [docs/27-v15-深色浅色主题.md](docs/27-v15-深色浅色主题.md)。
 >
-> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-y9fpjpsa1c.preview.iga-pages.com?iga_token=fa87438b4e635c128e396eb0a97cf445&iga_time=1795247383>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
+> 仓库：<https://github.com/Mars2077/kuangquan-platform>　｜　在线体验（火山引擎 IGA Pages）：<https://kuangquan-platfo-541ysnljv4-fqi6064181.preview.iga-pages.com?iga_token=293edd8f7b96bce078a8d8149ebcc889&iga_time=1795317586>　｜　部署文档：[docs/04-部署说明.md](docs/04-部署说明.md)
 ![数字驾驶舱](docs/shots/iga-v14-dashboard.png)
 
 ---
@@ -113,7 +113,7 @@ npm run preview:demo             # 3. 本地验证（http://127.0.0.1:4173）
 ```
 
 - 上线：`cd web && iga pages deploy --name kuangquan-platform`（需先 `iga login`，配置见 `web/iga.json`）
-- 线上：<https://kuangquan-platfo-541ysnljv4-y9fpjpsa1c.preview.iga-pages.com?iga_token=fa87438b4e635c128e396eb0a97cf445&iga_time=1795247383>
+- 线上：<https://kuangquan-platfo-541ysnljv4-fqi6064181.preview.iga-pages.com?iga_token=293edd8f7b96bce078a8d8149ebcc889&iga_time=1795317586>
 - 差异：静态版的新增/修改/删除写入浏览器 `localStorage`（键 `kq_demo_journal_v1`），刷新后仍在、换设备不共享；服务端版写真实 SQLite。
 - 两个形态共用同一份前端代码与同一套接口契约，页面、交互、算法完全一致。
 

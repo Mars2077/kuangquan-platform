@@ -1591,18 +1591,18 @@ export default function Cockpit({ sceneKey }) {
           >
             <PanelBody panel={p} extra={data?.extra} dense={midRange} />
             {p.key === 'warn' && indicators.length ? (
-              <div style={{ marginTop: 10, borderTop: '1px solid var(--line-soft)', paddingTop: 8 }}>
-                <div className="panel-title" style={{ fontSize: 12, marginBottom: 2, display: 'flex' }}>
+              <div className="warn-chart-wrap" style={{ marginTop: 8, borderTop: '1px solid var(--line-soft)', paddingTop: 6 }}>
+                <div className="panel-title" style={{ fontSize: 12, marginBottom: 4, display: 'flex' }}>
                   指标执行预警
                   <span className="muted tiny" style={{ fontWeight: 400 }}>
                     {warnCount ? `· 黄牌 ${warnCount} 项` : ''}
                   </span>
                 </div>
                 <Chart
-                  height={Math.max(108, Math.min(6, indicators.length) * 26 + 14)}
+                  height={Math.max(120, Math.min(5, indicators.length) * 24 + 14)}
                   style={{ minHeight: 0 }}
                   label="指标执行预警"
-                  option={indicatorOption(indicators.slice(0, 6))}
+                  option={indicatorOption(indicators.slice(0, 5))}
                 />
               </div>
             ) : null}

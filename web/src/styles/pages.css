@@ -2789,3 +2789,42 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 html[data-theme='light'] .map-plate { box-shadow: var(--sh-1); }
+/* ===================================================================
+   § v16 指标预警面板：统计行 + 执行预警图共存时的布局修正
+   根因：该面板同时含 .stat-list 与 .warn-chart-wrap，沿用了
+   「纯统计面板」的行拉伸规则，导致 4 行指标溢出压住图表标题，
+   同时图表被 flex:1 压缩到 101px，进度条与标签挤在一起。
+   =================================================================== */
+.dash-col--r > .panel:has(> .panel-body > .warn-chart-wrap) {
+  /* 含图表的面板：统计区不参与等高拉伸，保留自然高度 */
+  flex: 0 0 auto !important;
+}
+.dash-col--r > .panel:has(> .panel-body > .warn-chart-wrap) > .panel-body {
+  overflow: visible !important;
+  gap: 0;
+}
+/* 统计行回到紧凑模式：不拉伸、行高由内容决定 */
+.dash-col--r > .panel:has(> .panel-body > .warn-chart-wrap) > .panel-body > .stat-list {
+  flex: 0 0 auto !important;
+  justify-content: flex-start !important;
+  gap: 0;
+}
+.dash-col--r > .panel:has(> .panel-body > .warn-chart-wrap) > .panel-body > .stat-list > .stat-row {
+  flex: 0 0 auto !important;
+  max-height: none !important;
+  min-height: 30px;
+  padding: 5px 0 !important;
+  line-height: 1.2;
+}
+.dash-col--r > .panel:has(> .panel-body > .warn-chart-wrap) .stat-row .v {
+  font-size: 20px !important;
+}
+/* 图表容器：保持自身高度，不被 flex 压扁 */
+.dash-col--r > .panel > .panel-body > .warn-chart-wrap {
+  display: block !important;
+  flex: 0 0 auto !important;
+}
+.dash-col--r > .panel > .panel-body > .warn-chart-wrap > .chart {
+  flex: none !important;
+  min-height: 120px !important;
+}
